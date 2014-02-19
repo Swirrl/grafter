@@ -5,10 +5,10 @@
 ;; Just experimenting with CSV
 
 (defn parse-csv [csv-file-or-url]
-  (csv/parse-csv   (io/reader csv-file-or-url)))
+  (csv/parse-csv (io/reader csv-file-or-url)))
 
 (defn nnth
-  "Same as nth but returns nil (or not-found) if"
+  "Same as nth but returns nil (or not-found) if supplied."
   ([col index] (nnth col index nil))
   ([col index not-found]
      (try
@@ -38,16 +38,25 @@ columns."
                 (conj acc (nnth csv r)))
               [] (conj rs r))))
 
-;; TODO make this extensible
-;; Also don't test for equality of strings but that it contains the string...
-;; also make it work with regexes.
-(defn grep [csv f]
-  (if (instance? String f)
-    (grep csv #(= f %))
-    (filter (fn [row]
-              (some f row)) csv)))
+(defmulti grep
+  "Filters rows in the table for matches.  This is multi-method
+  dispatches on the type of its second argument."
+  (fn [table f & cols] (class f)))
 
-(defn remove-indices [col & idxs]
+(defmethod grep clojure.lang.IFn [csv f & cols]
+  (let [select-cols (if (empty? cols)
+                           identity
+                           (partial select-columns-from-row cols))]
+    (filter (fn [row]
+              (some f (select-cols row))) csv)))
+
+(defmethod grep java.lang.String [csv s & cols]
+  (apply grep csv #(.contains % s) cols))
+
+(defmethod grep java.util.regex.Pattern [csv p & cols]
+  (apply grep csv #(re-find p %) cols))
+
+(defn- remove-indices [col & idxs]
   "Removes the values at the supplied indexes from the given vector."
   (let [pos (map - (sort idxs) (iterate inc 0))
         remove-index (fn [col pos]
@@ -56,16 +65,14 @@ columns."
     (reduce remove-index col pos)))
 
 (defn- fuse-row [columns f row]
-  (let [
-        to-drop (drop 1 (sort columns))
+  (let [to-drop (drop 1 (sort columns))
         merged (assoc row (apply min columns)
                       (apply f (select-columns-from-row columns row)))]
-    
     (apply remove-indices merged to-drop)))
 
 (defn fuse [csv f & cols]
   "Merge columns with the specified function"
-  (map (partial fuse-row cols f) csv ))
+  (map (partial fuse-row cols f) csv))
 
 (defn join [])
 
@@ -78,9 +85,7 @@ columns."
   (rows earners (range 5 10))
 
   (-> (parse-csv "./examples/high-earners-pay-2012.csv")
-      (grep "John")
       (fuse #(str %1 " " %2) 2 1)
+      (grep "John")
       (columns 2 1)
-      (rows 1 10))
-  
-  )
+      (rows 1 10)))
