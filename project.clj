@@ -8,6 +8,6 @@
                  ;;[plaza "0.0.5-SNAPSHOT"]
                  [org.clojure/math.combinatorics "0.0.7"]
                  [clojure-csv/clojure-csv "2.0.1"]
-                 ;;[org.openrdf/sesame "2.7.10"]
+                 [org.openrdf.sesame/sesame-runtime "2.7.10"]
                  [seesaw "1.4.4"]]
   :java-source-path "src")
