@@ -32,15 +32,21 @@ columns."
   ([csv r]
      (if (sequential? r)
        (apply rows csv r)
-       (list (nnth csv r))))
+       (let [val (nnth csv r ::not-found)]
+         (if (= ::not-found val)
+           nil
+           (list val)))))
   ([csv r & rs]
-      (reduce (fn [acc r]
-                (conj acc (nnth csv r)))
-              [] (conj rs r))))
+     (reduce (fn [acc r]
+               (conj acc (nnth csv r)))
+             [] (conj rs r))))
 
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
-  dispatches on the type of its second argument."
+  dispatches on the type of its second argument.  It also takes any
+  number of column numbers as the final set of arguments.  These
+  narrow the scope of the grep to only those columns.  If no columns
+  are specified then grep operates on all columns."
   (fn [table f & cols] (class f)))
 
 (defmethod grep clojure.lang.IFn [csv f & cols]
@@ -74,7 +80,10 @@ columns."
   "Merge columns with the specified function"
   (map (partial fuse-row cols f) csv))
 
-(defn join [])
+;; TODO implement inner join, maybe l/r outer joins too
+(defn join [csv f & others]
+  ;(filter)
+  (apply map vector csv others))
 
 (comment
 
@@ -85,7 +94,16 @@ columns."
   (rows earners (range 5 10))
 
   (-> (parse-csv "./examples/high-earners-pay-2012.csv")
+      (grep "John" 2)
       (fuse #(str %1 " " %2) 2 1)
-      (grep "John")
-      (columns 2 1)
-      (rows 1 10)))
+      (columns 2 1 7)
+      (rows 1 10)
+      )
+
+  (def lookup '(["1" "Cats"] ["2" "Dogs"]))
+
+  (def pets '(["1" "Sylvester"]
+              ["2" "Fido"]))
+
+
+  )
