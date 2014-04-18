@@ -3,7 +3,52 @@
 Exploring the use of Clojure for RDFizing, DSL's, RDF tooling and more
 tightly integrating with triple stores.
 
-* RDFizing
+Grafter has a number of stated aims:
+
+1) To show that Clojure could provide us with a number of platform
+   benefits:
+
+   - Easy access to Java tooling & API's, including the ability to
+     talk direct to underlying triple store implementations.
+   - Simplified infrastructure due to excellent concurrency support
+     etc.
+   - Potentially better performance by
+     + Utilising local disk backed, indexed triple stores with no
+       additional infrastructure overhead
+     + Using a more performant language
+     + Potentially skipping unnecessary serialization/parsing steps
+   - Being able to create and manage logical graphs/endpoints more
+     easily.
+
+2) To show that Clojure is a near perfect tool for building an
+   RDFization DSL which has a number of desirable properties that
+   would be harder to achieve with more conventional approaches.
+
+* RDFizing DSL
+
+In terms of RDFization the core idea is:
+
+1) To build up a decent library of low level functions for common
+   RDFing tasks.
+
+2) To build a DSL with a simplified, consistent syntax that can be
+   easily targetted by tooling etc...  The idea here is that the DSL's
+   syntax will be built purely in terms of [[https://github.com/edn-format/edn][Extensible Data Notation]].
+
+   Above the syntactic layer Grafter should try and provide a language
+   of operations that are simple enough for basic end user tooling,
+   whilst ensuring sane (non-turing complete) semantics.
+
+   As the grafter DSL snippets will also be valid Clojure programs,
+   DSL forms will be literally copy/pastable inside arbitrary Clojure
+   programs.
+
+3) Grafter should aim to be a componentized workflow language, where
+   logging, error reporting and more advanced features such as
+   debugging, tracing and the configuration of concrete
+   implementations can be easily applied by either the environment or
+   a user to arbitrary pipelines without having to modify the pipeline
+   itself.
 
 * Misc
 
