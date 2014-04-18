@@ -25,6 +25,9 @@ column numbers and returns a new CSV file containing only those
 columns."
   (map (partial select-columns-from-row cols) csv))
 
+(defn drop-rows [csv n]
+  (drop n csv))
+
 (defn rows
   ([csv] csv)
   ([csv r]
@@ -35,6 +38,7 @@ columns."
            nil
            (list val)))))
   ([csv r & rs]
+     ;; todo make this lazy
      (reduce (fn [acc r]
                (conj acc (nnth csv r)))
              [] (conj rs r))))

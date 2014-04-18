@@ -103,7 +103,6 @@ takes an optional language tag or URI =(s "Bonjour!" "fr")=
 Additionally =java.util.Date= is also expanded into xsd dateTime's,
 which means you can use EDN =#inst= data literals too.
 
-
 You can add Statements or sequences of statements to your store like
 so with the =grafter.rdf.protocols/add= function:
 
