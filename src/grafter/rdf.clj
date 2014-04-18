@@ -53,3 +53,19 @@
   "Takes many turtle like structures and converts them to a lazy-seq
 of grafter.rdf.protocols.IStatement's"
   (mapcat expand-subj subjects))
+
+;; TODO consider making it return a prefixer instead of just a fn so
+;; you can prefixer indefinitely.
+(defn prefixer
+  ([uri-prefix]
+     (fn [f-or-s]
+       (cond
+        (ifn? f-or-s) (let [f f-or-s]
+                        (fn [s] (str uri-prefix (f s))))
+        (string? f-or-s) (let [s f-or-s]
+                           (str uri-prefix s))
+        :else (str uri-prefix f-or-s)))))
+
+(defn delayed-prefixer [uri-prefix]
+  (fn [f]
+    (prefixer )))
