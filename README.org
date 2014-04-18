@@ -35,6 +35,11 @@ In terms of RDFization the core idea is:
    easily targetted by tooling etc...  The idea here is that the DSL's
    syntax will be built purely in terms of [[https://github.com/edn-format/edn][Extensible Data Notation]].
 
+   (EDN is sort of like JSON, except it's syntactically Clojure,
+   supports more data types and collections, and is extensible.
+   API's for parsing and writing EDN are available in lots of
+   languages including [[https://github.com/relevance/edn-ruby][Ruby]] and [[https://github.com/shaunxcode/jsedn][Javascript]])
+
    Above the syntactic layer Grafter should try and provide a language
    of operations that are simple enough for basic end user tooling,
    whilst ensuring sane (non-turing complete) semantics.
