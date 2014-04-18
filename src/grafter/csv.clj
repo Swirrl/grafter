@@ -2,8 +2,6 @@
   (:require [clojure-csv.core :as csv])
   (:require [clojure.java.io :as io]))
 
-;; Just experimenting with CSV
-
 (defn parse-csv [csv-file-or-url]
   (csv/parse-csv (io/reader csv-file-or-url)))
 
@@ -84,19 +82,3 @@ columns."
 (defn join [csv f & others]
   ;(filter)
   (apply map vector csv others))
-
-(comment
-
-  (def earners (parse-csv "./examples/high-earners-pay-2012.csv"))
-
-  (columns earners 2 1) ; => (["Richard" "Alderman"] ["David" "Allen, Dr"] ...)
-
-  (rows earners (range 5 10))
-
-  (def lookup '(["1" "Cats"] ["2" "Dogs"]))
-
-  (def pets '(["1" "Sylvester"]
-              ["2" "Fido"]))
-
-
-  )
