@@ -100,7 +100,7 @@ lazy-seq of Triple records:
 you want a string wrap it in a call to =(s "String Value")=.  =s= also
 takes an optional language tag or URI =(s "Bonjour!" "fr")=
 
-Additionally java.util.Date's are also expanded into xsd dateTime's,
+Additionally =java.util.Date= is also expanded into xsd dateTime's,
 which means you can use EDN =#inst= data literals too.
 
 
