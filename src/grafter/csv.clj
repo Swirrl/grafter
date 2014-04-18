@@ -93,13 +93,6 @@ columns."
 
   (rows earners (range 5 10))
 
-  (-> (parse-csv "./examples/high-earners-pay-2012.csv")
-      (grep "John" 2)
-      (fuse #(str %1 " " %2) 2 1)
-      (columns 2 1 7)
-      (rows 1 10)
-      )
-
   (def lookup '(["1" "Cats"] ["2" "Dogs"]))
 
   (def pets '(["1" "Sylvester"]
