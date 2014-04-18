@@ -11,6 +11,7 @@
   (context [statement]))
 
 (defprotocol ITripleWriteable
+  (add-statement [this statement])
   (add [this triples]))
 
 (defrecord Triple

@@ -22,86 +22,67 @@
   (object [this] (.getObject this))
   (context [this] (.getContext this)))
 
-(defprotocol IRDFConvertObject
-  (->rdf-type [this]))
+(defprotocol ISesameRDFConverter
+  (->sesame-rdf-type [this]))
 
-(defn s
-  ([str]
-     (reify Object
-       (toString [_] str)
-       IRDFConvertObject
-       (->rdf-type [this]
-         (LiteralImpl. str))))
-  ([str lang]
-     (reify Object
-       (toString [_] str)
-       IRDFConvertObject
-       (->rdf-type [this]
-         (LiteralImpl. str lang)))))
-
-(defrecord Str [s]
-  IRDFConvertObject
-  (->rdf-type [this]
-    (.toString (.s this))))
-
-(extend-protocol IRDFConvertObject
+(extend-protocol ISesameRDFConverter
   java.lang.String
   ;; Assume URI's are the norm not strings
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     (URIImpl. this))
 
   java.lang.Integer
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
 
   java.math.BigInteger
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
 
   java.lang.Long
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     ;; hacky and probably a little slow but works for now
     (IntegerLiteralImpl. (BigInteger. (str this))))
 
   clojure.lang.BigInt
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     ;; hacky and probably a little slow but works for now
     (IntegerLiteralImpl. (BigInteger. (str this))))
 
   Statement
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     this)
 
   Value
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     this)
 
   Resource
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     this)
 
   Literal
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     this)
 
   URI
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     this)
 
   java.net.URI
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     (URIImpl. (.toString this)))
 
   java.net.URL
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     (URIImpl. (.toString this)))
 
   BNode
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     this)
 
   java.util.Date
-  (->rdf-type [this]
+  (->sesame-rdf-type [this]
     (let [cal (doto (GregorianCalendar.)
                 (.setTime this))]
       (-> (DatatypeFactory/newInstance)
@@ -111,26 +92,31 @@
 (defn IStatement->sesame-statement [is]
   (StatementImpl. (URIImpl. (.s is))
                   (URIImpl. (.p is))
-                  (->rdf-type (.o is))))
+                  (->sesame-rdf-type (.o is))))
 
 (extend-type Repository
+
   pr/ITripleWriteable
+  (pr/add-statement [this statement]
+    (pr/add-statement (.getConnection this) statement))
+
   (pr/add [this triples]
     (pr/add (.getConnection this) triples)))
 
-(defn- add-statement [repo statement]
-  {:pre [(instance? IStatement statement)]}
-  (.add this (IStatement->sesame-statement statement)
-        nil (into-array Resource [])))
-
 (extend-type RepositoryConnection
   pr/ITripleWriteable
+
+  (pr/add-statement [this statement]
+    {:pre [(instance? IStatement statement)]}
+    (doto this
+      (.add (IStatement->sesame-statement statement)
+            (into-array Resource []))))
+
   (pr/add [this triples]
     (if (seq triples)
       (doseq [t triples]
-        (prn "adding t" t this)
-        (add-statement this t))
-      (add-statement this triples))))
+        (pr/add-statement this t))
+      (pr/add-statement this triples))))
 
 (defn memory-store []
   (MemoryStore.))

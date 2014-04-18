@@ -1,9 +1,11 @@
 (ns grafter.rdf
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
-  (:import [grafter.rdf.protocols Triple Str])
+  (:require [grafter.rdf.sesame :as ses])
+  (:import [grafter.rdf.protocols Triple]
+           [grafter.rdf.sesame ISesameRDFConverter])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
-           [org.openrdf.model.impl ValueFactoryImpl]
+           [org.openrdf.model.impl ValueFactoryImpl LiteralImpl]
            [org.openrdf.repository Repository]
            [org.openrdf.repository.sail SailRepository]
            [org.openrdf.sail.memory MemoryStore]
@@ -20,6 +22,23 @@
 (def format-rdf-trix RDFFormat/TRIX)
 (def format-rdf-trig RDFFormat/TRIG)
 
+(defn s
+  "Cast a string to an RDF literal"
+  ([str]
+     {:pre [(string? str)]}
+     (reify Object
+       (toString [_] str)
+       ses/ISesameRDFConverter
+       (->sesame-rdf-type [this]
+         (LiteralImpl. str))))
+  ([str lang-or-uri]
+     {:pre [(string? str) (or (string? lang-or-uri) (instance? URI lang-or-uri))]}
+     (reify Object
+       (toString [_] str)
+       ses/ISesameRDFConverter
+       (->sesame-rdf-type [this]
+         (LiteralImpl. str lang-or-uri)))))
+
 (defn expand-subject
   "Takes a turtle like data structure and converts it to triples e.g.
 
@@ -29,7 +48,3 @@
 
   (map (fn [[predicate object]]
          (Triple. subject predicate object)) po-pairs))
-
-(defn s [str]
-  {:pre [(string? str)]}
-  (Str. str))
