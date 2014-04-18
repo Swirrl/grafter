@@ -30,3 +30,9 @@ Uses memory-based cache to speed up display"
         (.setTitle (str "Viewing file " shapefile))
         (.addLayer cache nil)
         (JMapFrame/showMap)))))
+
+(comment
+
+  ;; To view a shape file run:
+  (show-shapefile (io/file "./test-data/dclg-enterprise-zones/National_EZ_WGS84.shp"))
+  )

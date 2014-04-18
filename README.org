@@ -1,0 +1,18 @@
+* Grafter
+
+Exploring the use of Clojure for RDFizing, DSL's, RDF tooling and more
+tightly integrating with triple stores.
+
+* RDFizing
+
+* Misc
+
+There is a demonstration of utilising GIS tools such as a shapefile
+viewer which uses the [[http://geotools.org/][geotools API]].  This can be found in the
+=grafter.gis.shape-viewer= namespace.
+
+To run this run the following command:
+
+#+BEGIN_SRC clojure
+    (show-shapefile (io/file "./test-data/dclg-enterprise-zones/National_EZ_WGS84.shp"))
+#+END_SRC
