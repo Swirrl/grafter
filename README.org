@@ -24,7 +24,7 @@ Grafter has a number of stated aims:
    RDFization DSL which has a number of desirable properties that
    would be harder to achieve with more conventional approaches.
 
-* RDFizing DSL
+* RDFizing
 
 In terms of RDFization the core idea is:
 
@@ -54,6 +54,65 @@ In terms of RDFization the core idea is:
    implementations can be easily applied by either the environment or
    a user to arbitrary pipelines without having to modify the pipeline
    itself.
+
+We refer to the lower-level of grafter as the Grafter API and the
+higher level as the grafter DSL.  Sometimes functions may be both part
+of the DSL and the API so the distinction is not necessarily always
+clear cut.
+
+** Grafter API
+
+Some namespace declarations to import the libraries:
+
+#+BEGIN_SRC clojure
+(ns grafter.rdf-examples
+  (:use [grafter.rdf]
+        [grafter.rdf.sesame])
+  (:require [grafter.rdf.protocols :as pr]))
+#+END_SRC
+
+Create and initialise a sesame native-store repository on disk:
+
+#+BEGIN_SRC clojure
+(def my-repo (-> "./tmp/grafter-sesame-store" native-store repo))
+#+END_SRC
+
+Or use an in memory store:
+
+#+BEGIN_SRC clojure
+(def my-memory-repo (-> "./tmp/grafter-sesame-store" memory-store repo))
+#+END_SRC
+
+Want to add some triples to your store?  The triplify function takes
+a sequence of turtle style rdf subjects and expands them into a
+lazy-seq of Triple records:
+
+#+BEGIN_SRC clojure
+(triplify ["http://test.org/bob"
+            ["http://is/a" "http://class/Person"]
+            ["http://rdfs/label" (s "Bob Jones")]
+            ["http://date-of-birth/" #inst "1980-01-02"]])
+
+;; => (#grafter.rdf.protocols.Triple{:s "http://test.org/bob", :p "http://is/a", :o "http://class/Person"} #grafter.rdf.protocols.Triple{:s "http://test.org/bob", :p "http://rdfs/label", :o #<rdf$s$reify__1888 Bob Jones>} #grafter.rdf.protocols.Triple{:s "http://test.org/bob", :p "http://date-of-birth/", :o #inst "1980-01-02T00:00:00.000-00:00"})
+#+END_SRC
+
+*Note* how triplify assumes Strings in object position are URI's, if
+you want a string wrap it in a call to =(s "String Value")=.  =s= also
+takes an optional language tag or URI =(s "Bonjour!" "fr")=
+
+Additionally java.util.Date's are also expanded into xsd dateTime's,
+which means you can use EDN =#inst= data literals too.
+
+
+You can add Statements or sequences of statements to your store like
+so with the =grafter.rdf.protocols/add= function:
+
+#+BEGIN_SRC clojure
+(pr/add repo (expand-subject ["http://test.org/bob"
+                                ["http://is/a" "http://class/Person"]
+                                ["http://rdfs/label" (s "Bob Jones")]
+                                ["http://date-of-birth/" #inst "1980-01-02"]]))
+#+END_SRC
 
 * Misc
 
