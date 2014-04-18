@@ -1,4 +1,8 @@
-rdfizing
-========
+# Grafter
 
-For prototype code and test data for RDFizing tools
+Exploring the use of Clojure for RDFizing, DSL's, RDF tooling and more
+tightly integrating with triple stores.
+
+## Usage
+
+TODO
