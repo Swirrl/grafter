@@ -39,7 +39,7 @@
        (->sesame-rdf-type [this]
          (LiteralImpl. str lang-or-uri)))))
 
-(defn expand-subject
+(defn- expand-subj
   "Takes a turtle like data structure and converts it to triples e.g.
 
    [:rick [:a :Person]
@@ -48,3 +48,8 @@
 
   (map (fn [[predicate object]]
          (Triple. subject predicate object)) po-pairs))
+
+(defn triplify [& subjects]
+  "Takes many turtle like structures and converts them to a lazy-seq
+of grafter.rdf.protocols.IStatement's"
+  (mapcat expand-subj subjects))
