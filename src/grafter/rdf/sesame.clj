@@ -97,26 +97,47 @@
 (extend-type Repository
 
   pr/ITripleWriteable
-  (pr/add-statement [this statement]
-    (pr/add-statement (.getConnection this) statement))
+  (pr/add-statement
+    ([this statement]
+       (pr/add-statement (.getConnection this) statement))
 
-  (pr/add [this triples]
-    (pr/add (.getConnection this) triples)))
+    ([this graph statement]
+       (pr/add-statement (.getConnection this) graph statement)))
+
+  (pr/add
+    ([this triples]
+       (pr/add (.getConnection this) triples))
+
+    ([this graph triples]
+       (pr/add (.getConnection this) graph triples))))
 
 (extend-type RepositoryConnection
   pr/ITripleWriteable
 
-  (pr/add-statement [this statement]
-    {:pre [(instance? IStatement statement)]}
-    (doto this
-      (.add (IStatement->sesame-statement statement)
-            (into-array Resource []))))
+  (pr/add-statement
+    ([this statement]
+       {:pre [(instance? IStatement statement)]}
+       (doto this
+         (.add (IStatement->sesame-statement statement)
+               (into-array Resource []))))
+    ([this graph statement]
+       {:pre [(instance? IStatement statement)]}
+       (doto this
+         (.add (IStatement->sesame-statement statement)
+               (into-array Resource [(URIImpl. graph)])))))
 
-  (pr/add [this triples]
-    (if (seq triples)
-      (doseq [t triples]
-        (pr/add-statement this t))
-      (pr/add-statement this triples))))
+  (pr/add
+    ([this triples]
+       (if (seq triples)
+         (doseq [t triples]
+           (pr/add-statement this t))
+         (pr/add-statement this triples)))
+
+    ([this graph triples]
+       (if (seq triples)
+         (doseq [t triples]
+           (pr/add-statement this graph t))
+         (pr/add-statement this graph triples)))))
 
 (defn memory-store []
   (MemoryStore.))

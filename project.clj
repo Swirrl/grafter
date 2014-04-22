@@ -8,6 +8,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  ;;[org.apache.jena/jena-core "2.11.1"]
                  ;;[plaza "0.0.5-SNAPSHOT"]
+                 [org.clojure/tools.namespace "0.2.4"]
                  [org.clojure/math.combinatorics "0.0.7"]
                  [clojure-csv/clojure-csv "2.0.1"]
                  [org.openrdf.sesame/sesame-runtime "2.7.10"]
@@ -15,4 +16,6 @@
                  [org.geotools/gt-swing "2.7-M3"]
                  [org.geotools/gt-shapefile "2.7-M3"]
                  [seesaw "1.4.4"]]
-  :java-source-path "src")
+  :source-paths ["src"]
+  :java-source-paths ["src-java"]
+  )

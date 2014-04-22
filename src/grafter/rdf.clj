@@ -11,7 +11,8 @@
            [org.openrdf.sail.memory MemoryStore]
            [org.openrdf.sail.nativerdf NativeStore]
            [org.openrdf.query TupleQuery TupleQueryResult BindingSet QueryLanguage]
-           [org.openrdf.rio RDFFormat]))
+           [org.openrdf.rio RDFFormat])
+  (:require [grafter.rdf.ontologies.util :as ontutils]))
 
 (def format-rdf-xml RDFFormat/RDFXML)
 (def format-rdf-n3 RDFFormat/N3)
@@ -29,15 +30,17 @@
      (reify Object
        (toString [_] str)
        ses/ISesameRDFConverter
-       (->sesame-rdf-type [this]
+       (ses/->sesame-rdf-type [this]
          (LiteralImpl. str))))
   ([str lang-or-uri]
-     {:pre [(string? str) (or (string? lang-or-uri) (instance? URI lang-or-uri))]}
+     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (instance? URI lang-or-uri))]}
      (reify Object
        (toString [_] str)
        ses/ISesameRDFConverter
-       (->sesame-rdf-type [this]
-         (LiteralImpl. str lang-or-uri)))))
+       (ses/->sesame-rdf-type [this]
+         (LiteralImpl.  str (if (keyword? lang-or-uri)
+                              (name lang-or-uri)
+                              lang-or-uri))))))
 
 (defn- expand-subj
   "Takes a turtle like data structure and converts it to triples e.g.
@@ -54,18 +57,4 @@
 of grafter.rdf.protocols.IStatement's"
   (mapcat expand-subj subjects))
 
-;; TODO consider making it return a prefixer instead of just a fn so
-;; you can prefixer indefinitely.
-(defn prefixer
-  ([uri-prefix]
-     (fn [f-or-s]
-       (cond
-        (ifn? f-or-s) (let [f f-or-s]
-                        (fn [s] (str uri-prefix (f s))))
-        (string? f-or-s) (let [s f-or-s]
-                           (str uri-prefix s))
-        :else (str uri-prefix f-or-s)))))
-
-(defn delayed-prefixer [uri-prefix]
-  (fn [f]
-    (prefixer )))
+(def prefixer ontutils/prefixer)

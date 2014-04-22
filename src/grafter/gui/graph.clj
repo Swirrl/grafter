@@ -8,7 +8,7 @@
              (use 'clojure.repl)))
 
 (defn identify
-  "Make names from Eclipse GUI builder act as seesaw ids.  As described at: 
+  "Make names from Eclipse GUI builder act as seesaw ids.  As described at:
 https://github.com/daveray/seesaw/wiki/Window-Builder"
   [root]
   (doseq [w (select root [:*])]
@@ -35,4 +35,5 @@ https://github.com/daveray/seesaw/wiki/Window-Builder"
       pack!
       show!))
 
-(def main-frame (start))
+(comment
+  (def main-frame (start)))

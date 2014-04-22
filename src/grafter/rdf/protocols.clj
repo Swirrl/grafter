@@ -11,8 +11,12 @@
   (context [statement]))
 
 (defprotocol ITripleWriteable
-  (add-statement [this statement])
-  (add [this triples]))
+  (add-statement
+    [this statement]
+    [this graph statement])
+
+  (add [this triples]
+       [this graph triples]))
 
 (defrecord Triple
     [s p o]

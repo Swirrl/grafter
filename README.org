@@ -113,6 +113,62 @@ so with the =grafter.rdf.protocols/add= function:
                                 ["http://date-of-birth/" #inst "1980-01-02"]]))
 #+END_SRC
 
+** Prefixer Ideas
+
+One very obvious and simple idea I've had which I suspect might be a
+good one (though it probably needs refining) is the =prefixer=
+function.
+
+=prefixer= takes a string as an argument and returns a function that
+will generate the specified prefix e.g.
+
+#+BEGIN_SRC clojure
+((prefixer "http://www.w3.org/1999/02/22-rdf-syntax-ns#") "Type") ;; => "http://www.w3.org/1999/02/22-rdf-syntax-ns#Type"
+#+END_SRC
+
+This allows you to do the following, which is syntactically quite
+nice:
+
+#+BEGIN_SRC clojure
+(def rdf (prefixer "http://www.w3.org/1999/02/22-rdf-syntax-ns#"))
+
+(rdf "Type") ;; => "http://www.w3.org/1999/02/22-rdf-syntax-ns#Type"
+#+END_SRC
+
+I suspect that in practice prefixers or something like them will be
+very useful, and are an ideal point for composing additional type
+conversion pipelines etc...   e.g.
+
+#+BEGIN_SRC clojure
+(def myprefixer (comp (prefixer "http://foobarbaz.com/museums/")
+                       hyphenate-spaces
+                       downcase
+                       parse-name))
+#+END_SRC
+
+Note that you can also compose prefixers:
+
+#+BEGIN_SRC clojure
+(def mydomain (prefixer "http://mydomain.com"))
+
+(def life-facilities (comp
+                      mydomain
+                      (prefixer "/life-facilities")))
+
+(def museum (comp life-facilities
+                  (prefixer "/museums/")))
+
+(museum "kelvin-grove") ;; => "http://mydomain.com/life-facilities/museums/kelvin-grove"
+#+END_SRC
+
+These simple prefixers have the benefit of only ever taking one
+argument and converting it.
+
+You can imagine multi-argument prefixers would be useful too, though
+they may be harder to compose in a user interface.
+
+
+
 * Misc
 
 There is a demonstration of utilising GIS tools such as a shapefile
