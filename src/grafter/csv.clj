@@ -25,9 +25,6 @@ column numbers and returns a new CSV file containing only those
 columns."
   (map (partial select-columns-from-row cols) csv))
 
-(defn drop-rows [csv n]
-  (drop n csv))
-
 (defn rows
   ([csv] csv)
   ([csv r]
@@ -42,6 +39,10 @@ columns."
      (reduce (fn [acc r]
                (conj acc (nnth csv r)))
              [] (conj rs r))))
+
+(defn drop-rows [csv n]
+  "Drops the first n rows from the CSV."
+  (drop n csv))
 
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
@@ -82,7 +83,38 @@ columns."
   "Merge columns with the specified function"
   (map (partial fuse-row cols f) csv))
 
-;; TODO implement inner join, maybe l/r outer joins too
-(defn join [csv f & others]
-  ;(filter)
-  (apply map vector csv others))
+(defn mapr [csv f]
+  "Logically the same as map but with reversed arguments, so it works
+better with -> .  mapr maps f over each row."
+  (map f csv))
+
+(defn mapc [csv fs]
+  "Takes an array of functions and maps each to the equivalent column
+position for every row."
+  (map (fn [row]
+         (map (fn [f c] (f c))
+              (lazy-cat fs (cycle [identity])) row)) csv))
+
+(defn swap [csv col-map]
+  "Takes a map from column_id -> column_id (int -> int) and swaps each
+column."
+
+  (map (fn [row]
+         (reduce (fn swaper [acc [cola colb]]
+                   (-> row
+                       (assoc cola (row colb))
+                       (assoc colb (row cola))))
+                       [] col-map)
+
+         ) csv))
+
+;; for use with mapc
+(def _ identity)
+
+
+
+(comment
+  ;; TODO implement inner join, maybe l/r outer joins too
+  (defn join [csv f & others]
+                                        ;(filter)
+    (apply map vector csv others)))
