@@ -18,6 +18,7 @@
 (def urban (prefixer "http://linked.glasgow.gov.uk/def/urban-assets/"))
 
 (defonce my-repo (-> "./tmp/grafter-sesame-store" native-store repo))
+;;(defonce my-repo (repo (memory-store)))
 
 (defn urban-assets-ontology [ont-uri]
   (triplify [ont-uri
