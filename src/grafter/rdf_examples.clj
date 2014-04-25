@@ -5,6 +5,7 @@
         [grafter.rdf.ontologies.rdf]
         [grafter.rdf.ontologies.void]
         [grafter.rdf.ontologies.dcterms]
+        [grafter.rdf.ontologies.vcard]
         [grafter.rdf.ontologies.pmd]
         [grafter.rdf.ontologies.qb]
         [grafter.rdf.ontologies.sdmxmeasure]
@@ -69,7 +70,8 @@
   ;;Facility description | Facillity name | Monthly attendence |Month | Year | Address | Town | Postcode | Website
 
   (with-monad blank-m
-    (let [replace-comma (lift-1 (replacer "," ""))
+    (let [rdfstr        (lift-1 (fn [str] (s str :en)))
+          replace-comma (lift-1 (replacer "," ""))
           trim          (lift-1 clojure.string/trim)
           parse-integer (m-chain [trim replace-comma parse-int])
           convert-month (m-chain [trim
@@ -87,18 +89,37 @@
                                           "november" 11 "nov" 11 "11" 11
                                           "december" 12 "dec" 12 "12" 12
                                           })])
-          convert-year  (m-chain [trim parse-int t/date-time])
-          address-line  (lift-1 identity)
-          city          (lift-1 identity)
-          post-code     (lift-1 identity)
+          convert-year  (m-chain [trim parse-int date-time])
+          address-line  (m-chain [trim rdfstr])
+          city          (m-chain [trim rdfstr])
+          post-code     (m-chain [trim rdfstr])
+          uriify-pcode  (m-chain [trim
+                                  (lift-1 (replacer " " ""))
+                                  (lift-1 clojure.string/upper-case)
+                                  (lift-1 (prefixer "http://data.ordnancesurvey.co.uk/id/postcodeunit/"))])
           url           (lift-1 #(java.net.URL. %))]
 
-      (-> (parse-csv "./test-data/glasgow-life-facilities.csv")
-          (drop-rows 1)
-          (swap {3 4})
-          ;; todo
-          ;(mapc [_ _ _ (m-chain trim )])
-          (mapc [uriify-facility _ parse-integer parse-integer convert-month address-line city post-code url])
-          (fuse (m-chain [(m-lift 2 date-time)]) 3 4)
-                                        ;(mapc [_               _ _             _  ])
-          ))))
+      (let [processed-rows
+            (-> (parse-csv "./test-data/glasgow-life-facilities.csv")
+                (drop-rows 1)
+                (swap {3 4})
+                (mapc [uriify-facility _ parse-integer parse-integer convert-month address-line city post-code url])
+                (derive-column uriify-pcode 6)
+                (fuse date-time 3 4))]
+
+        (mapcat (fn [[facility-uri name attendance date street-address city postcode website postcode-uri :as row]]
+                  (triplify [facility-uri
+                             [vcard:hasAddress [[rdf:a vcard:Address]
+                                                [vcard:street-address street-address]
+                                                [vcard:locality city]
+                                                [vcard:country-name (rdfstr "Scotland")]
+                                                [vcard:postal-code postcode-uri]
+                                                ["http://data.ordnancesurvey.co.uk/ontology/postcode/postcode" postcode-uri]]]]))
+                processed-rows)))))
+
+(defn load [triple-seq]
+  (pr/add my-repo  triple-seq))
+
+(defn import-life-facilities []
+  (-> (make-life-facilities)
+      load))

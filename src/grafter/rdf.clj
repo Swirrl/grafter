@@ -42,6 +42,17 @@
                               (name lang-or-uri)
                               lang-or-uri))))))
 
+(defn- make-triples [subject predicate object-or-nested-subject]
+  (if (vector? object-or-nested-subject)
+    (let [bnode-resource (keyword (gensym "bnode"))
+          nested-pairs object-or-nested-subject]
+      (-> (mapcat (partial make-triples bnode-resource)
+                  (map first nested-pairs)
+                  (map second nested-pairs))
+          (conj (Triple. subject predicate bnode-resource))))
+    (let [object object-or-nested-subject]
+      [(Triple. subject predicate object)])))
+
 (defn- expand-subj
   "Takes a turtle like data structure and converts it to triples e.g.
 
@@ -49,8 +60,18 @@
           [:age 34]]"
   [[subject & po-pairs]]
 
-  (map (fn [[predicate object]]
-         (Triple. subject predicate object)) po-pairs))
+  (mapcat (fn [[predicate object]]
+            (make-triples subject predicate object)) po-pairs))
+
+
+(comment (defn- expand-subj
+           "Takes a turtle like data structure and converts it to triples e.g.
+
+   [:rick [:a :Person]
+          [:age 34]]"
+           [[subject & po-pairs]]
+           (mapcat (partial make-triples subject) po-pairs)))
+
 
 (defn triplify [& subjects]
   "Takes many turtle like structures and converts them to a lazy-seq

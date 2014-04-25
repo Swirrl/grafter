@@ -4,7 +4,7 @@
   (:import [grafter.rdf.protocols IStatement Triple])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
            [org.openrdf.model.impl CalendarLiteralImpl ValueFactoryImpl URIImpl
-            LiteralImpl IntegerLiteralImpl NumericLiteralImpl StatementImpl]
+            LiteralImpl IntegerLiteralImpl NumericLiteralImpl StatementImpl BNodeImpl]
            [org.openrdf.repository Repository RepositoryConnection]
            [org.openrdf.repository.sail SailRepository]
            [org.openrdf.sail.memory MemoryStore]
@@ -53,6 +53,12 @@
   (->sesame-rdf-type [this]
     this)
 
+  Triple
+  (->sesame-rdf-type [this]
+    (StatementImpl. (->sesame-rdf-type (pr/subject this))
+                    (->sesame-rdf-type (pr/predicate this))
+                    (->sesame-rdf-type (pr/object this))))
+
   Value
   (->sesame-rdf-type [this]
     this)
@@ -87,10 +93,14 @@
                 (.setTime this))]
       (-> (DatatypeFactory/newInstance)
           (.newXMLGregorianCalendar cal)
-          CalendarLiteralImpl.))))
+          CalendarLiteralImpl.)))
+
+  clojure.lang.Keyword
+  (->sesame-rdf-type [this]
+    (BNodeImpl. (name this))))
 
 (defn IStatement->sesame-statement [is]
-  (StatementImpl. (URIImpl. (.s is))
+  (StatementImpl. (->sesame-rdf-type (.s is))
                   (URIImpl. (.p is))
                   (->sesame-rdf-type (.o is))))
 

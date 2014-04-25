@@ -17,7 +17,7 @@
 (defn- select-columns-from-row [cols row]
   ;; Makes use of the fact that rows (vectors) are functions
   ;; of their indices.
-  (apply vector (map row cols)))
+  (apply vector (map (apply vector row) cols)))
 
 (defn columns [csv & cols]
   "Takes a parsed CSV file and any number of integers corresponding to
@@ -91,9 +91,11 @@ better with -> .  mapr maps f over each row."
 (defn mapc [csv fs]
   "Takes an array of functions and maps each to the equivalent column
 position for every row."
-  (map (fn [row]
-         (map (fn [f c] (f c))
-              (lazy-cat fs (cycle [identity])) row)) csv))
+  (->> csv
+       (map (fn [row]
+              (map (fn [f c] (f c))
+                   (lazy-cat fs (cycle [identity])) row)))
+       (map (partial apply vector))))
 
 (defn swap [csv col-map]
   "Takes a map from column_id -> column_id (int -> int) and swaps each
@@ -105,13 +107,19 @@ column."
                        (assoc cola (row colb))
                        (assoc colb (row cola))))
                        [] col-map)
-
          ) csv))
 
-;; for use with mapc
+(defn derive-column
+  "Adds a new column to the end of the row which is derived from the
+row.  f should just return the cells value."
+
+  ;; todo support multiple columns/arguments to f.
+  ([csv f col-n]
+     (map #(conj % (f (nth % col-n))) csv)))
+
+;; alias to create a lightweight pattern matching style syntax for use
+;; with mapc
 (def _ identity)
-
-
 
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
