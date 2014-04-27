@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
   (:require [grafter.rdf.sesame :as ses])
-  (:import [grafter.rdf.protocols Triple]
+  (:import [grafter.rdf.protocols Triple Quad]
            [grafter.rdf.sesame ISesameRDFConverter])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
            [org.openrdf.model.impl ValueFactoryImpl LiteralImpl]
@@ -53,6 +53,13 @@
     (let [object object-or-nested-subject]
       [(Triple. subject predicate object)])))
 
+(defn quad
+  ([graph triple]
+     (Quad. (pr/subject triple)
+            (pr/predicate triple)
+            (pr/object triple)
+            graph)))
+
 (defn- expand-subj
   "Takes a turtle like data structure and converts it to triples e.g.
 
@@ -70,15 +77,28 @@ of grafter.rdf.protocols.IStatement's"
 
 (defn graph [graph-uri & triples]
   ;; ignore graph-uri parameter for now
-  (apply triplify triples))
+  (map (partial quad graph-uri)
+       (apply triplify triples)))
 
 (defmacro graphify [row-bindings & forms]
   "Takes a vector in fn binding form (where destructuring is
 supported) followed by a series of graph or triplify forms and
 concatenates them all together."
-  `(fn graphify-rows-fn [rs#]
-     (mapcat (fn graphify-row [~row-bindings]
-               (concat
-                ~@forms)) rs#)))
+  (let [row-sym (gensym "row")
+        row-bindings (conj row-bindings :as row-sym)]
+    `(fn graphify-rows-fn [rs#]
+       (mapcat (fn graphify-row [~row-bindings]
+                 (->> (concat
+                       ~@forms)
+                      (map (fn [triple#] (with-meta triple# {:row ~row-sym}))))) rs#))))
+
+(defn load-triples [my-repo triple-seq]
+  (doseq [triple triple-seq]
+    (try
+      (pr/add-statement my-repo triple)
+      (catch java.lang.IllegalArgumentException e
+        (throw (Exception.
+                (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta :row)))))))
+  my-repo)
 
 (def prefixer ontutils/prefixer)

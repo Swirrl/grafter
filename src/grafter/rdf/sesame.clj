@@ -1,10 +1,10 @@
 (ns grafter.rdf.sesame
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
-  (:import [grafter.rdf.protocols IStatement Triple])
+  (:import [grafter.rdf.protocols IStatement Triple Quad])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
            [org.openrdf.model.impl CalendarLiteralImpl ValueFactoryImpl URIImpl
-            LiteralImpl IntegerLiteralImpl NumericLiteralImpl StatementImpl BNodeImpl]
+            LiteralImpl IntegerLiteralImpl NumericLiteralImpl StatementImpl BNodeImpl ContextStatementImpl]
            [org.openrdf.repository Repository RepositoryConnection]
            [org.openrdf.repository.sail SailRepository]
            [org.openrdf.sail.memory MemoryStore]
@@ -59,6 +59,13 @@
                     (->sesame-rdf-type (pr/predicate this))
                     (->sesame-rdf-type (pr/object this))))
 
+  Quad
+  (->sesame-rdf-type [this]
+    (ContextStatementImpl. (->sesame-rdf-type (pr/subject this))
+                           (->sesame-rdf-type (pr/predicate this))
+                           (->sesame-rdf-type (pr/object this))
+                           (->sesame-rdf-type (pr/context this))))
+
   Value
   (->sesame-rdf-type [this]
     this)
@@ -100,9 +107,15 @@
     (BNodeImpl. (name this))))
 
 (defn IStatement->sesame-statement [is]
-  (StatementImpl. (->sesame-rdf-type (.s is))
-                  (URIImpl. (.p is))
-                  (->sesame-rdf-type (.o is))))
+  (if (.c is)
+    (do
+      (ContextStatementImpl. (->sesame-rdf-type (.s is))
+                             (URIImpl. (.p is))
+                             (->sesame-rdf-type (.o is))
+                             (URIImpl. (.c is))))
+    (StatementImpl. (->sesame-rdf-type (.s is))
+                    (URIImpl. (.p is))
+                    (->sesame-rdf-type (.o is)))))
 
 (extend-type Repository
 

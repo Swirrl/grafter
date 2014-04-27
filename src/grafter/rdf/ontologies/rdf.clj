@@ -8,3 +8,4 @@
 
 (def rdfs:Class (rdfs "Class"))
 (def rdfs:label (rdfs "label"))
+(def rdfs:comment (rdfs "comment"))
