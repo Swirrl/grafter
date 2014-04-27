@@ -38,6 +38,16 @@
 
 (def parse-int #(Integer/parseInt %))
 
+(defn mapper [map]
+  "Return a function that applies the map to its argument if the map
+doesn't contain the arguments value it returns the argument, otherwise
+it returns what it maps to."
+  (fn mapper-wrapper [arg]
+    (let [defval (get map arg ::not-found)]
+      (if (= defval ::not-found)
+        arg
+        defval))))
+
 (def trim s/trim)
 
 (defn replacer [match replace]

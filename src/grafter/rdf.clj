@@ -63,19 +63,22 @@
   (mapcat (fn [[predicate object]]
             (make-triples subject predicate object)) po-pairs))
 
-
-(comment (defn- expand-subj
-           "Takes a turtle like data structure and converts it to triples e.g.
-
-   [:rick [:a :Person]
-          [:age 34]]"
-           [[subject & po-pairs]]
-           (mapcat (partial make-triples subject) po-pairs)))
-
-
 (defn triplify [& subjects]
   "Takes many turtle like structures and converts them to a lazy-seq
 of grafter.rdf.protocols.IStatement's"
   (mapcat expand-subj subjects))
+
+(defn graph [graph-uri & triples]
+  ;; ignore graph-uri parameter for now
+  (apply triplify triples))
+
+(defmacro graphify [row-bindings & forms]
+  "Takes a vector in fn binding form (where destructuring is
+supported) followed by a series of graph or triplify forms and
+concatenates them all together."
+  `(fn graphify-rows-fn [rs#]
+     (mapcat (fn graphify-row [~row-bindings]
+               (concat
+                ~@forms)) rs#)))
 
 (def prefixer ontutils/prefixer)

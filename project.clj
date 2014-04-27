@@ -13,6 +13,7 @@
                  [org.clojure/tools.namespace "0.2.4"]
                  [org.clojure/math.combinatorics "0.0.7"]
                  [clojure-csv/clojure-csv "2.0.1"]
+                 [org.marianoguerra/clj-rhino "0.2.1"]
                  [org.openrdf.sesame/sesame-runtime "2.7.10"]
                  [org.geotools/gt-main "2.7-M3"]
                  [org.geotools/gt-swing "2.7-M3"]
