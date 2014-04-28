@@ -16,7 +16,11 @@
     [this graph statement])
 
   (add [this triples]
-       [this graph triples]))
+    [this graph triples]))
+
+(defprotocol ITripleReadable
+  "A source of statements or triples.  Converts such a source into a seq of triples."
+  (statements [this]))
 
 (defrecord Triple
     [s p o]

@@ -8,6 +8,7 @@
            [org.openrdf.repository Repository RepositoryConnection]
            [org.openrdf.repository.sail SailRepository]
            [org.openrdf.sail.memory MemoryStore]
+           [org.openrdf.rio Rio RDFWriter]
            [org.openrdf.sail.nativerdf NativeStore]
            [org.openrdf.query TupleQuery TupleQueryResult BindingSet QueryLanguage]
            [javax.xml.datatype XMLGregorianCalendar DatatypeFactory]
@@ -118,8 +119,8 @@
                     (->sesame-rdf-type (.o is)))))
 
 (extend-type Repository
-
   pr/ITripleWriteable
+
   (pr/add-statement
     ([this statement]
        (pr/add-statement (.getConnection this) statement))
@@ -162,6 +163,35 @@
            (pr/add-statement this graph t))
          (pr/add-statement this graph triples)))))
 
+(defn rdf-serializer
+  "Coerces destination into an java.io.Writer using
+  clojure.java.io/writer and returns an RDFSerializer."
+
+  ([destination]
+     (rdf-serializer destination (Rio/getWriterFormatForFileName destination)))
+  ([destination format]
+     (Rio/createWriter format (io/writer destination))))
+
+(extend-protocol pr/ITripleWriteable
+  RDFWriter
+  (pr/add-statement [this statement]
+    (.handleStatement this (->sesame-rdf-type statement)))
+
+  (pr/add
+    ([this triples]
+       (if (seq triples)
+         (do
+           (.startRDF this)
+           (doseq [t triples]
+             (pr/add-statement this t))
+           (.endRDF this))
+         (throw (IllegalArgumentException. "This serializer does not support writing a single statement.  It should be passed a sequence of statements."))))
+
+    ([this _graph triples]
+       ;; TODO if format allows graphs we should support
+       ;; them... otherwise.. ignore the graph param
+       (pr/add this triples))))
+
 (defn memory-store []
   (MemoryStore.))
 
@@ -200,7 +230,11 @@ TODO: reimplement with proper resource handling."
 (extend-type Repository
   ISPARQLable
   (query [this query-str]
-    (query (.getConnection this) query-str)))
+    (query (.getConnection this) query-str))
+
+  pr/ITripleReadable
+  (pr/statements [this]
+    (pr/statements (.getConnection this))))
 
 (extend-type RepositoryConnection
   ISPARQLable
@@ -219,4 +253,17 @@ TODO: reimplement with proper resource handling."
                          [current-result]
                          (pull-query)))
                       (.close results)))]
-    (run-query))))
+      (run-query)))
+
+  pr/ITripleReadable
+
+  (statements [this]
+    (map
+     (fn [{:strs [s p o c]}]
+       (Quad. s p o c))
+
+     (query this "SELECT ?s ?p ?o ?c WHERE {
+               GRAPH ?c {
+                 ?s ?p ?o .
+               }
+            }"))))

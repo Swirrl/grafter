@@ -1,4 +1,13 @@
 (ns grafter.rdf
+  (:use
+   [grafter.rdf.ontologies.rdf]
+   [grafter.rdf.ontologies.void]
+   [grafter.rdf.ontologies.dcterms]
+   [grafter.rdf.ontologies.vcard]
+   [grafter.rdf.ontologies.pmd]
+   [grafter.rdf.ontologies.qb]
+   [grafter.rdf.ontologies.os]
+   [grafter.rdf.ontologies.sdmxmeasure])
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
   (:require [grafter.rdf.sesame :as ses])
@@ -102,3 +111,17 @@ concatenates them all together."
   my-repo)
 
 (def prefixer ontutils/prefixer)
+
+(defn dataset [dataset-uri data-graph date title label comment description email]
+  (let [metadata-graph (str data-graph "/metadata")]
+
+    (graph metadata-graph
+           [dataset-uri
+            [rdf:a pmd:Dataset]
+            [rdfs:comment (s comment :en)]
+            [rdfs:label (s label :en)]
+            [dcterms:description (s description :en)]
+            [pmd:contactEmail email]
+            [pmd:graph data-graph]
+            [dcterms:issued date]
+            [dcterms:modified date]])))

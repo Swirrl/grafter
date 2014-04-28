@@ -155,23 +155,28 @@
           [dcterms:issued date]
           [dcterms:modified date]]))
 
+(defn filter-triples [triples]
+  (filter #(not (and (#{vcard:postal-code os:postcode} (pr/predicate %1))
+                     (blank? (pr/object %1)))) triples))
+
 (defn import-life-facilities [quads-seq]
   (let [now (java.util.Date.)]
     (->> quads-seq
-         (filter #(not (and (#{vcard:postal-code os:postcode} (pr/predicate %1))
-                            (blank? (pr/object %1)))))
+         filter-triples
          (validate-triples (complement has-blank?))
          (load-triples my-repo))
 
     (->> (concat
-          (dataset "glasgow-life-facilities"
+          (dataset (str (base-uri "glasgow-life-facilities") "/data")
+                   (str (base-graph "glasgow-life-facilities"))
                    now "Glasgow Life Facilities"
                    "Glasgow Life Facilities"
                    "List of Glasgow Life facilities"
                    "Sporting, cultural and social facilities in Glasgow."
                    "mailto:open@glasgow.gov.uk")
 
-          (dataset "glasgow-life-attendances"
+          (dataset (str (base-uri "glasgow-life-attendances"))
+                   (str (base-graph "glasgow-life-attendances"))
                    now "Glasgow Life Attendances"
                    "Glasgow Life Attendances"
                    "Monthly Attendance figures for Glasgow Life Facilities"
