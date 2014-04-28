@@ -299,7 +299,8 @@ earlier.
 
 *** Transform Templates : Triple Templates Revisited
 
-
+I have developed Bill's triple templates idea, to support a
+constrained data-based syntax using clojure vectors:
 
 #+BEGIN_SRC clojure
 ((graphify [facility-uri name attendance date street-address city postcode website postcode-uri
