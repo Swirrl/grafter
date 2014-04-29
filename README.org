@@ -24,6 +24,10 @@ Grafter has a number of stated aims:
    RDFization DSL which has a number of desirable properties that
    would be harder to achieve with more conventional approaches.
 
+This document tries to illustrate the DSL with a worked example,
+whilst the [[https://github.com/Swirrl/rdfizing-grafter-clj/blob/master/doc/grafter-core-concepts.org][Grafter Core Concepts & Semantics]] document tries to work
+through some of the ideas in a little more depth.
+
 * RDFizing
 
 In terms of RDFization the core idea is:
@@ -501,7 +505,6 @@ argument and converting it.
 
 You can imagine multi-argument prefixers would be useful too, though
 they may be harder to compose in a user interface.
-
 
 
 * Misc
