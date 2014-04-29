@@ -135,12 +135,11 @@ Both return a function.  There are two main differences:
 m-chain needs to run within the context of a monad which provides this
 custom logic...  To get the pure composition logic we run it with the
 identity monad identity-m.  The identity monad essentially does
-nothing between the compositions.
+nothing between the compositions.  It's functionally identical in
+everyway to =comp= (although the functions it composes need to be
+monadic - or lifted into the monad):
 
-#+BEGIN_SRC clojure
-(with-monad identity-m
-  (m-chain [trim replace-comma parse-int]))
-#+END_SRC
+So lets use it in the identity monad:
 
 #+BEGIN_SRC clojure
 (def parse-attendance (with-monad identity-m
@@ -149,31 +148,32 @@ nothing between the compositions.
 (parse-attendance "1,000  ") ;; => 1000
 #+END_SRC
 
-There may be a problem with this code though, which is that parse-int
-raises exceptions if it's given anything it can't parse.  In
+It works!  But, there may be a problem with this code, which is that
+parse-int raises exceptions if it's given anything it can't parse.  In
 particular if it receives an empty string, it will raise an exception.
 
 #+BEGIN_SRC clojure
 (parse-attendance "") ;; => EXCEPTION ...
 #+END_SRC
 
-To fix this we can run it in grafters blank-m monad:
+Thanks to monads this can be easily fixed, by running it in grafters
+=blank-m= monad:
 
 #+BEGIN_SRC clojure
 (def parse-attendance (with-monad blank-m
-                                       (m-chain [trim replace-comma parse-int])))
+                        (m-chain [trim replace-comma parse-int])))
 
 (parse-attendance "") ;; => ""
 #+END_SRC
 
-blank-m, treats nil or "" as a pipeline failure, where either nil or
+=blank-m=, treats nil or "" as a pipeline failure, where either nil or
 an empty string will abort the pipeline and return an empty string:
 "".  By swapping the monad we can control the behaviour of the
 pipeline.  Without the monad, we'd have to modify every function
 themselves with the appropriate logic.
 
 In order for standard functions to be used within a monad, they need
-to be lifted into it with lift-1.  Users would never or need to do
+to be lifted into it with =lift-1=.  Users would never or need to do
 this, it can be done for them.  They'd simply select the function they
 want, and the type of pipeline (monad).  Additionally if we want to
 capture different log outputs etc... we should be able to do so by
@@ -182,14 +182,17 @@ modifying the monad.
 I suspect that this pipeline DSL, when mapped to columns can also be
 used to detect and warn about changes in the source spreadsheet; as
 essentially these functions are descriptions of what types are
-expected in what columns.  Table Processing DSL In terms of DSL code
-presented yesterday I suspect that this is the best understood part of
-Grafter, and needs a little less explanation in terms of semantics.
-Though the laziness and mechanics of how and when processing is done
-are perhaps less clear; they're probably better served by an
-introduction to Clojure; once this is understood the code is really
-very simple.  None of the magic here is mine, it was all given to me
-be Clojure.
+expected in what columns.
+
+** Table Processing DSL
+
+In terms of DSL code presented yesterday I suspect that this is the
+best understood part of Grafter, and needs a little less explanation
+in terms of semantics.  Though the laziness and mechanics of how and
+when processing is done are perhaps less clear; they're probably
+better served by an introduction to Clojure; once this is understood
+the code is really very simple.  None of the magic here is mine, it
+was all given to me be Clojure.
 
 The two key ideas behind this bit of the DSL are:
 
@@ -207,7 +210,7 @@ I can imagine two different styles of interface that could be directly
 built on this DSL...  One would be a traditional Kettle-like workflow
 tool.  The other a more simple Refine-like tool.
 
-Ultimately I suspect you'd choose a Kettle-like tool if you wanted to
+Ultimately I suspect we'd choose a Kettle-like tool if you wanted to
 support conditionals within the Table Processing DSL and a refine-like
 one if you didn't.
 
@@ -251,7 +254,7 @@ computation:
 
 #+BEGIN_SRC clojure
 '(-> (parse-csv "./data/attendances.csv")
-(drop 1))
+     (drop 1))
 #+END_SRC
 
 Note that the quote prefixing the list means that this is clojure
