@@ -107,7 +107,7 @@ concatenates them all together."
       (pr/add-statement my-repo triple)
       (catch java.lang.IllegalArgumentException e
         (throw (Exception.
-                (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta :row)))))))
+                (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta :row)) e)))))
   my-repo)
 
 (def prefixer ontutils/prefixer)
