@@ -39,7 +39,7 @@ one argument.  This is necessary for composition i.e the following is
 expressible in a pipeline, and no intermediate variables are needed:
 
 #+BEGIN_SRC clojure
-(c (b (a "initial value))) ;; => "output value"
+(c (b (a "initial value"))) ;; => "output value"
 #+END_SRC
 
 In ruby you would write this as:
