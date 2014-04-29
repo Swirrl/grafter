@@ -1,7 +1,5 @@
 #+TITLE: Grafter Core Concepts & Semantics
 
-
-
 These are some follow up notes to clarify the semantics of Grafter,
 and help answer any questions you may have.
 
