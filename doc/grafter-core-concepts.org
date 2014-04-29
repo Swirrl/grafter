@@ -1,9 +1,9 @@
-#+TITLE: Grafter Core Concepts & Semantics
+* Grafter Core Concepts & Semantics
 
 These are some follow up notes to clarify the semantics of Grafter,
 and help answer any questions you may have.
 
-* Overview
+** Overview
 
 It's quite a challenge trying to explain an API written in a foreign
 programming language without making it appear too scary.  And I
@@ -27,7 +27,7 @@ should be simple and more familiar, and include:
 
 - (Maybe some other steps to customise validation, loading etc...)
 
-* Pluggable function pipelines for cell converters
+** Pluggable function pipelines for cell converters
 
 Functions are simply composed in a pipeline.  Users can select
 functions from a palete and place them one after the other, to convert
@@ -104,7 +104,7 @@ similarly.
 (I suspect mapper/replacer can be replaced by a better combination of
 functions).
 
-* (not so scary?) Monadic Pipelines
+** (not so scary?) Monadic Pipelines
 
 So why not just use composition?  Why use monads?  Well, I don't want
 to have to explain monads (1000's try, few succeed), but I think
@@ -276,7 +276,7 @@ Refine.
 Errors in the preview mode (monad?) should display on the appropriate
 CSV column / row / cell.
 
-* RDFizing DSL
+** RDFizing DSL
 
 The job of the table DSL is ultimately to convert a lazy-sequence of
 rows containing Strings into a lazy-sequence of rows containing RDF
@@ -365,7 +365,7 @@ stages could be added should we wish).
 ;; => (#grafter.rdf.protocols.Quad{:s "http://john-doe.com/id/johnd", :p "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", :o "http://foaf.com/Person", :c "http://mygraph.com/graph/test"} #grafter.rdf.protocols.Quad{:s "http://john-doe.com/id/johnd", :p "http://www.w3.org/2000/01/rdf-schema#label", :o #<rdf$s$reify__5355 John Doe>, :c "http://mygraph.com/graph/test"})
 #+END_SRC
 
-* Error Handling at Graph Construction
+** Error Handling at Graph Construction
 
 The biggest remaining challenge with the current RDF DSL is handling
 error conditions, as I really don't want users to ever have to write
