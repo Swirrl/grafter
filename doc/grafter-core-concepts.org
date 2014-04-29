@@ -142,8 +142,6 @@ nothing between the compositions.
   (m-chain [trim replace-comma parse-int]))
 #+END_SRC
 
-There may be a problem with this code though, which is that parse-int raises exceptions if it's given anything it can't parse:
-
 #+BEGIN_SRC clojure
 (def parse-attendance (with-monad identity-m
                                        (m-chain [trim replace-comma parse-int])))
@@ -151,7 +149,9 @@ There may be a problem with this code though, which is that parse-int raises exc
 (parse-attendance "1,000  ") ;; => 1000
 #+END_SRC
 
-In particular if it receives an empty string, it will raise an exception.
+There may be a problem with this code though, which is that parse-int
+raises exceptions if it's given anything it can't parse.  In
+particular if it receives an empty string, it will raise an exception.
 
 #+BEGIN_SRC clojure
 (parse-attendance "") ;; => EXCEPTION ...
