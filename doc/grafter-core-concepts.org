@@ -73,7 +73,7 @@ you can use the function comp to do the same:
 
 The lack of multiple arguments is necessary for composition, but it's
 not really a problem because you can (and I do) build one argument
-functions that close over arguments provided to their "factory
+functions that close over arguments provided to a "factory
 function".
 
 Part of what I'm proposing is that we provide as components a suite of
