@@ -133,6 +133,56 @@ the specified column being cloned."
 ;; with mapc
 (def _ identity)
 
+
+(defn select-columns
+  ([srange row]
+     (drop srange row))
+  ([srange erange row]
+     {:pre [(<= srange erange)]}
+     (let [ncols (- (inc erange) srange)]
+       (->> row
+            (drop srange)
+            (take ncols)))))
+
+(defn normalise [[header-row & data-rows] [srange erange]]
+  "Takes a CSV with a header row and normalises it by transforming the
+selected columns into values within the rows.
+
+Essentially the following call:
+
+(normalise csv 3 4)
+
+will convert a table that looks like this:
+
+| cola | colb | colc | normalise-me-a | normalise-me-b |
+|------+------+------+----------------+----------------|
+|    0 |    0 |    0 | normal-a-0     | normal-b-0     |
+|    1 |    1 |    1 | normal-a-1     | normal-b-1     |
+
+into data rows look like this.  It does not yet preserve the header row:
+
+|   |   |   |                |            |
+|---+---+---+----------------+------------+
+| 0 | 0 | 0 | normalise-me-a | normal-0-a |
+| 0 | 0 | 0 | normalise-me-b | normal-0-b |
+| 1 | 1 | 1 | normalise-me-a | normal-1-a |
+| 1 | 1 | 1 | normalise-me-b | normal-1-b |
+"
+  (let [colids           (range srange (inc erange))
+        ncols            (inc (- erange srange))
+        headers-to-move  (select-columns srange erange header-row)
+
+        normalise-row (fn [id row]
+                        (let [rowv (->> row (take srange) (apply vector))]
+                          (-> rowv
+                              (conj (nth header-row id))
+                              (conj (nth row id)))))
+
+        expand-rows (fn [row] (map normalise-row colids (repeat ncols row)))]
+
+    (mapcat expand-rows data-rows)))
+
+
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
   (defn join [csv f & others]
