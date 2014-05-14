@@ -1,19 +1,22 @@
 (ns grafter.csv-examples
   (:use [grafter.csv]))
 
-(def my-csv (parse-csv "./examples/high-earners-pay-2012.csv"))
-
-(-> (parse-csv "./examples/high-earners-pay-2012.csv")
-    (grep "John" 2)
-    (fuse #(str %1 " " %2) 2 1)
-    (columns 2 1 7)
-    (rows 1 10))
-
+(defn csv-example []
+  (-> (parse-csv "./examples/high-earners-pay-2012.csv")
+      (grep "John" 2)
+      (fuse #(str %1 " " %2) 2 1)
+      (columns 2 1 7)
+      (rows 1 10)))
 
 ;; composition of pipelines
-(-> (-> (parse-csv "./examples/high-earners-pay-2012.csv")
-        (grep "John" 2)
-        (fuse #(str %1 " " %2) 2 1)
-        (columns 2 1 7)
-        (rows 1 10))
-    (rows 0 1))
+(defn pipeline-composition-example []
+  (-> (-> (parse-csv "./examples/high-earners-pay-2012.csv")
+          (grep "John" 2)
+          (fuse #(str %1 " " %2) 2 1)
+          (columns 2 1 7)
+          (rows 1 10))
+      (rows 0 1)))
+
+(defn normalise-example []
+  (-> (parse-csv "./test-data/Hampshire-DataPack-Health-v1/aac_tot_count-Table 1.csv")
+      (normalise [3 46])))
