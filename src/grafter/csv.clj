@@ -44,6 +44,10 @@ columns."
   "Drops the first n rows from the CSV."
   (drop n csv))
 
+(defn take-rows [csv n]
+  "Drops the first n rows from the CSV."
+  (take n csv))
+
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
   dispatches on the type of its second argument.  It also takes any
