@@ -7,6 +7,8 @@
 
 (def vcard:hasAddress (vcard "hasAddress"))
 
+(def vcard:hasUrl (vcard "hasUrl"))
+
 (def vcard:street-address (vcard "street-address"))
 
 (def vcard:postal-code (vcard "postal-code"))
