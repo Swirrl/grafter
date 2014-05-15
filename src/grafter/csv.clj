@@ -133,7 +133,6 @@ the specified column being cloned."
 ;; with mapc
 (def _ identity)
 
-
 (defn select-columns
   ([srange row]
      (drop srange row))
@@ -144,7 +143,12 @@ the specified column being cloned."
             (drop srange)
             (take ncols)))))
 
-(defn normalise [[header-row & data-rows] [srange erange]]
+
+;; TODO fix this so that it doesn't assume contiguous blocks of
+;; id/measure columns.  It needs to calculate the set complement of
+;; the selected measure column ids and use those.
+
+(defn normalise [[header-row & data-rows] measure-col-ids]
   "Takes a CSV with a header row and normalises it by transforming the
 selected columns into values within the rows.
 
@@ -168,8 +172,12 @@ into data rows look like this.  It does not yet preserve the header row:
 | 1 | 1 | 1 | normalise-me-a | normal-1-a |
 | 1 | 1 | 1 | normalise-me-b | normal-1-b |
 "
-  (let [colids           (range srange (inc erange))
-        ncols            (inc (- erange srange))
+  (let [ncols            (count header-row)
+        colids           (-> (take ncols measure-col-ids) set sort) ;; incase its an infinite seq
+        srange           (first colids)
+        colids           (take (- ncols srange) colids)
+        erange           (last colids)
+        ncols            (count colids)
         headers-to-move  (select-columns srange erange header-row)
 
         normalise-row (fn [id row]
