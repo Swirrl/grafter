@@ -1,7 +1,6 @@
 (ns grafter.rdf.protocols
   (:require [clojure.set :as set])
-  (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory])
-  (:require [clojure.math.combinatorics :as comb]))
+  (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]))
 
 (defprotocol IStatement
   "An RDF triple"
