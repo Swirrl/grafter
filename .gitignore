@@ -9,3 +9,5 @@ pom.xml.asc
 /.nrepl-port
 /README.html
 /tmp/
+
+.DS_Store
