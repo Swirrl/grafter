@@ -6,3 +6,5 @@
 (def qb:dataSet (qb "dataSet"))
 
 (def qb:Observation (qb "Observation"))
+
+(def qb:DataStructureDefinition (qb "DataStructureDefinition"))
