@@ -4,7 +4,8 @@
   (:import [grafter.rdf.protocols IStatement Triple Quad])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
            [org.openrdf.model.impl CalendarLiteralImpl ValueFactoryImpl URIImpl
-            LiteralImpl IntegerLiteralImpl NumericLiteralImpl StatementImpl BNodeImpl ContextStatementImpl]
+            BooleanLiteralImpl LiteralImpl IntegerLiteralImpl NumericLiteralImpl
+            StatementImpl BNodeImpl ContextStatementImpl]
            [org.openrdf.repository Repository RepositoryConnection]
            [org.openrdf.repository.sail SailRepository]
            [org.openrdf.sail.memory MemoryStore]
@@ -27,6 +28,11 @@
   (->sesame-rdf-type [this]))
 
 (extend-protocol ISesameRDFConverter
+
+  java.lang.Boolean
+  (->sesame-rdf-type [this]
+    (BooleanLiteralImpl. this))
+
   java.lang.String
   ;; Assume URI's are the norm not strings
   (->sesame-rdf-type [this]
