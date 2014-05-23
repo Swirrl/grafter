@@ -1,4 +1,0 @@
-Glasgow Life Facilities became 2 datasets in the Glasgow project: a list of facilities and a data cube, with one time slice, of attendance figures
-
-http://linked.glasgow.gov.uk/data/glasgow-life-facilities
-http://linked.glasgow.gov.uk/data/glasgow-life-attendances

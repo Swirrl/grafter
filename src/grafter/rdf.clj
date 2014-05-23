@@ -85,7 +85,6 @@ of grafter.rdf.protocols.IStatement's"
   (mapcat expand-subj subjects))
 
 (defn graph [graph-uri & triples]
-  ;; ignore graph-uri parameter for now
   (map (partial quad graph-uri)
        (apply triplify triples)))
 

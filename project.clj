@@ -9,6 +9,16 @@
                  [clj-time "0.7.0"]
                  [org.clojure/tools.namespace "0.2.4"]
                  [clojure-csv/clojure-csv "2.0.1"]
+                 [clj-excel "0.0.1"]
+                 [me.raynes/fs "1.4.4"]
                  [org.marianoguerra/clj-rhino "0.2.1"]
-                 [org.openrdf.sesame/sesame-runtime "2.7.10"]]
-  :source-paths ["src"])
+                 [org.openrdf.sesame/sesame-runtime "2.7.10"]
+                 ;;[incanter/incanter-core "1.5.5"]
+                 [incanter "1.5.5"] ; Include all of incanter
+                 ]
+  :source-paths ["src"]
+  :jvm-opts ["-Dapple.awt.UIElement=true"] ;; Prevent Java process
+                                           ;; from appearing as a GUI
+                                           ;; app in OSX when Swing
+                                           ;; classes are loaded.
+)
