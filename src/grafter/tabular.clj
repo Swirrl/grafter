@@ -7,7 +7,7 @@
   (:import [incanter.core Dataset]))
 
 
-(def open-as-table
+(def open-tabular-file
   "Takes a File or String as an argument and coerces it based upon its
   file extension into a concrete grafter table.
 
@@ -23,7 +23,10 @@ Supported options are currently:
        file type to be opened instead of looking at the files extension.
 "
 
-  tabcommon/open-as-table)
+  tabcommon/open-tabular-file)
+
+(def open-all-sheets
+  tabcommon/open-all-sheets)
 
 (defn nnth
   "Same as nth but returns nil (or not-found) if supplied."
