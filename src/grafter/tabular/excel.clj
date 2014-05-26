@@ -1,15 +1,14 @@
 (ns grafter.tabular.excel
-  (:require [grafter.tabular.util :as tabutil])
+  (:require [grafter.tabular.common :as tabutil])
   (:require [clj-excel.core :as xls]))
 
-(defmethod tabutil/open-as-table :xls
+(defmethod tabutil/open-tabular-file :xls
   [f & args]
   (-> f xls/workbook-hssf))
 
-(defmethod tabutil/open-as-table :xlsx
+(defmethod tabutil/open-tabular-file :xlsx
   [f & args]
   (-> f xls/workbook-xssf))
-
 
 (comment
   (for [workbook-file xls-files

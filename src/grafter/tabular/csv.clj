@@ -1,9 +1,9 @@
 (ns grafter.tabular.csv
-  (:require [grafter.tabular.util :as tabutil]
+  (:require [grafter.tabular.common :as tabutil]
             [clojure-csv.core :as csv]
             [clojure.java.io :as io]))
 
-(defmethod tabutil/open-as-table :csv
+(defmethod tabutil/open-tabular-file :csv
   [f & {:keys []}]
   (csv/parse-csv (io/reader f)))
 
