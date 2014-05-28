@@ -43,11 +43,22 @@
 
           (is (= [1 2 3] header)))))))
 
-(def csv-sheet (make-dataset ["one" "two" "three"]
-                             [["1" "2" "3"]]))
+;; These two vars define what the content of the files
+;; test/grafter/test.csv and test/grafter/test.xlsx should look like
+;; when loaded.
+;;
+;; - CSV data is always cast as Strings
+;; - Excel data when loaded is cast to floats
 
-(def excel-sheet (make-dataset ["one" "two" "three"]
-                               [[1.0 2.0 3.0]]))
+(def raw-csv-data [["one" "two" "three"]
+                   ["1" "2" "3"]])
+
+(def raw-excel-data [["one" "two" "three"]
+                     [1.0 2.0 3.0]])
+
+(def csv-sheet (make-dataset move-first-row-to-header raw-csv-data))
+
+(def excel-sheet (make-dataset move-first-row-to-header raw-excel-data))
 
 (comment
   (testing "returns a lazy-seq of all datasets beneath a path"
@@ -59,12 +70,12 @@
     (testing "Opens CSV files"
       (let [loaded-csv (open-tabular-file "./test/grafter/test.csv")]
         (testing "are a seq of seqs"
-          (is (= csv-sheet loaded-csv)))))
+          (is (= raw-csv-data loaded-csv)))))
 
     (testing "Opens Excel files"
-      (let [loaded-csv (open-tabular-file "./test/grafter/test.xlsx")]
+      (let [loaded-excel (open-tabular-file "./test/grafter/test.xlsx")]
         (testing "are incanter.core.Dataset records"
-          (is (instance? org.apache.poi.xssf.usermodel.XSSFWorkbook loaded-csv)))))))
+          (is (instance? org.apache.poi.xssf.usermodel.XSSFWorkbook loaded-excel)))))))
 
 (deftest open-all-datasets-tests
   (testing "open-all-sheets"
