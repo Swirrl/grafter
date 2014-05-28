@@ -17,3 +17,6 @@
                         y alphabet]
                     (str x y))))
        (apply concat)))
+
+(defn alphabetical-column-names []
+  (column-names-seq "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
