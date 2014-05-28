@@ -1,32 +1,20 @@
 (ns grafter.tabular
   (:require [clojure.java.io :as io]
             [grafter.tabular.common :as tabcommon]
+            [grafter.sequences :as seqs]
             [grafter.tabular.excel]
             [grafter.tabular.csv]
-            [incanter.core :as i])
+            [incanter.core :as inc]
+            [potemkin.namespaces :refer [import-vars]])
   (:import [incanter.core Dataset]))
 
-
-(def open-tabular-file
-  "Takes a File or String as an argument and coerces it based upon its
-  file extension into a concrete grafter table.
-
-Supported files are currently csv or Excel's xls or xlsx files.
-
-Additionally open-as-table takes an optional set of key/value
-parameters which will be passed to the concrete function opening the
-file.
-
-Supported options are currently:
-
-:ext - An overriding file extension (as keyword) to force a particular
-       file type to be opened instead of looking at the files extension.
-"
-
-  tabcommon/open-tabular-file)
-
-(def open-all-sheets
-  tabcommon/open-all-sheets)
+(import-vars
+ [grafter.tabular.common
+  make-dataset
+  copy-first-row-to-header
+  move-first-row-to-header
+  open-tabular-file
+  open-all-datasets])
 
 (defn nnth
   "Same as nth but returns nil (or not-found) if supplied."

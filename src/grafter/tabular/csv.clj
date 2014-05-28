@@ -1,11 +1,13 @@
 (ns grafter.tabular.csv
-  (:require [grafter.tabular.common :as tabutil]
+  (:require [grafter.tabular.common :as tab]
             [clojure-csv.core :as csv]
             [clojure.java.io :as io]))
 
-(defmethod tabutil/open-tabular-file :csv
-  [f & {:keys []}]
-  (csv/parse-csv (io/reader f)))
+(defmethod tab/open-tabular-file :csv
+  [f & {:as opts}]
+  (if opts
+    (csv/parse-csv (io/reader f) opts)
+    (csv/parse-csv (io/reader f))))
 
 (comment
 
