@@ -98,3 +98,67 @@
         (let [columns (:column-names (make-dataset [(range 30)]))]
           (is (= "AA" (nth columns 26)))
           (is (= "AB" (nth columns 27))))))))
+
+(defn test-dataset [r c]
+  "Constructs a test dataset of r rows by c cols e.g.
+
+(test-dataset 2 2) ;; =>
+
+| A | B |
+|---+---|
+| 0 | 0 |
+| 1 | 1 |"
+
+  (->> (iterate inc 0)
+       (map #(repeat c %))
+       (take r)
+       make-dataset))
+
+(deftest resolve-column-id-tests
+  (testing "resolve-column-id"
+    (let [dataset (test-dataset 5 5)]
+      (are [expected lookup]
+           (= expected (resolve-column-id dataset lookup :not-found))
+           "A" "A"
+           "A" :A
+           "A" 0
+           :not-found "Z"
+           :not-found :Z))))
+
+(deftest invalid-column-keys-tests
+  (testing "invalid-column-keys"
+    (let [dataset (test-dataset 5 5)]
+      (testing "Returns the keys not in the dataset"
+        (is (= ["X" "Z" 5 :F] (invalid-column-keys ["A" "B" "X" "Z" "C" "D" "E" 0 1 2 3 4 5 :A :B :C :D :E :F] dataset)))
+
+        (testing "Preserves the order of invalid keys"
+          (is (= ["Z" "X"] (invalid-column-keys ["A" "B" "Z" "X" "C" "D" "E"] dataset))))))))
+
+(deftest row-processor-tests
+  (let [expected-dataset (test-dataset 5 2)
+        test-data (test-dataset 5 5)]
+    (testing "columns"
+      (testing "Narrows by string names"
+        (is (= expected-dataset
+               (columns test-data ["A" "B"]))  "Should select just columns A and B"))
+
+      (testing "Narrows by numeric ids"
+        (is (= expected-dataset
+               (columns test-data [0 1])) "Should select columns 0 and 1 (A and B)"))
+
+      (testing "Narrows by keywords"
+        (is (= expected-dataset
+               (columns test-data [:A :B])) "Should select columns 0 and 1 (A and B)"))
+
+      (testing ":bounded"
+        (is (thrown? IndexOutOfBoundsException
+                     (columns test-data (range 100) :bounded true)))
+        (testing "is the default"
+          (is (thrown? IndexOutOfBoundsException
+                       (columns test-data (range 100))))))
+      (testing ":unbounded"
+        (is (columns test-data (range 3) :unbounded true)
+            "Takes as much as it can from the supplied sequence.")
+
+        (is (thrown? IndexOutOfBoundsException (columns test-data (range 10 100) :unbounded true))
+            "Raises an exception if yielded values are not column headings.")))))

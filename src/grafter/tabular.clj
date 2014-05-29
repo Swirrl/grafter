@@ -3,6 +3,7 @@
             [grafter.tabular.common :as tabcommon]
             [grafter.sequences :as seqs]
             [grafter.tabular.excel]
+            [clojure.string :as str]
             [grafter.tabular.csv]
             [incanter.core :as inc]
             [potemkin.namespaces :refer [import-vars]])
@@ -16,8 +17,11 @@
   open-tabular-file
   open-all-datasets])
 
-(defn nnth
-  "Same as nth but returns nil (or not-found) if supplied."
+(defn- nnth
+  "Same as nth but returns nil (or not-found) if supplied.  Unlike nth
+  it swallows any IndexOutOfBoundsException's."
+  {:deprecated true}
+
   ([col index] (nnth col index nil))
   ([col index not-found]
      (try
@@ -25,16 +29,74 @@
        (catch java.lang.IndexOutOfBoundsException ex
          not-found))))
 
-(defn- select-columns-from-row [cols row]
+(defn- select-columns-from-row
+  {:deprecated true}
+  [cols row]
   ;; Makes use of the fact that rows (vectors) are functions
   ;; of their indices.
   (apply vector (map (apply vector row) cols)))
 
-(defn columns [csv & cols]
+(defn resolve-column-id
+  "Finds and resolves the column id by converting between symbols and
+  strings.  If column-key is not found in the datsets headers then nil
+  is returned."
+  [dataset column-key not-found]
+
+  (let [headers (:column-names dataset)
+        converted-column-key (cond
+                              (string? column-key) (keyword column-key)
+                              (keyword? column-key) (name column-key)
+                              (integer? column-key) (nth headers column-key not-found))]
+
+    (if-let [val (some #{column-key converted-column-key} headers)]
+      val
+      not-found)))
+
+(defn invalid-column-keys
+  "Takes a sequence of column key names and returns a sequence of keys
+  that cannot be resolved against the current dataset."
+  [keys dataset]
+
+  (let [not-found (Object.)
+        not-found-items (->> keys
+                             (map (fn [col]
+                                    [col (resolve-column-id dataset col not-found)]))
+                             (filter (fn [[_ present]] (= not-found present)))
+                             (map first))]
+    not-found-items))
+
+(defn- columns-bounded [dataset cols]
   "Takes a parsed CSV file and any number of integers corresponding to
 column numbers and returns a new CSV file containing only those
 columns."
-  (map (partial select-columns-from-row cols) csv))
+  (let [not-found-items (invalid-column-keys cols dataset)]
+    (if (empty? not-found-items)
+      (inc/$ cols dataset)
+      (throw (IndexOutOfBoundsException. (str "The columns: " (str/join ", " not-found-items) " are not currently defined."))))))
+
+(defn- columns-unbounded [dataset cols]
+  (columns-bounded
+   dataset
+   (take (count (:column-names dataset)) cols)))
+
+(defn columns
+  "Given a dataset and some columns, narrow the dataset to just the
+  supplied columns.
+
+By default the behaviour is bounded, and an error will be thrown if
+any supplied columns don't occur in the data.  If this behaviour is
+switched off by setting :unbounded to true then the supplied columns
+can be larger than are in the data without triggering an exception.
+
+:unbounded allows you to supply infinite sequences of values, however
+the yielded values must still occur as columns or an IndexOutOfBoundsException
+will still be thrown."
+
+  [dataset cols & {:keys [unbounded] :or {unbounded false}}]
+
+  (if (not unbounded)
+    (columns-bounded dataset cols)
+    (columns-unbounded dataset cols)))
 
 (defn rows
   ([csv] csv)
