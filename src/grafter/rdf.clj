@@ -92,13 +92,13 @@ of grafter.rdf.protocols.IStatement's"
   "Takes a vector in fn binding form (where destructuring is
 supported) followed by a series of graph or triplify forms and
 concatenates them all together."
-  (let [row-sym (gensym "row")
-        row-bindings (conj row-bindings :as row-sym)]
-    `(fn graphify-rows-fn [rs#]
-       (mapcat (fn graphify-row [~row-bindings]
+  `(fn graphify-rows-fn [rs#]
+     (mapcat (fn graphify-row [row-sym#]
+               (let [~@row-bindings row-sym#]
                  (->> (concat
                        ~@forms)
-                      (map (fn [triple#] (with-meta triple# {:row ~row-sym}))))) rs#))))
+                      (map (fn [triple#] (with-meta triple# {:row row-sym#}))))))
+             rs#)))
 
 (defn load-triples [my-repo triple-seq]
   (doseq [triple triple-seq]
