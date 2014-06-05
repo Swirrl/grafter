@@ -7,7 +7,11 @@
    [grafter.rdf.ontologies.pmd]
    [grafter.rdf.ontologies.qb]
    [grafter.rdf.ontologies.os]
-   [grafter.rdf.ontologies.sdmxmeasure])
+   [grafter.rdf.ontologies.skos]
+   [grafter.rdf.ontologies.owl]
+   [grafter.rdf.ontologies.sdmx-measure]
+   [grafter.rdf.ontologies.sdmx-attribute]
+   [grafter.rdf.ontologies.sdmx-concept])
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
   (:require [grafter.rdf.sesame :as ses])
