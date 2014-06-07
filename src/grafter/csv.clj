@@ -184,7 +184,7 @@ into data rows look like this.  It does not yet preserve the header row:
                         (let [rowv (->> row (take srange) (apply vector))]
                           (-> rowv
                               (conj (nth header-row id))
-                              (conj (nth row id)))))
+                              (conj (get (vec row) id)))))
 
         expand-rows (fn [row] (map normalise-row colids (repeat ncols row)))]
 
