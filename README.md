@@ -1,4 +1,4 @@
-#Grafter
+![Grafter RDF ](./doc/images/grafter.png)
 
 Exploring the use of Clojure for RDFizing, DSL's, RDF tooling and more
 tightly integrating with triple stores.
