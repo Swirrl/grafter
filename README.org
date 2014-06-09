@@ -354,7 +354,7 @@ constrained data-based syntax using clojure vectors:
           [rdf:a (rdf "Property")]
           [rdf:a (qb "MeasureProperty")]
           [rdfs:label (s "Number of Assets" :en)]
-          [(rdfs "subPropertyOf") (sdmxmeasure "obsValue")]
+          [(rdfs "subPropertyOf") (sdmx-measure "obsValue")]
           [(rdfs "isDefinedBy") ont-uri]]))
 
 (defn internal-ontology-metadata [ontology-uri date]

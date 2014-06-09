@@ -10,7 +10,7 @@
         [grafter.rdf.ontologies.pmd]
         [grafter.rdf.ontologies.qb]
         [grafter.rdf.ontologies.os]
-        [grafter.rdf.ontologies.sdmxmeasure]
+        [grafter.rdf.ontologies.sdmx-measure]
         [grafter.parse]
         [grafter.js]
         [clojure.algo.monads])
@@ -144,7 +144,7 @@
           [rdf:a (rdf "Property")]
           [rdf:a (qb "MeasureProperty")]
           [rdfs:label (s "Number of Assets" :en)]
-          [(rdfs "subPropertyOf") (sdmxmeasure "obsValue")]
+          [(rdfs "subPropertyOf") (sdmx-measure "obsValue")]
           [(rdfs "isDefinedBy") ont-uri]]))
 
 (defn internal-ontology-metadata [ontology-uri date]
