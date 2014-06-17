@@ -299,7 +299,7 @@
   Exceptions are rolled back on failure."
   `(try
     (pr/begin ~repo)
-    (let [return# ~@forms]
+    (let [return# (do ~@forms)]
       (pr/commit ~repo)
       return#)
     (catch Exception e#
