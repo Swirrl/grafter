@@ -156,7 +156,7 @@
     (BNodeImpl. (name this))))
 
 (defn IStatement->sesame-statement [is]
-  (if (.c is)
+  (if (:c is)
     (do
       (ContextStatementImpl. (->sesame-rdf-type (.s is))
                              (URIImpl. (.p is))
@@ -323,7 +323,7 @@
        (run-query))))
 
 (defn- evaluate-tuple-query [prepared-query]
-  (sesame-results->seq query-bindings->map))
+  (sesame-results->seq prepared-query query-bindings->map))
 
 (defn- evaluate-graph-query [prepared-query]
   (sesame-results->seq prepared-query sesame-statement->IStatement))
