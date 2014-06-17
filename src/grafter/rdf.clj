@@ -92,6 +92,13 @@ of grafter.rdf.protocols.IStatement's"
   (map (partial quad graph-uri)
        (apply triplify triples)))
 
+(defn add-properties [triple-template hash-map]
+  "Appends the key/value pairs from the supplied hash-map into the
+  triple-template form.  Assumes it is given a vector representing a
+  single subject."
+  (reduce conj triple-template
+          (mapcat vector hash-map)))
+
 (defmacro graphify [row-bindings & forms]
   "Takes a vector in fn binding form (where destructuring is
 supported) followed by a series of graph or triplify forms and
