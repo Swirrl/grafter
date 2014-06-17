@@ -21,6 +21,12 @@
   "A source of statements or triples.  Converts such a source into a seq of triples."
   (statements [this]))
 
+(defprotocol ITransactable
+  "Transactions support"
+  (begin [repo])
+  (commit [repo])
+  (rollback [repo]))
+
 (defrecord Triple
     [s p o]
   IStatement

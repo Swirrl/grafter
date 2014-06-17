@@ -11,7 +11,7 @@
            [org.openrdf.sail.memory MemoryStore]
            [org.openrdf.rio Rio RDFWriter]
            [org.openrdf.sail.nativerdf NativeStore]
-           [org.openrdf.query TupleQuery TupleQueryResult BindingSet QueryLanguage]
+           [org.openrdf.query TupleQuery TupleQueryResult BindingSet QueryLanguage BooleanQuery GraphQuery]
            [javax.xml.datatype XMLGregorianCalendar DatatypeFactory]
            [java.util GregorianCalendar Date]
            [org.openrdf.rio RDFFormat]))
@@ -25,7 +25,8 @@
   (context [this] (.getContext this)))
 
 (defprotocol ISesameRDFConverter
-  (->sesame-rdf-type [this]))
+  (->sesame-rdf-type [this])
+  (sesame-rdf-type->type [this]))
 
 (extend-protocol ISesameRDFConverter
 
@@ -33,28 +34,69 @@
   (->sesame-rdf-type [this]
     (BooleanLiteralImpl. this))
 
+  (sesame-rdf-type->type [this]
+    this)
+
+  BooleanLiteralImpl
+  (->sesame-rdf-type [this]
+    this)
+
+  (sesame-rdf-type->type [this]
+    (.booleanValue this))
+
   java.lang.String
   ;; Assume URI's are the norm not strings
   (->sesame-rdf-type [this]
     (URIImpl. this))
 
+  (sesame-rdf-type->type [this]
+    this)
+
+  URI
+  (->sesame-rdf-type [this]
+    this)
+
+  (sesame-rdf-type->type [this]
+    (str this))
+
   java.lang.Integer
   (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
 
+  (sesame-rdf-type->type [this]
+    this)
+
+  NumericLiteralImpl
+  (->sesame-rdf-type [this]
+    this)
+
+  (sesame-rdf-type->type [this]
+    ;; TODO support this
+    (assert false "TODO add grafter support for this type.  Need to inspect datatype URI's in order to properly cast")
+    (.intValue this))
+
   java.math.BigInteger
   (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
+
+  (sesame-rdf-type->type [this]
+    this)
 
   java.lang.Long
   (->sesame-rdf-type [this]
     ;; hacky and probably a little slow but works for now
     (IntegerLiteralImpl. (BigInteger. (str this))))
 
+  (sesame-rdf-type->type [this]
+    this)
+
   clojure.lang.BigInt
   (->sesame-rdf-type [this]
     ;; hacky and probably a little slow but works for now
     (IntegerLiteralImpl. (BigInteger. (str this))))
+
+  (sesame-rdf-type->type [this]
+    this)
 
   Statement
   (->sesame-rdf-type [this]
@@ -123,6 +165,14 @@
     (StatementImpl. (->sesame-rdf-type (.s is))
                     (URIImpl. (.p is))
                     (->sesame-rdf-type (.o is)))))
+
+(defn sesame-statement->IStatement [st]
+  ;; TODO fix this to work properly with object & context.
+  ;; context should return either nil or a URI
+  ;; object should be converted to a clojure type.
+  (Quad. (str (.getSubject st)) (str (.getPredicate st))
+         (.getObject st)
+         (.getContext st)))
 
 (extend-type Repository
   pr/ITripleWriteable
@@ -223,8 +273,63 @@
                    [k (-> qbs (.getBinding k) .getValue)]))
          (apply hash-map))))
 
+(extend-protocol pr/ITransactable
+  Repository
+  (begin [repo]
+    (-> repo .getConnection .begin))
+
+  (commit [repo]
+    (-> repo .getConnection .commit))
+
+  (rollback [repo]
+    (-> repo .getConnection .rollback))
+
+  RepositoryConnection
+  (begin [repo]
+    (-> repo .begin))
+
+  (commit [repo]
+    (-> repo .commit))
+
+  (rollback [repo]
+    (-> repo .rollback)))
+
+(defmacro with-transaction [repo & forms]
+  "Wraps the given forms in a transaction on the supplied repository.
+  Exceptions are rolled back on failure."
+  `(try
+    (pr/begin ~repo)
+    (let [return# ~@forms]
+      (pr/commit ~repo)
+      return#)
+    (catch Exception e#
+      (pr/rollback ~repo)
+      (throw e#))))
+
+(defn- sesame-results->seq
+  ([prepared-query] (sesame-results->seq prepared-query identity))
+  ([prepared-query converter-f]
+     (let [results (.evaluate prepared-query)
+           run-query (fn pull-query []
+                       (if (.hasNext results)
+                         (let [current-result (try
+                                                (converter-f (.next results))
+                                                (catch Exception e
+                                                  (.close results)))]
+                           (lazy-cat
+                            [current-result]
+                            (pull-query)))
+                         (.close results)))]
+       (run-query))))
+
+(defn- evaluate-tuple-query [prepared-query]
+  (sesame-results->seq query-bindings->map))
+
+(defn- evaluate-graph-query [prepared-query]
+  (sesame-results->seq prepared-query sesame-statement->IStatement))
+
 (defprotocol ISPARQLable
-  "Quick and dirty sparql results.  Takes a connection and query
+  "Quick and dirty sparql SELECT results.  Takes a connection and query
 string and returns a lazy sequence of results.
 
 It doesn't clear up properly in all cases, for example if the sequence
@@ -245,21 +350,14 @@ TODO: reimplement with proper resource handling."
 (extend-type RepositoryConnection
   ISPARQLable
   (query [this sparql-string]
-    (let [tuple-query (.prepareTupleQuery this
-                                        QueryLanguage/SPARQL
-                                        sparql-string)
-        results (.evaluate tuple-query)
-        run-query (fn pull-query []
-                    (if (.hasNext results)
-                      (let [current-result (try
-                                             (query-bindings->map (.next results))
-                                             (catch Exception e
-                                               (.close results)))]
-                        (lazy-cat
-                         [current-result]
-                         (pull-query)))
-                      (.close results)))]
-      (run-query)))
+    (let [preped-query (.prepareQuery this
+                                      QueryLanguage/SPARQL
+                                      sparql-string)]
+
+      (cond
+       (instance? BooleanQuery preped-query) (.evaluate preped-query)
+       (instance? TupleQuery preped-query) (evaluate-tuple-query preped-query)
+       (instance? GraphQuery preped-query) (evaluate-graph-query preped-query))))
 
   pr/ITripleReadable
 
