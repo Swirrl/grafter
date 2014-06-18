@@ -46,6 +46,14 @@
   (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
 
+  java.lang.Float
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this))
+
+  java.lang.Double
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this))
+
   java.lang.Long
   (->sesame-rdf-type [this]
     ;; hacky and probably a little slow but works for now
