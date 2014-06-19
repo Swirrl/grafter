@@ -336,12 +336,16 @@ It doesn't clear up properly in all cases, for example if the sequence
 isn't fully consumed you may cause a resource leak.
 
 TODO: reimplement with proper resource handling."
-  (query [this sparql-string]))
+  (query [this sparql-string])
+  (update! [this sparql-string]))
 
 (extend-type Repository
   ISPARQLable
   (query [this query-str]
     (query (.getConnection this) query-str))
+
+  (update! [this query-str]
+    (update! (.getConnection this) query-str))
 
   pr/ITripleReadable
   (pr/statements [this]
@@ -358,6 +362,13 @@ TODO: reimplement with proper resource handling."
        (instance? BooleanQuery preped-query) (.evaluate preped-query)
        (instance? TupleQuery preped-query) (evaluate-tuple-query preped-query)
        (instance? GraphQuery preped-query) (evaluate-graph-query preped-query))))
+
+  (update! [this sparql-string]
+    (let [prepared-query (.prepareUpdate this
+                                         QueryLanguage/SPARQL
+                                         sparql-string)]
+
+      (.execute prepared-query)))
 
   pr/ITripleReadable
 
