@@ -3,8 +3,7 @@
   (:require [grafter.sequences :as seqs]
             [incanter.core :as inc]
             [me.raynes.fs :as fs]
-            [clj-excel.core :as xls]
-            [incanter.core :as inc])
+            [clj-excel.core :as xls])
   (:import [java.io File]
            [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFSheet]
            [org.apache.poi.hssf.usermodel HSSFWorkbook HSSFSheet]
