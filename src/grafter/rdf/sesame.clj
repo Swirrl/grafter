@@ -12,6 +12,7 @@
            [org.openrdf.rio Rio RDFWriter]
            [org.openrdf.sail.nativerdf NativeStore]
            [org.openrdf.query TupleQuery TupleQueryResult BindingSet QueryLanguage BooleanQuery GraphQuery]
+           [org.openrdf.query.impl DatasetImpl]
            [javax.xml.datatype XMLGregorianCalendar DatatypeFactory]
            [java.util GregorianCalendar Date]
            [org.openrdf.rio RDFFormat]))
@@ -336,13 +337,14 @@ It doesn't clear up properly in all cases, for example if the sequence
 isn't fully consumed you may cause a resource leak.
 
 TODO: reimplement with proper resource handling."
-  (query [this sparql-string])
+  (query-dataset [this sparql-string model])
+
   (update! [this sparql-string]))
 
 (extend-type Repository
   ISPARQLable
-  (query [this query-str]
-    (query (.getConnection this) query-str))
+  (query-dataset [this query-str model]
+    (query-dataset (.getConnection this) query-str model))
 
   (update! [this query-str]
     (update! (.getConnection this) query-str))
@@ -353,10 +355,11 @@ TODO: reimplement with proper resource handling."
 
 (extend-type RepositoryConnection
   ISPARQLable
-  (query [this sparql-string]
-    (let [preped-query (.prepareQuery this
-                                      QueryLanguage/SPARQL
-                                      sparql-string)]
+  (query-dataset [this sparql-string dataset]
+    (let [preped-query (doto (.prepareQuery this
+                                            QueryLanguage/SPARQL
+                                            sparql-string)
+                         (.setDataset dataset))]
 
       (cond
        (instance? BooleanQuery preped-query) (.evaluate preped-query)
@@ -368,8 +371,49 @@ TODO: reimplement with proper resource handling."
                                          QueryLanguage/SPARQL
                                          sparql-string)]
 
-      (.execute prepared-query)))
+      (.execute prepared-query))))
 
+(defn- ->uri [graph]
+  (if (instance? URI graph)
+    graph
+    (URIImpl. graph)))
+
+(defn- make-restricted-dataset
+  "Build a dataset to act as a graph restriction.  You can specify for
+  both :default-graph and :named-graphs.  Both of which take sequences
+  of URI strings.  If nil is passed in nil is returned, which means we
+  use the default no restriction."
+  [{:keys [default-graph named-graphs]
+                                 :or {default-graph [] named-graphs []}
+                                 :as options}]
+  (if options
+    (let [dataset (DatasetImpl.)]
+      (doseq [graph default-graph]
+        (.addDefaultGraph dataset (->uri graph)))
+      (doseq [graph named-graphs]
+        (.addNamedGraph dataset (->uri graph)))
+      dataset)
+    nil))
+
+(defn query
+  "Takes a repo and sparql string and an optional set of k/v argument
+  pairs, and executes the sparql query on the repository.
+
+  Options are:
+
+  :default-graph a seq of URI strings representing named graphs to be set
+                 as the default union graph for the query.
+
+  :named-graphs a seq of URI strings representing the named graphs in
+  to be used in the query.
+
+  If no options are passed then we use the default of no graph
+  restrictions whilst the union graph is the union of all graphs."
+  [repo sparql & {:as options}]
+  (let [dataset (make-restricted-dataset options)]
+    (query-dataset repo sparql dataset)))
+
+(extend-type RepositoryConnection
   pr/ITripleReadable
 
   (statements [this]
