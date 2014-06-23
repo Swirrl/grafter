@@ -20,6 +20,9 @@
   ;;:dev-dependencies [[lein-autodoc "0.9.0"]]
 
   :plugins [[codox "0.8.9"]]
+
+  :codox {:defaults {:doc "FIXME: write docs"}}
+
   :source-paths ["src"]
   :jvm-opts ["-Dapple.awt.UIElement=true"] ;; Prevent Java process
                                            ;; from appearing as a GUI
