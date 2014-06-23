@@ -17,6 +17,9 @@
                  ;;[incanter/incanter-core "1.5.5"]
                  [incanter "1.5.5"] ; Include all of incanter
                  ]
+  ;;:dev-dependencies [[lein-autodoc "0.9.0"]]
+
+  :plugins [[codox "0.8.9"]]
   :source-paths ["src"]
   :jvm-opts ["-Dapple.awt.UIElement=true"] ;; Prevent Java process
                                            ;; from appearing as a GUI
