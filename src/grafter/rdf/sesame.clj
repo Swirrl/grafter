@@ -426,3 +426,7 @@ TODO: reimplement with proper resource handling."
                  ?s ?p ?o .
                }
             }"))))
+
+(defn shutdown [repo]
+  "Cleanly shutsdown the repository."
+  (.shutDown repo))
