@@ -12,3 +12,5 @@
 (def rdfs:comment (rdfs "comment"))
 (def rdfs:subPropertyOf (rdfs "subPropertyOf"))
 (def rdfs:isDefinedBy (rdfs "isDefinedBy"))
+(def rdfs:range (rdfs "range"))
+(def rdfs:domain (rdfs "domain"))
