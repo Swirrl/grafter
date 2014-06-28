@@ -27,6 +27,8 @@
            [org.openrdf.rio RDFFormat])
   (:require [grafter.rdf.ontologies.util :as ontutils]))
 
+;; TODO move these into their own grafter.rdf.formats namespace that
+;; can be reused from other namespaces.
 (def format-rdf-xml RDFFormat/RDFXML)
 (def format-rdf-n3 RDFFormat/N3)
 (def format-rdf-ntriples RDFFormat/NTRIPLES)

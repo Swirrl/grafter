@@ -1,21 +1,40 @@
 (ns grafter.rdf.sesame
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
-  (:import [grafter.rdf.protocols IStatement Triple Quad])
-  (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
-           [org.openrdf.model.impl CalendarLiteralImpl ValueFactoryImpl URIImpl
-            BooleanLiteralImpl LiteralImpl IntegerLiteralImpl NumericLiteralImpl
-            StatementImpl BNodeImpl ContextStatementImpl]
-           [org.openrdf.repository Repository RepositoryConnection]
-           [org.openrdf.repository.sail SailRepository]
-           [org.openrdf.sail.memory MemoryStore]
-           [org.openrdf.rio Rio RDFWriter]
-           [org.openrdf.sail.nativerdf NativeStore]
-           [org.openrdf.query TupleQuery TupleQueryResult BindingSet QueryLanguage BooleanQuery GraphQuery]
-           [org.openrdf.query.impl DatasetImpl]
-           [javax.xml.datatype XMLGregorianCalendar DatatypeFactory]
-           [java.util GregorianCalendar Date]
-           [org.openrdf.rio RDFFormat]))
+  (:import
+   [java.net URL MalformedURLException]
+   [java.io File]
+   [grafter.rdf.protocols IStatement Triple Quad]
+   [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
+   [org.openrdf.model.impl CalendarLiteralImpl ValueFactoryImpl URIImpl
+    BooleanLiteralImpl LiteralImpl IntegerLiteralImpl NumericLiteralImpl
+    StatementImpl BNodeImpl ContextStatementImpl]
+   [org.openrdf.repository Repository RepositoryConnection]
+   [org.openrdf.query.resultio TupleQueryResultFormat]
+   [org.openrdf.repository.sail SailRepository]
+   [org.openrdf.sail.memory MemoryStore]
+   [org.openrdf.rio Rio RDFWriter RDFHandler]
+   [org.openrdf.rio.binary BinaryRDFParserFactory]
+   [org.openrdf.rio.nquads NQuadsParserFactory]
+   [org.openrdf.rio.ntriples NTriplesParserFactory]
+   [org.openrdf.rio.n3 N3ParserFactory]
+   [org.openrdf.rio.rdfjson RDFJSONParserFactory]
+   [org.openrdf.rio.rdfxml RDFXMLParserFactory]
+   [org.openrdf.rio.trig TriGParserFactory]
+   [org.openrdf.rio.trix TriXParserFactory]
+   [org.openrdf.rio.turtle TurtleParserFactory]
+   [org.openrdf.sail.nativerdf NativeStore]
+   [org.openrdf.query TupleQuery TupleQueryResult TupleQueryResultHandler BooleanQueryResultHandler BindingSet QueryLanguage BooleanQuery GraphQuery]
+   [org.openrdf.query.resultio.text BooleanTextWriter]
+   [org.openrdf.query.resultio.sparqljson SPARQLResultsJSONWriter]
+   [org.openrdf.query.resultio.sparqlxml SPARQLResultsXMLWriter SPARQLBooleanXMLWriter]
+   [org.openrdf.query.resultio.binary BinaryQueryResultWriter]
+   [org.openrdf.query.resultio.text.csv SPARQLResultsCSVWriter]
+   [org.openrdf.query.resultio.text.tsv SPARQLResultsTSVWriter]
+   [org.openrdf.query.impl DatasetImpl]
+   [javax.xml.datatype XMLGregorianCalendar DatatypeFactory]
+   [java.util GregorianCalendar Date]
+   [org.openrdf.rio RDFFormat]))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -24,6 +43,47 @@
   (predicate [this] (.getPredicate this))
   (object [this] (.getObject this))
   (context [this] (.getContext this)))
+
+(defmulti literal-datatype->type (fn [literal]
+                                   (when-let [datatype (-> literal .getDatatype)]
+                                     (str datatype))))
+
+(defmethod literal-datatype->type nil [literal]
+  (.stringValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [literal]
+  (.byteValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#short" [literal]
+  (.shortValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [literal]
+  (.decimalValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [literal]
+  (.doubleValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [literal]
+  (.floatValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [literal]
+  (.integerValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [literal]
+  (.intValue literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
+  (str literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
+  (-> literal .calendarValue .toGregorianCalendar .getTime))
+
+(defmethod literal-datatype->type :default [literal]
+  ;; If we don't have a type conversion for it, let the sesame type
+  ;; through, as it's not really up to grafter to fail the processing,
+  ;; as they might just want to pass data through rather than
+  ;; understand it.
+  literal)
 
 (defprotocol ISesameRDFConverter
   (->sesame-rdf-type [this])
@@ -67,14 +127,12 @@
   (sesame-rdf-type->type [this]
     this)
 
-  NumericLiteralImpl
+  LiteralImpl
   (->sesame-rdf-type [this]
     this)
 
   (sesame-rdf-type->type [this]
-    ;; TODO support this
-    (assert false "TODO add grafter support for this type.  Need to inspect datatype URI's in order to properly cast")
-    (.intValue this))
+    (literal-datatype->type this))
 
   java.math.BigInteger
   (->sesame-rdf-type [this]
@@ -103,6 +161,9 @@
   (->sesame-rdf-type [this]
     this)
 
+  (sesame-rdf-type->type [this]
+    this)
+
   Triple
   (->sesame-rdf-type [this]
     (StatementImpl. (->sesame-rdf-type (pr/subject this))
@@ -128,9 +189,16 @@
   (->sesame-rdf-type [this]
     this)
 
+  (sesame-rdf-type->type [this]
+    (literal-datatype->type this))
+
   URI
   (->sesame-rdf-type [this]
     this)
+
+  (sesame-rdf-type->type [this]
+    (str this))
+
 
   java.net.URI
   (->sesame-rdf-type [this]
@@ -171,8 +239,9 @@
   ;; TODO fix this to work properly with object & context.
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
-  (Quad. (str (.getSubject st)) (str (.getPredicate st))
-         (.getObject st)
+  (Quad. (str (.getSubject st))
+         (str (.getPredicate st))
+         (sesame-rdf-type->type (.getObject st))
          (.getContext st)))
 
 (extend-type Repository
@@ -307,28 +376,6 @@
       (pr/rollback ~repo)
       (throw e#))))
 
-(defn- sesame-results->seq
-  ([prepared-query] (sesame-results->seq prepared-query identity))
-  ([prepared-query converter-f]
-     (let [results (.evaluate prepared-query)
-           run-query (fn pull-query []
-                       (if (.hasNext results)
-                         (let [current-result (try
-                                                (converter-f (.next results))
-                                                (catch Exception e
-                                                  (.close results)))]
-                           (lazy-cat
-                            [current-result]
-                            (pull-query)))
-                         (.close results)))]
-       (run-query))))
-
-(defn- evaluate-tuple-query [prepared-query]
-  (sesame-results->seq prepared-query query-bindings->map))
-
-(defn- evaluate-graph-query [prepared-query]
-  (sesame-results->seq prepared-query sesame-statement->IStatement))
-
 (defprotocol ISPARQLable
   "Quick and dirty sparql SELECT results.  Takes a connection and query
 string and returns a lazy sequence of results.
@@ -350,27 +397,62 @@ TODO: reimplement with proper resource handling."
     (update! (.getConnection this) query-str))
 
   pr/ITripleReadable
-  (pr/statements [this]
-    (pr/statements (.getConnection this))))
+  (pr/to-statements [this options]
+    (pr/to-statements (.getConnection this) options)))
+
+(defn- sesame-results->seq
+  ([prepared-query] (sesame-results->seq prepared-query identity))
+  ([prepared-query converter-f]
+     (let [results (.evaluate prepared-query)
+           run-query (fn pull-query []
+                       (if (.hasNext results)
+                         (let [current-result (try
+                                                (converter-f (.next results))
+                                                (catch Exception e
+                                                  (.close results)))]
+                           (lazy-cat
+                            [current-result]
+                            (pull-query)))
+                         (.close results)))]
+       (run-query))))
+
+(defprotocol IQueryEvaluator
+  (evaluate [this]))
+
+(extend-protocol IQueryEvaluator
+  BooleanQuery
+  (evaluate [this]
+    (.evaluate this))
+
+  TupleQuery
+  (evaluate [this]
+    (sesame-results->seq this query-bindings->map))
+
+  GraphQuery
+  (evaluate [this]
+    (sesame-results->seq this sesame-statement->IStatement)))
+
+(defn prepare-query
+  ([repo sparql-string] (prepare-query repo sparql-string nil))
+  ([repo sparql-string dataset]
+     (let [conn (if (instance? RepositoryConnection repo)
+                  repo
+                  (.getConnection repo))]
+       (doto (.prepareQuery conn
+                            QueryLanguage/SPARQL
+                            sparql-string)
+         (.setDataset dataset)))))
 
 (extend-type RepositoryConnection
   ISPARQLable
   (query-dataset [this sparql-string dataset]
-    (let [preped-query (doto (.prepareQuery this
-                                            QueryLanguage/SPARQL
-                                            sparql-string)
-                         (.setDataset dataset))]
-
-      (cond
-       (instance? BooleanQuery preped-query) (.evaluate preped-query)
-       (instance? TupleQuery preped-query) (evaluate-tuple-query preped-query)
-       (instance? GraphQuery preped-query) (evaluate-graph-query preped-query))))
+    (let [preped-query (prepare-query this sparql-string dataset)]
+      (evaluate preped-query)))
 
   (update! [this sparql-string]
     (let [prepared-query (.prepareUpdate this
                                          QueryLanguage/SPARQL
                                          sparql-string)]
-
       (.execute prepared-query))))
 
 (defn- ->uri [graph]
@@ -378,14 +460,14 @@ TODO: reimplement with proper resource handling."
     graph
     (URIImpl. graph)))
 
-(defn- make-restricted-dataset
+(defn make-restricted-dataset
   "Build a dataset to act as a graph restriction.  You can specify for
   both :default-graph and :named-graphs.  Both of which take sequences
   of URI strings.  If nil is passed in nil is returned, which means we
   use the default no restriction."
   [{:keys [default-graph named-graphs]
-                                 :or {default-graph [] named-graphs []}
-                                 :as options}]
+    :or {default-graph [] named-graphs []}
+    :as options}]
   (if options
     (let [dataset (DatasetImpl.)]
       (doseq [graph default-graph]
@@ -413,10 +495,40 @@ TODO: reimplement with proper resource handling."
   (let [dataset (make-restricted-dataset options)]
     (query-dataset repo sparql dataset)))
 
-(extend-type RepositoryConnection
-  pr/ITripleReadable
+(defn format->parser [format]
+  (let [table {RDFFormat/NTRIPLES NTriplesParserFactory
+               RDFFormat/TRIX TriXParserFactory
+               RDFFormat/TRIG TriGParserFactory
+               RDFFormat/RDFXML RDFXMLParserFactory
+               RDFFormat/NQUADS NQuadsParserFactory
+               RDFFormat/TURTLE TurtleParserFactory
+               RDFFormat/JSONLD RDFJSONParserFactory
+               RDFFormat/N3 N3ParserFactory
+               }
+        parser-class (table format)]
+    (if-not parser-class
+      (throw (ex-info (str "Unsupported format: " (pr-str format)) {:type :unsupported-format})))
+    (-> parser-class
+        .newInstance
+        .getParser)))
 
-  (statements [this]
+;; http://clj-me.cgrand.net/2010/04/02/pipe-dreams-are-not-necessarily-made-of-promises/
+(defn pipe
+  "Returns a pair: a seq (the read end) and a function (the write end).
+  The function can takes either no arguments to close the pipe
+  or one argument which is appended to the seq. Read is blocking."
+  [size]
+  (let [q (java.util.concurrent.LinkedBlockingQueue. size)
+        EOQ (Object.)
+        NIL (Object.)
+        s (fn s [] (lazy-seq (let [x (.take q)]
+                               (when-not (= EOQ x)
+                                 (cons (when-not (= NIL x) x) (s))))))]
+    [(s) (fn ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
+
+(extend-protocol pr/ITripleReadable
+  RepositoryConnection
+  (pr/to-statements [this _]
     (map
      (fn [{:strs [s p o c]}]
        (Quad. s p o c))
@@ -425,7 +537,69 @@ TODO: reimplement with proper resource handling."
                GRAPH ?c {
                  ?s ?p ?o .
                }
-            }"))))
+            }")))
+
+  String
+  (pr/to-statements [this options]
+    (try
+      (pr/to-statements (URL. this) options)
+      (catch MalformedURLException ex
+        (pr/to-statements (File. this) options))))
+
+  URL
+  (pr/to-statements [this options]
+    (pr/to-statements (io/reader this) options))
+
+  URI
+  (pr/to-statements [this options]
+    (pr/to-statements (str this) options))
+
+  File
+  (pr/to-statements [this opts]
+    (let [implied-format (Rio/getParserFormatForFileName (str this))
+          options (if implied-format
+                    (merge {:format implied-format} opts)
+                    opts)]
+      (pr/to-statements (io/reader this) options)))
+
+  java.io.Reader
+  ;; WARNING: This implementation is necessarily a little convoluted
+  ;; as we hack around Sesame to generate a lazy sequence of results.
+  ;; Sesame's parse methods always assume you want to consume the
+  ;; whole file of triples, so we spawn a thread to consume through
+  ;; the file and use a blocking queue of 1 element to pass elements
+  ;; back into a lazy sequence on the calling thread.  The queue has a
+  ;; bounded size of 1 forcing it be in lockstep with the consumer.
+  ;;
+  ;; NOTE also none of these functions don't really allow for proper
+  ;; resource clean-up unless the whole sequence is consumed.
+  ;;
+  ;; So, the good news is that this means you should be able to read
+  ;; and stream huge files.  The bad news is that might leak a file
+  ;; handle, unless you consume the whole sequence.
+  ;;
+  ;; TODO: consider how to support proper resource cleanup.
+  (pr/to-statements [reader { :keys [format] :as options}]
+    (if-not format
+      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:type :no-format-supplied}))
+      (let [[statements put!] (pipe 1)]
+        (future
+          (let [parser (doto (format->parser format)
+                         (.setRDFHandler (reify RDFHandler
+                                           (startRDF [this])
+                                           (endRDF [this]
+                                             (put!)
+                                             (.close reader))
+                                           (handleStatement [this statement]
+                                             (put! statement))
+                                           (handleComment [this comment])
+                                           (handleNamespace [this prefix-str uri-str]))))]
+            (try
+              (.parse parser reader "http://example.org/base-uri")
+              (catch Exception ex
+                (println (str "TODO better handle this exception and communicate it back to the calling thread.  " ex)))
+              )))
+        (map sesame-statement->IStatement statements)))))
 
 (defn shutdown [repo]
   "Cleanly shutsdown the repository."

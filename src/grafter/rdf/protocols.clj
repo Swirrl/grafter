@@ -18,8 +18,16 @@
     [this graph triples]))
 
 (defprotocol ITripleReadable
-  "A source of statements or triples.  Converts such a source into a seq of triples."
-  (statements [this]))
+  "Use the higher level wrapper function statements if you just wish to read in some RDF.
+
+  This protocol exists for implementers to hook in additional sources of statements.
+
+  Takes a source of statements or triples and converts it into a seq
+  of triples.
+
+  A hash of options is passed to each implementation, they may be
+  ignored or handled depending on the circumstance."
+  (to-statements [this options]))
 
 (defprotocol ITransactable
   "Transactions support"
@@ -51,6 +59,20 @@
     (second this))
   (object [this]
     (nth this 2)))
+
+(defn statements
+  "Attempts to coerce an arbitrary source of RDF statements into a
+  sequence of grafter Statements.
+
+  Takes optional parameters which may be used depending on the
+  context e.g. specifiying the format of the source triples.
+
+  The :format option is supplied by the wrapping function and may be
+  nil, or act as an indicator about the format of the triples to read.
+  Implementers can choose whether or not to ignore or require the
+  format parameter."
+  [this & {:keys [format] :as options}]
+  (to-statements this options))
 
 (comment
   (expand-subject [:rick
