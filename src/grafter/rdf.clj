@@ -27,6 +27,8 @@
            [org.openrdf.rio RDFFormat])
   (:require [grafter.rdf.ontologies.util :as ontutils]))
 
+;; TODO move these into their own grafter.rdf.formats namespace that
+;; can be reused from other namespaces.
 (def format-rdf-xml RDFFormat/RDFXML)
 (def format-rdf-n3 RDFFormat/N3)
 (def format-rdf-ntriples RDFFormat/NTRIPLES)
@@ -36,24 +38,7 @@
 (def format-rdf-trix RDFFormat/TRIX)
 (def format-rdf-trig RDFFormat/TRIG)
 
-(defn s
-  "Cast a string to an RDF literal"
-  ([str]
-     {:pre [(string? str)]}
-     (reify Object
-       (toString [_] str)
-       ses/ISesameRDFConverter
-       (ses/->sesame-rdf-type [this]
-         (LiteralImpl. str))))
-  ([str lang-or-uri]
-     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (instance? URI lang-or-uri))]}
-     (reify Object
-       (toString [_] str)
-       ses/ISesameRDFConverter
-       (ses/->sesame-rdf-type [this]
-         (LiteralImpl.  str (if (keyword? lang-or-uri)
-                              (name lang-or-uri)
-                              lang-or-uri))))))
+(def ^{:doc "Cast string as an RDF string."} s ses/s)
 
 (defn- make-triples [subject predicate object-or-nested-subject]
   (if (vector? object-or-nested-subject)
