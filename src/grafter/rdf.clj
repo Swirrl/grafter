@@ -38,24 +38,7 @@
 (def format-rdf-trix RDFFormat/TRIX)
 (def format-rdf-trig RDFFormat/TRIG)
 
-(defn s
-  "Cast a string to an RDF literal"
-  ([str]
-     {:pre [(string? str)]}
-     (reify Object
-       (toString [_] str)
-       ses/ISesameRDFConverter
-       (ses/->sesame-rdf-type [this]
-         (LiteralImpl. str))))
-  ([str lang-or-uri]
-     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (instance? URI lang-or-uri))]}
-     (reify Object
-       (toString [_] str)
-       ses/ISesameRDFConverter
-       (ses/->sesame-rdf-type [this]
-         (LiteralImpl.  str (if (keyword? lang-or-uri)
-                              (name lang-or-uri)
-                              lang-or-uri))))))
+(def ^{:doc "Coerce a string into an RDF string"} s ses/s)
 
 (defn- make-triples [subject predicate object-or-nested-subject]
   (if (vector? object-or-nested-subject)

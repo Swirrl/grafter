@@ -44,12 +44,36 @@
   (object [this] (.getObject this))
   (context [this] (.getContext this)))
 
+(defprotocol ISesameRDFConverter
+  (->sesame-rdf-type [this])
+  (sesame-rdf-type->type [this]))
+
+(defn s
+  "Cast a string to an RDF literal"
+  ([str]
+     {:pre [(string? str)]}
+     (reify Object
+       (toString [_] str)
+       ISesameRDFConverter
+       (->sesame-rdf-type [this]
+         (LiteralImpl. str))))
+  ([str lang-or-uri]
+     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (instance? URI lang-or-uri))]}
+     (reify Object
+       (toString [_] str)
+       ISesameRDFConverter
+       (->sesame-rdf-type [this]
+         (LiteralImpl.  str (if (keyword? lang-or-uri)
+                              (name lang-or-uri)
+                              lang-or-uri))))))
+
+
 (defmulti literal-datatype->type (fn [literal]
                                    (when-let [datatype (-> literal .getDatatype)]
                                      (str datatype))))
 
 (defmethod literal-datatype->type nil [literal]
-  (.stringValue literal))
+  (s (.stringValue literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [literal]
   (.byteValue literal))
@@ -73,7 +97,7 @@
   (.intValue literal))
 
 (defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
-  (str literal))
+  (s (.stringValue literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
@@ -84,10 +108,6 @@
   ;; as they might just want to pass data through rather than
   ;; understand it.
   literal)
-
-(defprotocol ISesameRDFConverter
-  (->sesame-rdf-type [this])
-  (sesame-rdf-type->type [this]))
 
 (extend-protocol ISesameRDFConverter
 
@@ -124,6 +144,10 @@
   (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
 
+  java.math.BigInteger
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#integer")))
+
   (sesame-rdf-type->type [this]
     this)
 
@@ -134,7 +158,7 @@
   (sesame-rdf-type->type [this]
     (literal-datatype->type this))
 
-  java.math.BigInteger
+  java.lang.Double
   (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
 
