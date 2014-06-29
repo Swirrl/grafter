@@ -621,9 +621,15 @@ TODO: reimplement with proper resource handling."
             (try
               (.parse parser reader "http://example.org/base-uri")
               (catch Exception ex
-                (println (str "TODO better handle this exception and communicate it back to the calling thread.  " ex)))
-              )))
-        (map sesame-statement->IStatement statements)))))
+                (put! ex)))))
+        (let [read-rdf (fn read-rdf [msg]
+                         (if (instance? Exception msg)
+                           ;; if the other thread puts an Exception on
+                           ;; the pipe, raise it here.
+                           (throw (ex-info "Reading triples aborted."
+                                           {:type :reading-aborted} msg))
+                           (sesame-statement->IStatement msg)))]
+          (map read-rdf statements))))))
 
 (defn shutdown [repo]
   "Cleanly shutsdown the repository."
