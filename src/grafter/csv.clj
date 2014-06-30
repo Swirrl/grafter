@@ -84,7 +84,9 @@ columns."
     (apply remove-indices merged to-drop)))
 
 (defn fuse [csv f & cols]
-  "Merge columns with the specified function f receives the number of
+  "DEPRECATED: Use derive-column instead.
+
+Merge columns with the specified function f receives the number of
 cols supplied number of arguments e.g. If you fuse 3 columns f
 must accept 3 arguments"
   (map (partial fuse-row cols f) csv))
@@ -115,6 +117,11 @@ column."
                        [] col-map)
          ) csv))
 
+(defn apply-ns [f row col-ns]
+  (->> col-ns
+       (map (partial nth row))
+       (apply f)))
+
 (defn derive-column
   "Adds a new column to the end of the row which is derived from
 column with position col-n.  f should just return the cells value.
@@ -122,12 +129,14 @@ column with position col-n.  f should just return the cells value.
 If no f is supplied the identity function is used, which results in
 the specified column being cloned."
 
-  ;; todo support multiple columns/arguments to f.
   ([csv col-n]
      (derive-column csv identity col-n))
 
-  ([csv f col-n]
-     (map #(conj % (f (nth % col-n))) csv)))
+  ([csv f & col-ns]
+     (->> csv
+          (map (fn [row]
+                 (conj row
+                       (apply-ns f row col-ns)))))))
 
 ;; alias to create a lightweight pattern matching style syntax for use
 ;; with mapc
