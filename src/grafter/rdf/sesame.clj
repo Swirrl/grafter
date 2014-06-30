@@ -527,8 +527,7 @@ TODO: reimplement with proper resource handling."
                RDFFormat/NQUADS NQuadsParserFactory
                RDFFormat/TURTLE TurtleParserFactory
                RDFFormat/JSONLD RDFJSONParserFactory
-               RDFFormat/N3 N3ParserFactory
-               }
+               RDFFormat/N3 N3ParserFactory}
         parser-class (table format)]
     (if-not parser-class
       (throw (ex-info (str "Unsupported format: " (pr-str format)) {:type :unsupported-format})))
