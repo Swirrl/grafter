@@ -1,7 +1,7 @@
 (ns grafter.rdf.sesame-test
   (:require
    [grafter.rdf.protocols :as pr]
-   [grafter.rdf :refer :all]
+   [grafter.rdf :refer [graph]]
    [grafter.rdf.ontologies.rdf :refer :all]
    [grafter.rdf.sesame :refer :all]
    [clojure.test :refer :all]
