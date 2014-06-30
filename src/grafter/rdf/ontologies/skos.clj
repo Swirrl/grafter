@@ -13,3 +13,5 @@
 (def skos:prefLabel (skos "prefLabel"))
 (def skos:definition (skos "definition"))
 (def skos:notation (skos "notation"))
+(def skos:altLabel (skos "altLabel"))
+(def skos:note (skos "note"))
