@@ -1,6 +1,6 @@
-(ns grafter.core-test
+(ns grafter.csv-test
   (:require [clojure.test :refer :all]
-            [grafter.core :refer :all]))
+            [grafter.csv :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
