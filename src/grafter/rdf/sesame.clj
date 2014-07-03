@@ -489,17 +489,20 @@ TODO: reimplement with proper resource handling."
   both :default-graph and :named-graphs.  Both of which take sequences
   of URI strings.  If nil is passed in nil is returned, which means we
   use the default no restriction."
-  [{:keys [default-graph named-graphs]
-    :or {default-graph [] named-graphs []}
-    :as options}]
-  (if options
-    (let [dataset (DatasetImpl.)]
-      (doseq [graph default-graph]
+  [& {:as options}]
+  (when options
+    (let [{:keys [default-graph named-graphs]
+           :or {default-graph [] named-graphs []}} options
+           private-graph "urn:private-drafter-graph-to-force-restrictions-when-no-graphs-are-listed"
+           dataset (DatasetImpl.)]
+      (doseq [graph (conj default-graph private-graph)]
         (.addDefaultGraph dataset (->uri graph)))
       (doseq [graph named-graphs]
         (.addNamedGraph dataset (->uri graph)))
-      dataset)
-    nil))
+      dataset)))
+
+(defn- mapply [f & args]
+  (apply f (apply concat (butlast args) (last args))))
 
 (defn query
   "Takes a repo and sparql string and an optional set of k/v argument
@@ -516,7 +519,7 @@ TODO: reimplement with proper resource handling."
   If no options are passed then we use the default of no graph
   restrictions whilst the union graph is the union of all graphs."
   [repo sparql & {:as options}]
-  (let [dataset (make-restricted-dataset options)]
+  (let [dataset (mapply make-restricted-dataset (or options {}))]
     (query-dataset repo sparql dataset)))
 
 (defn format->parser [format]
@@ -544,10 +547,10 @@ TODO: reimplement with proper resource handling."
   (let [q (java.util.concurrent.LinkedBlockingQueue. size)
         EOQ (Object.)
         NIL (Object.)
-        s (fn s [] (lazy-seq (let [x (.take q)]
+        s (fn pull [] (lazy-seq (let [x (.take q)]
                                (when-not (= EOQ x)
                                  (cons (when-not (= NIL x) x) (s))))))]
-    [(s) (fn ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
+    [(s) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
   RepositoryConnection
