@@ -1,8 +1,13 @@
-(defproject grafter "0.1.0-SNAPSHOT"
+(defproject grafter "0.2.0-SNAPSHOT"
   :description "RDFization tools"
   :url "http://example.com/FIXME"
   :license {:name "TODO"
             :url "http://example.com/TODO"}
+
+  :repositories [["swirrl-private" {:url "s3p://leiningen-private-repo/releases/"
+                                    :username :env
+                                    :passphrase :env}]]
+
   :dependencies [[org.clojure/clojure "1.6.0"]
                  ;;[org.apache.jena/jena-core "2.11.1"]
                  [org.clojure/algo.monads "0.1.5"]
@@ -19,8 +24,6 @@
                  ]
   ;;:dev-dependencies [[lein-autodoc "0.9.0"]]
 
-  :plugins [[codox "0.8.9"]]
-
   :codox {:defaults {:doc "FIXME: write docs"}}
 
   :source-paths ["src"]
@@ -28,4 +31,15 @@
                                            ;; from appearing as a GUI
                                            ;; app in OSX when Swing
                                            ;; classes are loaded.
-)
+
+  :plugins [[s3-wagon-private "1.1.2"]] ;; private maven repo's on s3
+
+  :profiles {:uberjar {:aot :all}
+
+             :dev {:plugins [[com.aphyr/prism "0.1.1"]  ;; autotest support simply run: lein prism
+                             [codox "0.8.9"]]
+                   :dependencies [[com.aphyr/prism "0.1.1"]]
+
+
+                   :env {:dev true}}}
+  )
