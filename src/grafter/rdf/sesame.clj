@@ -553,10 +553,10 @@ TODO: reimplement with proper resource handling."
   (let [q (java.util.concurrent.LinkedBlockingQueue. size)
         EOQ (Object.)
         NIL (Object.)
-        s (fn pull [] (lazy-seq (let [x (.take q)]
+        pull (fn pull [] (lazy-seq (let [x (.take q)]
                                (when-not (= EOQ x)
-                                 (cons (when-not (= NIL x) x) (s))))))]
-    [(s) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
+                                 (cons (when-not (= NIL x) x) (pull))))))]
+    [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
   RepositoryConnection
