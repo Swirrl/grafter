@@ -538,6 +538,12 @@ TODO: reimplement with proper resource handling."
         .newInstance
         .getParser)))
 
+(defn filename->rdf-format
+  "Given a filename we attempt to return an appropriate RDFFormat
+  object based on the files extension."
+  [fname]
+  (Rio/getParserFormatForFileName fname))
+
 ;; http://clj-me.cgrand.net/2010/04/02/pipe-dreams-are-not-necessarily-made-of-promises/
 (defn pipe
   "Returns a pair: a seq (the read end) and a function (the write end).
