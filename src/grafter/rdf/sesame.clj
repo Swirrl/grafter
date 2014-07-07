@@ -236,6 +236,9 @@
   (->sesame-rdf-type [this]
     this)
 
+  (sesame-rdf-type->type [this]
+    (-> this .getID keyword))
+
   java.util.Date
   (->sesame-rdf-type [this]
     (let [cal (doto (GregorianCalendar.)
