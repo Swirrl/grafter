@@ -138,6 +138,10 @@
   (sesame-rdf-type->type [this]
     (literal-datatype->type this))
 
+  java.lang.Float
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this))
+
   java.lang.Double
   (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
