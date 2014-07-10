@@ -3,7 +3,7 @@
 
 (def void (prefixer "http://rdfs.org/ns/void#"))
 
-
-(def void:dataDump "dataDump")
-(def void:sparqlEndpoint "sparqlEndpoint")
-(def void:triples "triples")
+(def void:Dataset (void "Dataset"))
+(def void:dataDump (void "dataDump"))
+(def void:sparqlEndpoint (void "sparqlEndpoint"))
+(def void:triples (void "triples"))

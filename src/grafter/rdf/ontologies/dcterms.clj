@@ -10,4 +10,5 @@
 (def dcterms:description (dcterms "description"))
 (def dcterms:issued (dcterms "issued"))
 (def dcterms:license (dcterms "license"))
+(def dcterms:publisher (dcterms "publisher"))
 (def dcterms:references (dcterms "references"))
