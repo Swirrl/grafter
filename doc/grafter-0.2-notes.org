@@ -1,0 +1,267 @@
+#+TITLE: Grafter V0.2 DSL Notes
+#+AUTHOR: Rick Moynihan
+
+This file consists of some notes about how grafter 0.2 is fitting
+together.  Its primary purpose is to try and open up how the DSL is
+built and how it fits together for further discussion.
+
+These notes are currently maintained by Rick as an [[http://orgmode.org/][Org babel]],
+(literate programming) document - primarily for convenience while
+things are changing.  When things stabilise I can export it as
+markdown.
+
+All of the grafter functions from grafter.tabular can be refered into
+your chosen namespace (=grafter.api.examples=) like so:
+
+#+BEGIN_SRC clojure :results none
+  (ns grafter.api.examples
+    (:require [grafter.tabular :refer :all]
+              [grafter.sequences :refer :all]))
+#+END_SRC
+
+* Datasets
+
+Grafter uses the same representation as [[http://incanter.org/][Incanter]] for tabular data, and
+when processing tabular data, you will be manipulating Incanter
+Datasets.
+
+Grafter has some of its own functions for creating and manipulating
+these datasets.
+
+** make-dataset
+
+make-dataset lets you create datasets out of arbitrary data.
+Consequently it's mostly a function for developers aiming to target
+grafter with new file formats etc...
+
+It's also really useful for quickly creating test data.
+
+It expects data to be in a certain shape, which is a sequence of
+sequences.  If the data is in this shape it can be treated as a
+dataset, and is ameneable to processing with the grafter DSL.
+
+#+NAME: make-dataset
+#+BEGIN_SRC clojure :results raw
+(make-dataset [[1 2 3] [4 5 6]])
+#+END_SRC
+
+Calling the above returns a dataset like this:
+
+#+RESULTS: make-dataset
+
+| A | B | C |
+|---+---+---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+
+You'll notice that by default it has named the columns =A=, =B= and
+=C=.  This is because we didn't supply any column names, and by
+default it names the columns with an infinite lazy sequence defined by
+the function =grafter.sequences/column-names-seq=.
+
+We can supply our own column names like so:
+
+#+NAME: make-dataset-with-names
+#+BEGIN_SRC clojure :results raw
+(make-dataset ["First" "Second" "Third"] [[1 2 3] [4 5 6]])
+#+END_SRC
+
+#+RESULTS: make-dataset-with-names
+
+| First | Second | Third |
+|-------+--------+-------|
+|     1 |      2 |     3 |
+|     4 |      5 |     6 |
+
+Alternatively we can pair the actual columns with an infinite
+sequence.  There are some functions defined in the =grafter.sequences=
+namespace for this job, such as =integers-from= which defines an
+infinite sequence of incrementing integers from a starting
+point... e.g.
+
+#+NAME: make-dataset-with-integers-from-10
+#+BEGIN_SRC clojure :results raw
+(make-dataset (integers-from 10) [[1 2 3] [4 5 6]])
+#+END_SRC
+
+Produces the following, because there are three columns of data and we
+asked for the numbers to start from 10.  This sequence should be good
+for lots of things such as generating values for consecutive years.
+
+#+RESULTS: make-dataset-with-integers-from-10
+
+| 10 | 11 | 12 |
+|----+----+----|
+|  1 |  2 |  3 |
+|  4 |  5 |  6 |
+
+Instead of a sequence of column names you can also supply a function
+to =make-dataset= which allows you to programatically derive column
+names from the source data.
+
+This function will receive the raw data object, and is responsible for
+splitting it into a vector where the first argument is a sequence of
+column names and the second argument is a sequence of sequences
+(i.e. the rows, or data itself).
+
+#+NAME: make-dataset-with-function
+#+BEGIN_SRC clojure :results raw
+  (let [the-data [["heading one" "heading two"] [1 2] [3 4]]]
+    (make-dataset (fn [data]
+                    [(first data) (drop 1 data)])
+                  the-data))
+#+END_SRC
+
+The above call separates the source data into a heading sequence and a
+the data resulting in:
+
+#+RESULTS: make-dataset-with-function
+
+| heading one | heading two |
+|-------------+-------------|
+|           1 |           2 |
+|           3 |           4 |
+
+Grafter defines the =move-first-row-to-header= function which does
+this job already e.g.
+
+#+NAME: make-dataset-move
+#+BEGIN_SRC clojure :results raw
+(make-dataset move-first-row-to-header [["heading 1" "heading 2"] [1 2] [3 4]])
+#+END_SRC
+
+Which moves the first row to the header, removing it from the data.
+
+#+RESULTS: make-dataset-move
+
+| heading 1 | heading 2 |
+|-----------+-----------|
+|         1 |         2 |
+|         3 |         4 |
+
+If you want to have the header left in the data, making it ameneable
+to further processing you can use =copy-first-row-to-header= instead:
+
+#+NAME: make-dataset-copy
+#+BEGIN_SRC clojure :results raw
+(make-dataset copy-first-row-to-header [["heading 1" "heading 2"] [1 2] [3 4]])
+#+END_SRC
+
+#+RESULTS: make-dataset-copy
+
+| heading 1 | heading 2 |
+|-----------+-----------|
+| heading 1 | heading 2 |
+|         1 |         2 |
+|         3 |         4 |
+** open-all-datasets
+
+This code takes a file path and recursively searches beneath it for
+dataset-like things, returning a sequence of datasets.  In this
+context a single file can depending on its type be treated as multiple
+datasets, e.g. an Excel file containing multiple worksheets.
+
+#+NAME: open-all-datasets-excel
+#+BEGIN_SRC clojure :results raw
+(open-all-datasets "./test/grafter/")
+#+END_SRC
+
+The =./test/grafter/= directory contains two files and two datasets,
+one csv file and one Excel.  Consequently =open-all-datasets= returns:
+
+#+RESULTS: open-all-datasets-excel
+(
+|   A |   B |     C |
+|-----+-----+-------|
+| one | two | three |
+|   1 |   2 |     3 |
+
+|   A |   B |     C |
+|-----+-----+-------|
+| one | two | three |
+| 1.0 | 2.0 |   3.0 |
+)
+
+Note that this is a sequence of datasets.  Note that the second has
+decimal values as it was loaded from an Excel file; whilst the first
+was a CSV and so every value is typed as a String.
+
+*** :make-dataset-fn
+
+As you can see here, by default open-all-datasets generates column
+names.  If we want to make it take them from the file you can do it
+like so by supplying our own make-dataset function with the
+=:make-dataset-f= option.  Here we build our own through partially
+applying =make-dataset= with =move-first-row-to-header=.
+
+#+NAME: make-dataset-fn
+#+BEGIN_SRC clojure :results raw
+(open-all-datasets "./test/grafter/" :make-dataset-fn (partial make-dataset move-first-row-to-header))
+#+END_SRC
+
+#+RESULTS: make-dataset-fn
+(
+| one | two | three |
+|-----+-----+-------|
+|   1 |   2 |     3 |
+
+| one | two | three |
+|-----+-----+-------|
+| 1.0 | 2.0 |   3.0 |
+)
+
+*** :metadata-fn
+
+=open-all-datasets= can also take a =:metadata-fn= option.  By default
+this is set to be the =without-metadata-columns= function, which does
+not attempt to surface any extra metadata into the data.
+
+**** with-metadata-columns
+
+=with-metadata-columns= is designed to be used as a =:metadata-fn=
+value with =open-all-datasets=.  Like all metadata-fn's it receives a
+=[context, dataset]= pair and returns a dataset.  It returns a dataset
+with metadata columns copied down into every row of the source data,
+e.g.
+
+=with-metadata-columns= currently appends the file name, its path, and
+the sheet names as separate columns to the source data.
+
+#+BEGIN_SRC clojure :results raw
+(open-all-datasets "./test/grafter/" :metadata-fn with-metadata-columns)
+#+END_SRC
+
+#+RESULTS:
+(
+|   A |   B |     C |    :file |                                  :path |
+|-----+-----+-------+----------+----------------------------------------|
+| one | two | three | test.csv | /Users/rick/repos/grafter/test/grafter |
+|   1 |   2 |     3 | test.csv | /Users/rick/repos/grafter/test/grafter |
+
+|   A |   B |     C |     :file |                                  :path | :sheet-name |
+|-----+-----+-------+-----------+----------------------------------------+-------------|
+| one | two | three | test.xlsx | /Users/rick/repos/grafter/test/grafter |      Sheet1 |
+| 1.0 | 2.0 |   3.0 | test.xlsx | /Users/rick/repos/grafter/test/grafter |      Sheet1 |
+)
+
+** TODO open-tabular-file
+
+*NOTE:* Not sure this functions behaviour is correct.
+
+This is a mid-level entry point to loading tabular data into grafter.
+If you're looking at loading many dataset files, you should prefer
+=open-all-datasets=.
+
+=open-tabular-file= is implemented as a multimethod that dispatches on
+a keywordized file extension by default.  Alternatively users can
+overide this default behaviour by providing an optional =:ext= option
+with a keyword indicating the type of file to be processed.
+
+Grafter currently supports =:xls=, =:xlsx= and =:csv= file types.
+
+#+BEGIN_SRC clojure :results raw
+(open-tabular-file "./test/grafter/test.csv")
+#+END_SRC
+
+#+RESULTS:
+(["one" "two" "three"] ["1" "2" "3"])
