@@ -243,25 +243,3 @@ the sheet names as separate columns to the source data.
 | one | two | three | test.xlsx | /Users/rick/repos/grafter/test/grafter |      Sheet1 |
 | 1.0 | 2.0 |   3.0 | test.xlsx | /Users/rick/repos/grafter/test/grafter |      Sheet1 |
 )
-
-** TODO open-tabular-file
-
-*NOTE:* Not sure this functions behaviour is correct.
-
-This is a mid-level entry point to loading tabular data into grafter.
-If you're looking at loading many dataset files, you should prefer
-=open-all-datasets=.
-
-=open-tabular-file= is implemented as a multimethod that dispatches on
-a keywordized file extension by default.  Alternatively users can
-overide this default behaviour by providing an optional =:ext= option
-with a keyword indicating the type of file to be processed.
-
-Grafter currently supports =:xls=, =:xlsx= and =:csv= file types.
-
-#+BEGIN_SRC clojure :results raw
-(open-tabular-file "./test/grafter/test.csv")
-#+END_SRC
-
-#+RESULTS:
-(["one" "two" "three"] ["1" "2" "3"])
