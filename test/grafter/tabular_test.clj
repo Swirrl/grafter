@@ -43,12 +43,12 @@
 
           (is (= [1 2 3] header)))))))
 
-;; These two vars define what the content of the files
-;; test/grafter/test.csv and test/grafter/test.xlsx should look like
-;; when loaded.
-;;
-;; - CSV data is always cast as Strings
-;; - Excel data when loaded is cast to floats
+;;; These two vars define what the content of the files
+;;; test/grafter/test.csv and test/grafter/test.xlsx should look like
+;;; when loaded.
+;;;
+;;; - CSV data is always cast as Strings
+;;; - Excel data when loaded is cast to floats
 
 (def raw-csv-data [["one" "two" "three"]
                    ["1" "2" "3"]])
@@ -79,7 +79,7 @@
 
 (deftest open-all-datasets-tests
   (testing "open-all-sheets"
-    (let [sheets (open-all-datasets "./test/grafter" :make-dataset-f (partial make-dataset move-first-row-to-header))]
+    (let [sheets (open-all-datasets "./test/grafter" :make-dataset-fn (partial make-dataset move-first-row-to-header))]
 
       (is (seq? sheets) "should yield a seq")
       (is (= 2 (count sheets)) "should be 2 datasets")

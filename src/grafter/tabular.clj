@@ -15,7 +15,9 @@
   copy-first-row-to-header
   move-first-row-to-header
   open-tabular-file
-  open-all-datasets])
+  open-all-datasets
+  with-metadata-columns
+  without-metadata-columns])
 
 (defn- nnth
   "Same as nth but returns nil (or not-found) if supplied.  Unlike nth
@@ -163,7 +165,7 @@ must accept 3 arguments"
   (map (partial fuse-row cols f) csv))
 
 (defn mapr [csv f]
-  "Logically the same as map but with reversed arguments, so it works
+  "Logically identical to map but with reversed arguments, so it works
 better with -> .  mapr maps f over each row."
   (map f csv))
 

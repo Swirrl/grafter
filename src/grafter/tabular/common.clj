@@ -62,8 +62,8 @@ Supported options are currently:
 :ext - An overriding file extension (as keyword) to force a particular
        file type to be opened instead of looking at the files extension."
 
-  (fn [f & {:keys [ext]}]
-    (or ext (extension f))))
+  (fn [file & {:keys [ext]}]
+    (or ext (extension file))))
 
 (def datasetable? #{:csv})
 
@@ -86,17 +86,25 @@ Supported options are currently:
   (->> (file-seq (fs/file dir))
        (filter dataset-holder?)))
 
-(defn without-metadata-columns [[context sheet]]
-  sheet)
+(defn without-metadata-columns
+  "Ignores any possible metadata and leaves the dataset as is."
+  [[context data]]
+  data)
 
-(defn with-metadata-columns [[context sheet :as pair]]
-  ;; TODO add columns to sheet here
-  pair)
+(defn with-metadata-columns
+  "Takes a pair of [context, data] and returns a dataset.  Where the
+  metadata context is merged into the dataset itself."
+  [[context data]]
+  (letfn [(merge-metadata-column [dataset-acc [k v]]
+            (inc/add-column k
+                            (repeat v)
+                            dataset-acc))]
+    (reduce merge-metadata-column data context)))
 
-(defn- pair-with-context [make-dataset-f file sheet]
+(defn- pair-with-context [make-dataset-f file sheet-or-data]
   "Takes a function make-dataset-f a file representing the file
-containing the dataset and the raw sheet object that can be used to
-access specific sheet-level metadata.
+containing the dataset and the raw sheet object, which should either
+be an apache poi Sheet or a seq-of-seqs row representation.
 
 make-dataset-f should be a a function that converts a raw dataset type
 into an incanter dataset.
@@ -104,15 +112,14 @@ into an incanter dataset.
 Returns a vector pair containing a metadata map and the incanter
 dataset."
 
-  (let [common-context {:path (.getParent file)
-                        :file (.getName file)}]
+  ;; ensure metadata is in a consistent sorted order
+  (let [common-context (sorted-map :path (-> file .getCanonicalFile .getParent)
+                                   :file (.getName file))]
 
-    (if (instance? Sheet sheet)
-      [(assoc common-context :sheet-name (.getSheetName sheet))
-       (make-dataset-f (xls/lazy-sheet sheet))]
-
-      [common-context (make-dataset-f sheet)])))
-
+    (if (instance? Sheet sheet-or-data)
+      [(assoc common-context :sheet-name (.getSheetName sheet-or-data))
+       (make-dataset-f (xls/lazy-sheet sheet-or-data))]
+      [common-context (make-dataset-f sheet-or-data)])))
 
 (defn open-all-datasets
   "Return a seq of incanter.core.Dataset's, recursively found beneath
@@ -126,21 +133,21 @@ dataset."
   You can provide it with other metadata functions which will splice
   the context into the sheet as new columms."
 
-  [dir & {:keys [metadata-f make-dataset-f] :or {metadata-f without-metadata-columns
-                                                 make-dataset-f make-dataset}}]
+  [dir & {:keys [metadata-fn make-dataset-fn] :or {metadata-fn without-metadata-columns
+                                                   make-dataset-fn make-dataset}}]
   (let [file->sheets (fn [dataset-file]
                        (let [dataset (->> dataset-file
                                           open-tabular-file)
 
-                             ;; as native sheet types
+                             ;; as native sheet types, either POI sheets or the raw clojure data representation
                              raw-sheets   (if (multiple-dataset-holder? dataset-file)
                                             (->> dataset xls/sheets)
                                             [dataset])
 
-                             combine-metadata-f (comp metadata-f
-                                                      (partial pair-with-context make-dataset-f dataset-file))]
+                             combine-metadata-fn (comp metadata-fn
+                                                      (partial pair-with-context make-dataset-fn dataset-file))]
 
-                         (map combine-metadata-f raw-sheets)))]
+                         (map combine-metadata-fn raw-sheets)))]
     (mapcat file->sheets
             (dataset-files dir))))
 
