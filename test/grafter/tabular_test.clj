@@ -51,7 +51,8 @@
 ;;; - Excel data when loaded is cast to floats
 
 (def raw-csv-data [["one" "two" "three"]
-                   ["1" "2" "3"]])
+                   ["1" "2" "3"]
+                   ["4" "5" "6"]])
 
 (def raw-excel-data [["one" "two" "three"]
                      [1.0 2.0 3.0]])
@@ -78,7 +79,7 @@
           (is (instance? org.apache.poi.xssf.usermodel.XSSFWorkbook loaded-excel)))))))
 
 (deftest open-all-datasets-tests
-  (testing "open-all-sheets"
+  (testing "open-all-datasets"
     (let [sheets (open-all-datasets "./test/grafter" :make-dataset-fn (partial make-dataset move-first-row-to-header))]
 
       (is (seq? sheets) "should yield a seq")
@@ -86,7 +87,14 @@
 
       (let [[loaded-csv-sheet loaded-excel-sheet] sheets]
         (is (= loaded-csv-sheet csv-sheet))
-        (is (= loaded-excel-sheet excel-sheet))))))
+        (is (= loaded-excel-sheet excel-sheet))))
+    (testing "with-metadata-columns"
+      (let [[csv-dataset excel-dataset] (open-all-datasets "./test/grafter" :metadata-fn with-metadata-columns)]
+        (is (= (inc/$ 0 :file csv-dataset) "test.csv")
+            "Should contain file name")
+
+        (is (re-find #"/test/grafter" (inc/$ 0 :path excel-dataset))
+            "Should contain file path")))))
 
 (deftest make-dataset-tests
   (let [dataset (make-dataset csv-sheet)]
