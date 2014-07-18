@@ -19,24 +19,20 @@
   with-metadata-columns
   without-metadata-columns])
 
-(defn- nnth
-  "Same as nth but returns nil (or not-found) if supplied.  Unlike nth
-  it swallows any IndexOutOfBoundsException's."
-  {:deprecated true}
+(defn test-dataset [r c]
+  "Constructs a test dataset of r rows by c cols e.g.
 
-  ([col index] (nnth col index nil))
-  ([col index not-found]
-     (try
-       (nth col index not-found)
-       (catch java.lang.IndexOutOfBoundsException ex
-         not-found))))
+(test-dataset 2 2) ;; =>
 
-(defn- select-columns-from-row
-  {:deprecated true}
-  [cols row]
-  ;; Makes use of the fact that rows (vectors) are functions
-  ;; of their indices.
-  (apply vector (map (apply vector row) cols)))
+| A | B |
+|---+---|
+| 0 | 0 |
+| 1 | 1 |"
+
+  (->> (iterate inc 0)
+       (map #(repeat c %))
+       (take r)
+       make-dataset))
 
 (defn resolve-column-id
   "Finds and resolves the column id by converting between symbols and
@@ -68,9 +64,8 @@
     not-found-items))
 
 (defn- columns-bounded [dataset cols]
-  "Takes a parsed CSV file and any number of integers corresponding to
-column numbers and returns a new CSV file containing only those
-columns."
+  "Takes a dataset and any number of integers corresponding to
+column numbers and returns a dataset containing only those columns."
   (let [not-found-items (invalid-column-keys cols dataset)]
     (if (empty? not-found-items)
       (inc/$ cols dataset)
@@ -96,24 +91,73 @@ will still be thrown."
 
   [dataset cols & {:keys [unbounded] :or {unbounded false}}]
 
-  (if (not unbounded)
-    (columns-bounded dataset cols)
-    (columns-unbounded dataset cols)))
+  (if unbounded
+    (columns-unbounded dataset cols)
+    (columns-bounded dataset cols)))
 
-(defn rows
-  ([csv] csv)
-  ([csv r]
-     (if (sequential? r)
-       (apply rows csv r)
-       (let [val (nnth csv r ::not-found)]
-         (if (= ::not-found val)
-           nil
-           (list val)))))
-  ([csv r & rs]
-     ;; todo make this lazy
-     (reduce (fn [acc r]
-               (conj acc (nnth csv r)))
-             [] (conj rs r))))
+(defn- select-columns-from-row
+  {:deprecated true}
+  [cols row]
+  ;; Makes use of the fact that rows (vectors) are functions
+  ;; of their indices.
+  (apply vector (map (apply vector row) cols)))
+
+(defn indexed [col]
+  (map vector (iterate inc 0) col))
+
+(defn- rows-bounded [row-data row-numbers]
+  (let [row-numbers (into #{} row-numbers)]
+    (->> row-data
+         (filter (fn [[index row]]
+                   (if (row-numbers index)
+                     true
+                     false)))
+         (map second))))
+
+(comment
+
+  ;; a niaeve implementation that consumes the whole data sequence
+  (defn- rows-unbounded [row-data row-numbers]
+    (rows-bounded
+     row-data
+     (take (count row-data) row-numbers))))
+
+;; TODO handle repeated, consecutive values... e.g. 1 2 2
+(defn- rows-unbounded
+
+  [[[index current-row] & row-data]
+   [current-row-number & rest-row-numbers :as row-numbers]]
+  (cond
+   (or (nil? current-row-number)
+       (nil? index)) []
+
+   (= current-row-number index) (let [[repeated-row-numbers remaining-row-numbers]
+                                      (split-with #(= current-row-number %) row-numbers)
+                                      repeated-rows (repeat (count repeated-row-numbers) current-row)]
+                                  (lazy-cat
+                                   repeated-rows
+                                   (rows-unbounded row-data remaining-row-numbers)))
+
+   (< current-row-number index) (rows-unbounded
+                                 (drop-while (fn [[index row]]
+                                               (not= index current-row-number))
+                                             row-data)
+                                 rest-row-numbers)
+
+   (> current-row-number index) (rows-unbounded
+                                 (drop-while (fn [[index row]]
+                                               (not= index current-row-number))
+                                             row-data)
+                                 ;; leave current-row-number as
+                                 row-numbers)))
+
+(defn rows [dataset row-numbers & {:keys [unbounded] :or {unbounded true}}]
+  (let [rows (indexed (:rows dataset))
+        filtered-rows (if unbounded
+                        (rows-unbounded rows row-numbers)
+                        (rows-bounded rows row-numbers))]
+    (make-dataset (:column-names dataset)
+                  filtered-rows)))
 
 (defn drop-rows [csv n]
   "Drops the first n rows from the CSV."
@@ -133,8 +177,8 @@ will still be thrown."
 
 (defmethod grep clojure.lang.IFn [csv f & cols]
   (let [select-cols (if (empty? cols)
-                           identity
-                           (partial select-columns-from-row cols))]
+                      identity
+                      (partial select-columns-from-row cols))]
     (filter (fn [row]
               (some f (select-cols row))) csv)))
 

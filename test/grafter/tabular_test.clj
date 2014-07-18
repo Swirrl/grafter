@@ -3,6 +3,7 @@
             [grafter.tabular :refer :all]
             [grafter.tabular.csv]
             [grafter.tabular.excel]
+            [grafter.sequences :as seqs]
             [incanter.core :as inc]
             [me.raynes.fs :as fs]))
 
@@ -107,21 +108,6 @@
           (is (= "AA" (nth columns 26)))
           (is (= "AB" (nth columns 27))))))))
 
-(defn test-dataset [r c]
-  "Constructs a test dataset of r rows by c cols e.g.
-
-(test-dataset 2 2) ;; =>
-
-| A | B |
-|---+---|
-| 0 | 0 |
-| 1 | 1 |"
-
-  (->> (iterate inc 0)
-       (map #(repeat c %))
-       (take r)
-       make-dataset))
-
 (deftest resolve-column-id-tests
   (testing "resolve-column-id"
     (let [dataset (test-dataset 5 5)]
@@ -142,7 +128,7 @@
         (testing "Preserves the order of invalid keys"
           (is (= ["Z" "X"] (invalid-column-keys ["A" "B" "Z" "X" "C" "D" "E"] dataset))))))))
 
-(deftest row-processor-tests
+(deftest columns-tests
   (let [expected-dataset (test-dataset 5 2)
         test-data (test-dataset 5 5)]
     (testing "columns"
@@ -170,3 +156,32 @@
 
         (is (thrown? IndexOutOfBoundsException (columns test-data (range 10 100) :unbounded true))
             "Raises an exception if yielded values are not column headings.")))))
+
+(deftest rows-tests
+  (let [test-data (test-dataset 10 2)]
+    (testing "rows"
+      (testing "works with infinite sequences"
+        (is (= test-data (rows (test-dataset 10 2) (seqs/integers-from 0)))))
+
+      (testing "pairing [5 6 7 8 9] with row numbers [0 1 2 3 4 5 6 7 8 9] returns rows [5 6 7 8 9]"
+        (let [expected-dataset (make-dataset [[5 5]
+                                              [6 6]
+                                              [7 7]
+                                              [8 8]
+                                              [9 9]])]
+          (is (= expected-dataset (rows test-data
+                                        [5 6 7 8 9])))))
+
+      (testing "allows returning multiple copies of consecutive rows"
+
+        (let [expected-dataset (make-dataset [[2 2]
+                                              [2 2]])]
+
+          (is (= expected-dataset (rows test-data [2 2]))))
+
+        (let [expected-dataset (make-dataset [[0 0]
+                                              [1 1]
+                                              [2 2]
+                                              [2 2]])]
+
+          (is (= expected-dataset (rows test-data [0 1 2 2]))))))))
