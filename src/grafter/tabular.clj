@@ -34,25 +34,27 @@
        (take r)
        make-dataset))
 
+(defn- resolve-col-id [column-key headers not-found]
+  (let [converted-column-key (cond
+                              (string? column-key) (keyword column-key)
+                              (keyword? column-key) (name column-key)
+                              (integer? column-key) (nth headers column-key not-found))]
+    (if-let [val (some #{column-key converted-column-key} headers)]
+      val
+      not-found)))
+
 (defn resolve-column-id
   "Finds and resolves the column id by converting between symbols and
   strings.  If column-key is not found in the datsets headers then nil
   is returned."
   [dataset column-key not-found]
 
-  (let [headers (:column-names dataset)
-        converted-column-key (cond
-                              (string? column-key) (keyword column-key)
-                              (keyword? column-key) (name column-key)
-                              (integer? column-key) (nth headers column-key not-found))]
-
-    (if-let [val (some #{column-key converted-column-key} headers)]
-      val
-      not-found)))
+  (let [headers (:column-names dataset)]
+    (resolve-col-id column-key headers not-found)))
 
 (defn invalid-column-keys
-  "Takes a sequence of column key names and returns a sequence of keys
-  that cannot be resolved against the current dataset."
+  "Takes a sequence of column key names and a dataset and returns a
+  sequence of keys that are not in the dataset."
   [keys dataset]
 
   (let [not-found (Object.)
@@ -63,47 +65,26 @@
                              (map first))]
     not-found-items))
 
-(defn- columns-bounded [dataset cols]
-  "Takes a dataset and any number of integers corresponding to
-column numbers and returns a dataset containing only those columns."
+(defn all-columns [dataset cols]
+  "Takes a dataset and any number of integers corresponding to column
+  numbers and returns a dataset containing only those columns.
+
+  If you want to use infinite sequences of columns or allow the
+  specification of more cols than are in the data without error you
+  should use columns instead.  Using an infinite sequence with this
+  function will result in non-termination.
+
+  One advantage of this over using columns is that you can duplicate
+  an arbitrary number of columns."
+
   (let [not-found-items (invalid-column-keys cols dataset)]
-    (if (empty? not-found-items)
+    (if (and (empty? not-found-items)
+            (some identity cols))
       (inc/$ cols dataset)
       (throw (IndexOutOfBoundsException. (str "The columns: " (str/join ", " not-found-items) " are not currently defined."))))))
 
-(defn- columns-unbounded [dataset cols]
-  (columns-bounded
-   dataset
-   (take (count (:column-names dataset)) cols)))
-
-(defn columns
-  "Given a dataset and some columns, narrow the dataset to just the
-  supplied columns.
-
-By default the behaviour is bounded, and an error will be thrown if
-any supplied columns don't occur in the data.  If this behaviour is
-switched off by setting :unbounded to true then the supplied columns
-can be larger than are in the data without triggering an exception.
-
-:unbounded allows you to supply infinite sequences of values, however
-the yielded values must still occur as columns or an IndexOutOfBoundsException
-will still be thrown."
-
-  [dataset cols & {:keys [unbounded] :or {unbounded false}}]
-
-  (if unbounded
-    (columns-unbounded dataset cols)
-    (columns-bounded dataset cols)))
-
-(defn- select-columns-from-row
-  {:deprecated true}
-  [cols row]
-  ;; Makes use of the fact that rows (vectors) are functions
-  ;; of their indices.
-  (apply vector (map (apply vector row) cols)))
-
-(defn indexed [col]
-  (map vector (iterate inc 0) col))
+(defn- indexed [col]
+  (map-indexed vector col))
 
 (defn- rows-bounded [row-data row-numbers]
   (let [row-numbers (into #{} row-numbers)]
@@ -114,50 +95,75 @@ will still be thrown."
                      false)))
          (map second))))
 
-(comment
+(defn- select-indexed
+  "Selects indexed rows or columns (outside of the dataset).  Assumes the seq of
+  row-numbers to select on is ordered, and that row-data is a tuple
+  of form [index row].
 
-  ;; a niaeve implementation that consumes the whole data sequence
-  (defn- rows-unbounded [row-data row-numbers]
-    (rows-bounded
-     row-data
-     (take (count row-data) row-numbers))))
-
-;; TODO handle repeated, consecutive values... e.g. 1 2 2
-(defn- rows-unbounded
-
-  [[[index current-row] & row-data]
-   [current-row-number & rest-row-numbers :as row-numbers]]
+Returns a lazy sequence of matched rows."
+  [[[index current-item] & item-data]
+   [current-item-number & rest-item-numbers :as item-numbers]]
   (cond
-   (or (nil? current-row-number)
-       (nil? index)) []
+   (or (nil? current-item-number)
+       (nil? index)
+       (= ::not-found current-item-number)) []
 
-   (= current-row-number index) (let [[repeated-row-numbers remaining-row-numbers]
-                                      (split-with #(= current-row-number %) row-numbers)
-                                      repeated-rows (repeat (count repeated-row-numbers) current-row)]
+       (= current-item-number index) (let [[repeated-item-numbers remaining-item-numbers]
+                                      (split-with #(= current-item-number %) item-numbers)
+                                      repeated-items (repeat (count repeated-item-numbers) current-item)]
                                   (lazy-cat
-                                   repeated-rows
-                                   (rows-unbounded row-data remaining-row-numbers)))
+                                   repeated-items
+                                   (select-indexed item-data remaining-item-numbers)))
 
-   (< current-row-number index) (rows-unbounded
-                                 (drop-while (fn [[index row]]
-                                               (not= index current-row-number))
-                                             row-data)
-                                 rest-row-numbers)
+       (< current-item-number index) (select-indexed
+                                     (drop-while (fn [[index item]]
+                                                   (not= index current-item-number))
+                                                 item-data)
+                                     rest-item-numbers)
+       (> current-item-number index) (select-indexed
+                                     (drop-while (fn [[index item]]
+                                                   (not= index current-item-number))
+                                                 item-data)
+                                     ;; leave item-numbers as is (i.e. stay on current item after fast forwarding the data)
+                                     item-numbers)))
 
-   (> current-row-number index) (rows-unbounded
-                                 (drop-while (fn [[index row]]
-                                               (not= index current-row-number))
-                                             row-data)
-                                 ;; leave current-row-number as
-                                 row-numbers)))
-
-(defn rows [dataset row-numbers & {:keys [unbounded] :or {unbounded true}}]
+(defn rows [dataset row-numbers & {:as opts}]
   (let [rows (indexed (:rows dataset))
-        filtered-rows (if unbounded
-                        (rows-unbounded rows row-numbers)
-                        (rows-bounded rows row-numbers))]
+        filtered-rows (select-indexed rows row-numbers)]
     (make-dataset (:column-names dataset)
                   filtered-rows)))
+
+(defn- col-position [column-names col]
+  (if-let [canonical-col (resolve-col-id col column-names ::not-found)]
+    (let [val (.indexOf column-names canonical-col)]
+      (if (not= -1 val)
+        val
+        ::not-found))))
+
+(defn columns
+  "Given a dataset and some columns, narrow the dataset to just the
+  supplied columns.
+
+  cols are paired off with columns in the data and then a selection is
+  done.  Any cols left over after the pairing are discarded, but if a
+  selected col is not actually in the data an IndexOutOfBoundsException will
+  be thrown.
+
+  This function can safely be used with infinite sequences."
+
+  [dataset cols]
+  (let [column-names (:column-names dataset)
+        matched-columns (->> cols
+                             (map (partial col-position column-names)))
+        selected-cols (select-indexed (indexed column-names) matched-columns)]
+    (all-columns dataset selected-cols)))
+
+(defn- select-columns-from-row
+  {:deprecated true}
+  [cols row]
+  ;; Makes use of the fact that rows (vectors) are functions
+  ;; of their indices.
+  (apply vector (map (apply vector row) cols)))
 
 (defn drop-rows [csv n]
   "Drops the first n rows from the CSV."

@@ -130,7 +130,7 @@
 
 (deftest columns-tests
   (let [expected-dataset (test-dataset 5 2)
-        test-data (test-dataset 5 5)]
+        test-data (test-dataset 5 10)]
     (testing "columns"
       (testing "Narrows by string names"
         (is (= expected-dataset
@@ -144,18 +144,21 @@
         (is (= expected-dataset
                (columns test-data [:A :B])) "Should select columns 0 and 1 (A and B)"))
 
-      (testing ":bounded"
-        (is (thrown? IndexOutOfBoundsException
-                     (columns test-data (range 100) :bounded true)))
-        (testing "is the default"
-          (is (thrown? IndexOutOfBoundsException
-                       (columns test-data (range 100))))))
-      (testing ":unbounded"
-        (is (columns test-data (range 3) :unbounded true)
-            "Takes as much as it can from the supplied sequence.")
+      (testing "works with infinite sequences"
+        (is (columns test-data (grafter.sequences/integers-from 5))
+            "Takes as much as it can from the supplied sequence and returns those columns.")
 
-        (is (thrown? IndexOutOfBoundsException (columns test-data (range 10 100) :unbounded true))
-            "Raises an exception if yielded values are not column headings.")))))
+        (is (thrown? IndexOutOfBoundsException (columns test-data (range 10 100)))
+            "Raises an exception if columns when paired with data are not actually column headings.")))))
+
+(deftest all-columns-test
+  (testing "all-columns"
+    (let [test-data (test-dataset 5 5)]
+      (is (thrown? IndexOutOfBoundsException
+                   (all-columns test-data (range 100))))
+      (testing "is the default"
+        (is (thrown? IndexOutOfBoundsException
+                     (all-columns test-data (range 100))))))))
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
@@ -173,7 +176,6 @@
                                         [5 6 7 8 9])))))
 
       (testing "allows returning multiple copies of consecutive rows"
-
         (let [expected-dataset (make-dataset [[2 2]
                                               [2 2]])]
 
