@@ -355,7 +355,63 @@ columns.  e.g.
 | 3 | 3 | 3 | 3 | 3 |
 | 4 | 4 | 4 | 4 | 4 |
 
+One limitation to being able to handle infinite sequences is that the
+supplied columns need to be positionally in the same order that they
+are in the source data.  e.g.
+
+#+NAME: columns-ordering
+#+BEGIN_SRC clojure :results raw
+(columns (test-dataset 5 20) [:A :B :D :C])
+#+END_SRC
+
+Yields:
+
+#+RESULTS: columns-ordering
+
+| A | B | D |
+|---+---+---|
+| 0 | 0 | 0 |
+| 1 | 1 | 1 |
+| 2 | 2 | 2 |
+| 3 | 3 | 3 |
+| 4 | 4 | 4 |
+
+Note how only columns =A=, =B= and =D= were returned, the sequence
+does not go backwards and retrieve =C=.  No error is thrown in this
+case.
+
+If you want to be able to retrieve columns, you should use the eager
+equivalent of =columns=, =all-columns=.
+
 ** rows
 
-Takes a sequence of row numbers, and filters the rows for the rows
-which are contained within the sequence.
+Like columns, except it takes a sequence of row numbers, and filters
+the rows for the rows which are contained within the sequence.
+
+It takes a potentially infinite (ordered) sequence of row numbers
+
+#+BEGIN_SRC clojure :results raw
+(rows (test-dataset 5 5) [0 1 2])
+#+END_SRC
+
+#+RESULTS:
+
+| A | B | C | D | E |
+|---+---+---+---+---|
+| 0 | 0 | 0 | 0 | 0 |
+| 1 | 1 | 1 | 1 | 1 |
+| 2 | 2 | 2 | 2 | 2 |
+
+Or with an (ordered) infinite sequence:
+
+#+BEGIN_SRC clojure :results raw
+(rows (test-dataset 5 5) (grafter.sequences/integers-from 2))
+#+END_SRC
+
+#+RESULTS:
+
+| A | B | C | D | E |
+|---+---+---+---+---|
+| 2 | 2 | 2 | 2 | 2 |
+| 3 | 3 | 3 | 3 | 3 |
+| 4 | 4 | 4 | 4 | 4 |
