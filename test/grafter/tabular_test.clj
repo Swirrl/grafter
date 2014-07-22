@@ -187,3 +187,10 @@
                                               [2 2]])]
 
           (is (= expected-dataset (rows test-data [0 1 2 2]))))))))
+
+(deftest drop-rows-test
+  (testing "drop-rows"
+    (let [dataset (test-dataset 3 1)]
+      (is (= (make-dataset [[1] [2]]) (drop-rows dataset 1)))
+      (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
+      (is (= (make-dataset []) (drop-rows dataset 1000))))))

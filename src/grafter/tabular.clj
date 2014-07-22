@@ -19,6 +19,8 @@
   with-metadata-columns
   without-metadata-columns])
 
+
+
 (defn test-dataset [r c]
   "Constructs a test dataset of r rows by c cols e.g.
 
@@ -33,6 +35,11 @@
        (map #(repeat c %))
        (take r)
        make-dataset))
+
+(def column-names
+  "If given a dataset, it returns its column names. If given a dataset and a sequence
+  of column names, it returns a dataset with the given column names."
+  inc/col-names)
 
 (defn- resolve-col-id [column-key headers not-found]
   (let [converted-column-key (cond
@@ -49,7 +56,7 @@
   is returned."
   [dataset column-key not-found]
 
-  (let [headers (:column-names dataset)]
+  (let [headers (column-names dataset)]
     (resolve-col-id column-key headers not-found)))
 
 (defn invalid-column-keys
@@ -128,9 +135,9 @@ Returns a lazy sequence of matched rows."
                                      item-numbers)))
 
 (defn rows [dataset row-numbers & {:as opts}]
-  (let [rows (indexed (:rows dataset))
+  (let [rows (indexed (inc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
-    (make-dataset (:column-names dataset)
+    (make-dataset (column-names dataset)
                   filtered-rows)))
 
 (defn- col-position [column-names col]
@@ -152,10 +159,10 @@ Returns a lazy sequence of matched rows."
   This function can safely be used with infinite sequences."
 
   [dataset cols]
-  (let [column-names (:column-names dataset)
+  (let [col-names (column-names dataset)
         matched-columns (->> cols
-                             (map (partial col-position column-names)))
-        selected-cols (select-indexed (indexed column-names) matched-columns)]
+                             (map (partial col-position col-names)))
+        selected-cols (select-indexed (indexed col-names) matched-columns)]
     (all-columns dataset selected-cols)))
 
 (defn- select-columns-from-row
@@ -165,13 +172,43 @@ Returns a lazy sequence of matched rows."
   ;; of their indices.
   (apply vector (map (apply vector row) cols)))
 
-(defn drop-rows [csv n]
-  "Drops the first n rows from the CSV."
-  (drop n csv))
+(defn map-rows
+  "Maps the function f over the dataset and returns a new dataset.
+  This is really just map/fmap defined on dataset data."
+  [dataset f]
+  (make-dataset (column-names dataset)
+                (->> dataset inc/to-list f)))
 
-(defn take-rows [csv n]
+(defn- map-keys [f hash]
+  "Apply f to the keys in the supplied hashmap and return a new
+  hashmap."
+  (zipmap (map f (keys hash))
+          (vals hash)))
+
+(defn rename-columns
+  "Renames the columns"
+  [dataset col-map-or-fn]
+  {:pre [(or (map? col-map-or-fn)
+             (ifn? col-map-or-fn))]}
+
+  (if (map? col-map-or-fn)
+    (inc/rename-cols col-map-or-fn dataset)
+    (let [old-key->new-key (partial map-keys col-map-or-fn)
+          new-data (map (fn [row]
+                          (map-keys col-map-or-fn row))
+                        (inc/to-list dataset))
+          new-columns (map col-map-or-fn
+                           (column-names dataset))]
+      (make-dataset new-columns
+                    new-data))))
+
+(defn drop-rows [dataset n]
   "Drops the first n rows from the CSV."
-  (take n csv))
+  (map-rows dataset (partial drop n)))
+
+(defn take-rows [dataset n]
+  "Drops the first n rows from the CSV."
+  (map-rows dataset (partial take n)))
 
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
