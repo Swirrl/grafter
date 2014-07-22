@@ -154,6 +154,29 @@ to further processing you can use =copy-first-row-to-header= instead:
 | heading 1 | heading 2 |
 |         1 |         2 |
 |         3 |         4 |
+
+** test-dataset
+
+Constructs a simple test dataset of =r= rows and =c= cols, e.g. the
+following:
+
+#+NAME: test-dataset
+#+BEGIN_SRC clojure :results raw
+(test-dataset 5 5)
+#+END_SRC
+
+Yields a test dataset of 5 rows and 5 columns:
+
+#+RESULTS: test-dataset
+
+| A | B | C | D | E |
+|---+---+---+---+---|
+| 0 | 0 | 0 | 0 | 0 |
+| 1 | 1 | 1 | 1 | 1 |
+| 2 | 2 | 2 | 2 | 2 |
+| 3 | 3 | 3 | 3 | 3 |
+| 4 | 4 | 4 | 4 | 4 |
+
 ** open-all-datasets
 
 This code takes a file path and recursively searches beneath it for
@@ -243,3 +266,96 @@ the sheet names as separate columns to the source data.
 | one | two | three | test.xlsx | /Users/rick/repos/grafter/test/grafter |      Sheet1 |
 | 1.0 | 2.0 |   3.0 | test.xlsx | /Users/rick/repos/grafter/test/grafter |      Sheet1 |
 )
+
+** all-columns
+
+#+NAME: columns-by-name
+#+BEGIN_SRC clojure :results raw
+(let [ds (test-dataset 5 5)]
+  (columns ds ["A" "B"]))
+#+END_SRC
+
+Returns a dataset containing just columns =A= and =B=
+
+#+RESULTS: columns-by-name
+
+| A | B |
+|---+---|
+| 0 | 0 |
+| 1 | 1 |
+| 2 | 2 |
+| 3 | 3 |
+| 4 | 4 |
+
+You can also identify columns positionally
+
+#+NAME: columns-by-pos
+#+BEGIN_SRC clojure :results raw
+(let [ds (test-dataset 5 5)]
+  (columns ds [0 2]))
+#+END_SRC
+
+Column numbers are 0 indexed, so this yields:
+
+#+RESULTS: columns-by-pos
+
+| A | C |
+|---+---|
+| 0 | 0 |
+| 1 | 1 |
+| 2 | 2 |
+| 3 | 3 |
+| 4 | 4 |
+
+You can also use keywords to identify columns.  Note that it's also
+possible to duplicate columns more than once:
+
+#+NAME: columns-by-keyword
+#+BEGIN_SRC clojure :results raw
+(let [ds (test-dataset 5 5)]
+  (columns ds [:A :B :A]))
+#+END_SRC
+
+#+RESULTS: columns-by-keyword
+
+| A | B | A |
+|---+---+---|
+| 0 | 0 | 0 |
+| 1 | 1 | 1 |
+| 2 | 2 | 2 |
+| 3 | 3 | 3 |
+| 4 | 4 | 4 |
+
+Asking for columns not in the data will currently yield an
+=IndexOutOfBoundsException=.
+
+** columns
+
+=columns= takes a dataset and a sequence of columns which can be
+larger than the number of columns in the data.  This sequence is then
+paired (bounded) with the actual column data and if any in this paired
+set are not present in the source data then only then will an
+=IndexOutOfBoundsException= will be thrown.
+
+This means you can design for expected structural changes in the
+columns.  e.g.
+
+#+NAME: unbounded-cols
+#+BEGIN_SRC clojure :results raw
+(columns (test-dataset 5 10) (grafter.sequences/integers-from 5))
+#+END_SRC
+
+#+RESULTS: unbounded-cols
+
+| F | G | H | I | J |
+|---+---+---+---+---|
+| 0 | 0 | 0 | 0 | 0 |
+| 1 | 1 | 1 | 1 | 1 |
+| 2 | 2 | 2 | 2 | 2 |
+| 3 | 3 | 3 | 3 | 3 |
+| 4 | 4 | 4 | 4 | 4 |
+
+** rows
+
+Takes a sequence of row numbers, and filters the rows for the rows
+which are contained within the sequence.
