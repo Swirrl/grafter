@@ -12,6 +12,8 @@
    [org.openrdf.repository Repository RepositoryConnection]
    [org.openrdf.query.resultio TupleQueryResultFormat]
    [org.openrdf.repository.sail SailRepository]
+   [org.openrdf.repository.http HTTPRepository]
+   [org.openrdf.repository.sparql SPARQLRepository]
    [org.openrdf.sail.memory MemoryStore]
    [org.openrdf.rio Rio RDFWriter RDFHandler]
    [org.openrdf.rio.binary BinaryRDFParserFactory]
@@ -325,6 +327,15 @@
      (native-store (io/file datadir) "spoc,posc,cosp"))
   ([datadir indexes]
      (NativeStore. datadir indexes)))
+
+(defn http-repo [repo-url]
+  (HTTPRepository. repo-url))
+
+(defn sparql-repo
+  ([query-url]
+     (SPARQLRepository. query-url))
+  ([query-url update-url]
+     (SPARQLRepository. query-url update-url)))
 
 (defn repo
   ([] (repo (MemoryStore.)))
