@@ -259,7 +259,7 @@
       (ContextStatementImpl. (->sesame-rdf-type (.s is))
                              (URIImpl. (.p is))
                              (->sesame-rdf-type (.o is))
-                             (URIImpl. (.c is))))
+                             (URIImpl. (:c is))))
     (StatementImpl. (->sesame-rdf-type (.s is))
                     (URIImpl. (.p is))
                     (->sesame-rdf-type (.o is)))))
@@ -296,9 +296,14 @@
   (pr/add-statement
     ([this statement]
        {:pre [(instance? IStatement statement)]}
-       (doto this
-         (.add (IStatement->sesame-statement statement)
-               (into-array Resource []))))
+       (if-let [graph (:c statement)]
+         (doto this
+           (.add (IStatement->sesame-statement statement)
+                 (into-array Resource [(URIImpl. graph)])))
+         (doto this
+           (.add statement
+                 (into-array Resource [])))))
+
     ([this graph statement]
        {:pre [(instance? IStatement statement)]}
        (doto this
@@ -357,13 +362,16 @@
      (NativeStore. datadir indexes)))
 
 (defn http-repo [repo-url]
-  (HTTPRepository. repo-url))
+  (doto (HTTPRepository. repo-url)
+    (.initialize)))
 
 (defn sparql-repo
   ([query-url]
-     (SPARQLRepository. query-url))
+     (doto (SPARQLRepository. query-url)
+       (.initialize)))
   ([query-url update-url]
-     (SPARQLRepository. query-url update-url)))
+     (doto (SPARQLRepository. query-url update-url)
+       (.initialize))))
 
 (defn repo
   ([] (repo (MemoryStore.)))
