@@ -273,7 +273,7 @@
            (.add (IStatement->sesame-statement statement)
                  (into-array Resource [(URIImpl. graph)])))
          (doto this
-           (.add stmt
+           (.add statement
                  (into-array Resource [])))))
 
     ([this graph statement]
