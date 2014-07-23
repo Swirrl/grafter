@@ -1,4 +1,4 @@
-(defproject grafter "0.1.0"
+(defproject grafter "0.1.1-SNAPSHOT"
   :description "RDFization tools"
   :url "http://grafter.org/"
   :license {:name "TODO"
