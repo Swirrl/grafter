@@ -272,7 +272,7 @@ the sheet names as separate columns to the source data.
 #+NAME: columns-by-name
 #+BEGIN_SRC clojure :results raw
 (let [ds (test-dataset 5 5)]
-  (columns ds ["A" "B"]))
+  (all-columns ds ["A" "B"]))
 #+END_SRC
 
 Returns a dataset containing just columns =A= and =B=
@@ -292,7 +292,7 @@ You can also identify columns positionally
 #+NAME: columns-by-pos
 #+BEGIN_SRC clojure :results raw
 (let [ds (test-dataset 5 5)]
-  (columns ds [0 2]))
+  (all-columns ds [0 2]))
 #+END_SRC
 
 Column numbers are 0 indexed, so this yields:
@@ -313,7 +313,7 @@ possible to duplicate columns more than once:
 #+NAME: columns-by-keyword
 #+BEGIN_SRC clojure :results raw
 (let [ds (test-dataset 5 5)]
-  (columns ds [:A :B :A]))
+  (all-columns ds [:A :B :A]))
 #+END_SRC
 
 #+RESULTS: columns-by-keyword
