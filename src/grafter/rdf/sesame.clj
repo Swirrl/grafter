@@ -297,12 +297,31 @@
 
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
-  clojure.java.io/writer and returns an RDFSerializer."
+  clojure.java.io/writer and returns an RDFSerializer.
 
-  ([destination]
-     (rdf-serializer destination (Rio/getWriterFormatForFileName destination)))
-  ([destination format]
-     (Rio/createWriter format (io/writer destination))))
+  Accepts also the following optional options:
+
+  :append          If set to true it will append new values to the end of
+                   the file destination (default: false).
+
+  :format          If a String or a File are provided the format parameter
+                   can be optional (in which case it will be infered from
+                   the file extension).  This should be a sesame RDFFormat
+                   object.
+
+  :encoding        The character encoding to be used (default: UTF-8)"
+
+  ([destination & {:keys [append format encoding] :or {append false
+                                                       encoding "UTF-8"}}]
+     (let [format (or format
+                      (condp = (class destination)
+                        String (Rio/getWriterFormatForFileName destination)
+                        File   (Rio/getWriterFormatForFileName (str destination))
+                        (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object destination}))))]
+       (Rio/createWriter format
+                         (io/writer destination
+                                    :append append
+                                    :encoding encoding)))))
 
 (extend-protocol pr/ITripleWriteable
   RDFWriter
