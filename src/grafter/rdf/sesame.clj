@@ -209,9 +209,22 @@
   (->sesame-rdf-type [this]
     (URIImpl. (.toString this)))
 
+
   BNode
   (->sesame-rdf-type [this]
     this)
+
+  (sesame-rdf-type->type [this]
+    (-> this .getID keyword))
+
+
+  BNodeImpl
+  (->sesame-rdf-type [this]
+    this)
+
+  (sesame-rdf-type->type [this]
+    (-> this .getID keyword))
+
 
   java.util.Date
   (->sesame-rdf-type [this]
