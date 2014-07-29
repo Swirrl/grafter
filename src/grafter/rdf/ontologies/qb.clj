@@ -14,8 +14,10 @@
 (def qb:structure (qb "structure"))
 
 (def qb:dimension (qb "dimension"))
+(def qb:DimensionProperty (qb "DimensionProperty"))
 
 (def qb:attribute (qb "attribute"))
+(def qb:AttributeProperty (qb "AttributeProperty"))
 
 (def qb:measure (qb "measure"))
 (def qb:measureType (qb "measureType"))
