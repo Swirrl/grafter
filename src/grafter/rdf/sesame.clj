@@ -177,7 +177,7 @@
                            (->sesame-rdf-type (pr/predicate this))
                            (->sesame-rdf-type (pr/object this))
                            (when-let [context (pr/context this)]
-                             (->sesame-rdf-type (pr/context context)))))
+                             (->sesame-rdf-type context))))
 
   Value
   (->sesame-rdf-type [this]
