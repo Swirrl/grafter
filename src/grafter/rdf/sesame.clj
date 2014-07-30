@@ -60,7 +60,7 @@
        (->sesame-rdf-type [this]
          (LiteralImpl. str))))
   ([str lang-or-uri]
-     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (instance? URI lang-or-uri))]}
+     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (nil? lang-or-uri) (instance? URI lang-or-uri))]}
      (reify Object
        (toString [_] str)
        ISesameRDFConverter
@@ -75,7 +75,7 @@
                                      (str datatype))))
 
 (defmethod literal-datatype->type nil [literal]
-  (s (.stringValue literal)))
+  (s (.stringValue literal) (.getLanguage literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [literal]
   (.byteValue literal))
@@ -99,7 +99,7 @@
   (.intValue literal))
 
 (defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
-  (s (.stringValue literal)))
+  (s (.stringValue literal) (.getLanguage literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
@@ -201,7 +201,8 @@
     (ContextStatementImpl. (->sesame-rdf-type (pr/subject this))
                            (->sesame-rdf-type (pr/predicate this))
                            (->sesame-rdf-type (pr/object this))
-                           (->sesame-rdf-type (pr/context this))))
+                           (when-let [context (pr/context this)]
+                             (->sesame-rdf-type (pr/context context)))))
 
   Value
   (->sesame-rdf-type [this]
@@ -224,7 +225,6 @@
 
   (sesame-rdf-type->type [this]
     (str this))
-
 
   java.net.URI
   (->sesame-rdf-type [this]
