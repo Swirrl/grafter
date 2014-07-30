@@ -194,3 +194,26 @@
       (is (= (make-dataset [[1] [2]]) (drop-rows dataset 1)))
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
       (is (= (make-dataset []) (drop-rows dataset 1000))))))
+
+
+(deftest grep-test
+  (let [dataset (make-dataset [["one" "two" "three"]
+                               ["foo" "bar" "baz"]
+                               ["foo" "blee" "blah"]])
+
+        expected-dataset (make-dataset [["foo" "bar" "baz"]
+                                        ["foo" "blee" "blah"]])]
+
+    (testing "grep"
+      (testing "with a function"
+        (testing "receives a single cell as its argument"
+          (grep dataset (fn [cell]
+                          (is (= String (class cell))))))
+
+        (is (= expected-dataset
+               (grep dataset (fn [cell]
+                               (= cell "foo")))))
+
+        (is (= expected-dataset
+               (grep dataset (fn [cell]
+                               (.startsWith cell "b")))))))))

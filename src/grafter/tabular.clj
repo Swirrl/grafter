@@ -165,13 +165,6 @@ Returns a lazy sequence of matched rows."
         selected-cols (select-indexed (indexed col-names) matched-columns)]
     (all-columns dataset selected-cols)))
 
-(defn- select-columns-from-row
-  {:deprecated true}
-  [cols row]
-  ;; Makes use of the fact that rows (vectors) are functions
-  ;; of their indices.
-  (apply vector (map (apply vector row) cols)))
-
 (defn map-rows
   "Maps the function f over the dataset and returns a new dataset.
   This is really just map/fmap defined on dataset data."
@@ -210,6 +203,11 @@ Returns a lazy sequence of matched rows."
   "Drops the first n rows from the CSV."
   (map-rows dataset (partial take n)))
 
+(defn- grep-row [dataset f]
+  (let [filtered-data (filter f (:rows dataset))]
+    (make-dataset (column-names dataset)
+                  filtered-data)))
+
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
   dispatches on the type of its second argument.  It also takes any
@@ -218,12 +216,23 @@ Returns a lazy sequence of matched rows."
   are specified then grep operates on all columns."
   (fn [table f & cols] (class f)))
 
-(defmethod grep clojure.lang.IFn [csv f & cols]
-  (let [select-cols (if (empty? cols)
-                      identity
-                      (partial select-columns-from-row cols))]
-    (filter (fn [row]
-              (some f (select-cols row))) csv)))
+(defn- cells-from-columns
+  "Returns a seq of cells matching the supplied columns, cells are
+  stripped of column names by this process.  If no columns are specified all the cell
+  values for the row are returned."
+  [col-set row]
+  (->> row
+       (filter (fn [[k v]] (col-set k)))
+       (map second)))
+
+(defmethod grep clojure.lang.IFn [dataset f & cols]
+  (let [data (:rows dataset)
+        col-set (into #{} cols)]
+
+    (make-dataset (column-names dataset)
+                  (->> data
+                       (filter (fn [row]
+                                 (some f (partial cells-from-columns col-set))))))))
 
 (defmethod grep java.lang.String [csv s & cols]
   (apply grep csv #(.contains % s) cols))
