@@ -6,7 +6,7 @@
 
 (def rdf:a (rdf "type"))
 
-(def rdf:Property (rdfs "Property"))
+(def rdf:Property (rdf "Property"))
 (def rdfs:subPropertyOf (rdfs "subPropertyOf"))
 
 (def rdfs:Class (rdfs "Class"))
