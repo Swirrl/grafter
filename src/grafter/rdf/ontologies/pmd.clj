@@ -18,3 +18,4 @@
 (def folder:defaultTree  (folder "defaultTree"))
 (def folder:parentFolder (folder "parentFolder"))
 (def folder:resourceLocation (folder "resourceLocation"))
+(def folder:inTree       (folder "inTree"))
