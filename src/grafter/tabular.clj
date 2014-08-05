@@ -357,3 +357,31 @@ into data rows look like this.  It does not yet preserve the header row:
   (defn join [csv f & others]
     ;;(filter)
     (apply map vector csv others)))
+
+
+(defn build-lookup-table
+  "takes a CSV file, a vector of any number of integers corresponding
+  to key column numbers and a integer corresponding to the value column number and
+  returns a function, taking a row (a hash-map) as argument and returning the value wanted"
+  ([csv key-cols]
+
+    (let [key-names (map #(resolve-column-id csv % "this column id doesn't exist!") key-cols)
+          compl-key-cols (vec (clojure.set/difference (set (:column-names csv))
+                                                      (set (if (sequential? key-cols)
+                                                               key-names
+                                                               [key-names]))))]
+     (build-lookup-table csv key-cols compl-key-cols)))
+
+  ([csv key-cols value-col]
+
+    (let [arg->vector (fn [x] (if (sequential? x) x [x]))
+          keys (:rows (all-columns csv (arg->vector key-cols)))
+          val (:rows (all-columns csv (arg->vector value-col)))
+          table (zipmap keys val)]
+      (fn
+        [row]
+        (let [key-names (map #(resolve-column-id csv % "this column id doesn't exist!") (arg->vector key-cols))
+              lookup (zipmap key-names (map #(row %) key-names))
+              value-from-row (table lookup)]
+          value-from-row)))))
+
