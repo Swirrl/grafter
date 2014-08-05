@@ -215,7 +215,14 @@
       (testing "key column id"
         (is (= ((build-lookup-table ds 0 "B") row) {"B" 6})))
       (testing "key column name"
-        (is (= ((build-lookup-table ds "A" "B") row) {"B" 6}))))))
+        (is (= ((build-lookup-table ds "A" "B") row) {"B" 6}))))
+    (testing "errors"
+      (testing "no key column"
+        (is (thrown? IndexOutOfBoundsException
+                     ((build-lookup-table ds [] "B") row))))
+      (testing "key column not existing"
+        (is (thrown? IndexOutOfBoundsException
+                     ((build-lookup-table ds ["foo"] "B") row)))))))
 
 (comment
 
