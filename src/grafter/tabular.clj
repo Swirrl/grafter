@@ -203,6 +203,17 @@ Returns a lazy sequence of matched rows."
   "Drops the first n rows from the CSV."
   (map-rows dataset (partial take n)))
 
+(defn derive-column
+  "Adds a new column to the end of the row which is derived from
+column with position col-n.  f should just return the cells value.
+
+If no f is supplied the identity function is used, which results in
+the specified column being cloned."
+
+  ;; todo support multiple columns/arguments to f.
+  ([dataset new-column-name from-cols f]
+     (inc/add-derived-column new-column-name from-cols f dataset)))
+
 (defn- grep-row [dataset f]
   (let [filtered-data (filter f (:rows dataset))]
     (make-dataset (column-names dataset)
