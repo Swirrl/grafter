@@ -236,14 +236,17 @@ the specified column being cloned."
        (filter (fn [[k v]] (col-set k)))
        (map second)))
 
-(defmethod grep clojure.lang.IFn [dataset f & cols]
+(defmethod grep clojure.lang.IFn
+
+  [dataset f cols]
   (let [data (:rows dataset)
         col-set (into #{} cols)]
 
-    (make-dataset (column-names dataset)
-                  (->> data
+     (make-dataset cols
+                   (->> data
                        (filter (fn [row]
-                                 (some f (partial cells-from-columns col-set))))))))
+                                 (some f
+                                       (cells-from-columns col-set row))))))))
 
 (defmethod grep java.lang.String [csv s & cols]
   (apply grep csv #(.contains % s) cols))
