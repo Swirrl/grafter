@@ -1,7 +1,6 @@
 (ns grafter.rdf.validation
-  (:use [grafter.rdf]
-        [grafter.rdf.sesame])
-  (:require [grafter.rdf.protocols :as pr]
+  (:require [grafter.rdf]
+            [grafter.rdf.protocols :as pr]
             [clojure.string :as st]))
 
 (defn blank? [v]
