@@ -266,8 +266,6 @@ the specified column being cloned."
     (reduce remove-index col pos)))
 
 
-(comment
-
   (defn- fuse-row [columns f row]
     (let [to-drop (drop 1 (sort columns))
           merged (assoc row (apply min columns)
@@ -279,6 +277,8 @@ the specified column being cloned."
 cols supplied number of arguments e.g. If you fuse 3 columns f
 must accept 3 arguments"
     (map (partial fuse-row cols f) csv))
+
+(comment
 
   (defn mapr [csv f]
     "Logically identical to map but with reversed arguments, so it works
