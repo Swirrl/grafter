@@ -269,14 +269,20 @@ the specified column being cloned."
 
 (defn mapc [dataset fs]
 "Takes an array or a hashmap of functions and maps each to the key column for every row."
-  (let [functions (if (vector? fs)
+  (let [fs-hash (if (vector? fs)
                     (zipmap (column-names dataset) fs)
-                    fs)]
+                    fs)
+        other-keys (vec (clojure.set/difference (set (:column-names dataset))
+                                                      (set (if (sequential? key-cols)
+                                                               key-names
+                                                               [key-names]))))]
     (->> dataset
          (map (fn [row]
                 (map (fn [f c] (f c))
-                     (lazy-cat fs (cycle [identity])) row)))
-         (map (partial apply vector)))))
+                     (conj functions (zipmap ;;identity)) row)))
+         ;(map (partial apply vector))
+         )
+    ))
 
 
 (comment
