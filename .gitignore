@@ -10,4 +10,4 @@ pom.xml.asc
 /README.html
 /tmp/
 .DS_Store
-./doc
+/doc
