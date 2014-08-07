@@ -238,11 +238,12 @@ the specified column being cloned."
 
 (defmethod grep clojure.lang.IFn
 
-  [dataset f cols]
+  [dataset f & cols]
   (let [data (:rows dataset)
-        col-set (into #{} (if (nil? cols)
-                            (column-names dataset)
-                            cols))]
+        cols (if (nil? cols)
+                 (column-names dataset)
+                 (first cols))
+        col-set (into #{} cols)]
 
      (make-dataset cols
                    (->> data
@@ -250,10 +251,11 @@ the specified column being cloned."
                                  (some f
                                        (cells-from-columns col-set row))))))))
 
+
 (defmethod grep java.lang.String [dataset s cols]
   (grep dataset #(.contains % s) cols))
 
-(defmethod grep java.util.regex.Pattern [dataset p cols]
+(defmethod grep java.util.regex.Pattern [dataset p & cols]
   (grep dataset #(re-find p %) cols))
 
 (defn- remove-indices [col & idxs]
