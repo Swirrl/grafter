@@ -240,7 +240,9 @@ the specified column being cloned."
 
   [dataset f cols]
   (let [data (:rows dataset)
-        col-set (into #{} cols)]
+        col-set (into #{} (if (nil? cols)
+                            (column-names dataset)
+                            cols))]
 
      (make-dataset cols
                    (->> data
@@ -248,11 +250,11 @@ the specified column being cloned."
                                  (some f
                                        (cells-from-columns col-set row))))))))
 
-(defmethod grep java.lang.String [csv s & cols]
-  (apply grep csv #(.contains % s) cols))
+(defmethod grep java.lang.String [dataset s cols]
+  (grep dataset #(.contains % s) cols))
 
-(defmethod grep java.util.regex.Pattern [csv p & cols]
-  (apply grep csv #(re-find p %) cols))
+(defmethod grep java.util.regex.Pattern [dataset p cols]
+  (grep dataset #(re-find p %) cols))
 
 (defn- remove-indices [col & idxs]
   "Removes the values at the supplied indexes from the given vector."
