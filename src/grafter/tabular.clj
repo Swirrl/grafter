@@ -265,22 +265,21 @@ the specified column being cloned."
                                     (subvec col (inc pos)))))]
     (reduce remove-index col pos)))
 
+(def _ identity)
 
-(comment
-
-  (defn mapc [csv fs]
-    "Takes an array of functions and maps each to the equivalent column
-position for every row."
-    (->> csv
+(defn mapc [dataset fs]
+"Takes an array or a hashmap of functions and maps each to the key column for every row."
+  (let [functions (if (vector? fs)
+                    (zipmap (column-names dataset) fs)
+                    fs)]
+    (->> dataset
          (map (fn [row]
                 (map (fn [f c] (f c))
                      (lazy-cat fs (cycle [identity])) row)))
-         (map (partial apply vector))))
+         (map (partial apply vector)))))
 
 
-  ;; alias to create a lightweight pattern matching style syntax for use
-  ;; with mapc
-  (def _ identity)
+(comment
 
   (defn swap [csv col-map]
     "Takes a map from column_id -> column_id (int -> int) and swaps each
