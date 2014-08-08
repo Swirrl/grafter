@@ -276,13 +276,13 @@ the specified column being cloned."
                                                         (set (keys fs))))
                            (cycle [identity]))
         functions (conj fs-hash other-hash)]
-   ;(->> dataset
-   ;     (map (fn [row]
-   ;            (map (fn [f c] (f c))
-   ;                 (conj functions (zipmap identity)) row)))
-   ;     ;(map (partial apply vector))
-   ;     )
-    functions))
+   (->> dataset
+        (:rows)
+        (map (fn [row]
+               (map #(hash-map % ((functions %) (row %)))
+                    (keys row))))
+
+        )))
 
 
 (comment
