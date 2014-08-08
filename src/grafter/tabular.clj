@@ -273,7 +273,7 @@ the specified column being cloned."
                     (zipmap (column-names dataset) fs)
                     fs)
         other-hash (zipmap (vec (clojure.set/difference (set (:column-names dataset))
-                                                        (set (keys fs))))
+                                                        (set (keys fs-hash))))
                            (cycle [identity]))
         functions (conj fs-hash other-hash)]
    (->> dataset
@@ -281,8 +281,7 @@ the specified column being cloned."
         (map (fn [row]
                (apply merge (map #(hash-map % ((functions %) (row %)))
                     (keys row)))))
-
-        )))
+        (make-dataset (column-names dataset)))))
 
 
 (comment
