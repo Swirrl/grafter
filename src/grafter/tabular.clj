@@ -279,8 +279,8 @@ the specified column being cloned."
    (->> dataset
         (:rows)
         (map (fn [row]
-               (map #(hash-map % ((functions %) (row %)))
-                    (keys row))))
+               (apply merge (map #(hash-map % ((functions %) (row %)))
+                    (keys row)))))
 
         )))
 
