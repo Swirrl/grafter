@@ -285,19 +285,30 @@ the specified column being cloned."
         (make-dataset (column-names dataset)))))
 
 
+(defn swap
+"Takes two column names and swaps each column"
+
+  ([dataset first-col second-col]
+  (let [swapper (fn [v i j]
+                  (-> v
+                      (assoc i (v j))
+                      (assoc j (v i))))
+        data (:rows dataset)
+        header (column-names dataset)]
+    (-> header
+        (swapper (col-position header first-col)
+                 (col-position header second-col))
+        (make-dataset data))))
+  ([dataset first-col second-col & more]
+   (if (seq more)
+     (reduce (fn [ds [f s]]
+               (apply swap f s more)) (swap dataset first-col second-col)
+             more)
+     (swap dataset first-col second-col))
+   )
+  )
+
 (comment
-
-  (defn swap [csv col-map]
-    "Takes a map from column_id -> column_id (int -> int) and swaps each
-column."
-
-    (map (fn [row]
-           (reduce (fn swaper [acc [cola colb]]
-                     (-> row
-                         (assoc cola (row colb))
-                         (assoc colb (row cola))))
-                   [] col-map))
-         csv))
 
 (defn select-columns
   ([srange row]
