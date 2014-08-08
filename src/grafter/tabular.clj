@@ -209,7 +209,8 @@ column with position col-n.  f should just return the cells value.
 
 If no f is supplied the identity function is used, which results in
 the specified column being cloned."
-
+  ([dataset new-column-name from-cols]
+   (derive-column dataset new-column-name from-cols identity))
   ;; todo support multiple columns/arguments to f.
   ([dataset new-column-name from-cols f]
      (inc/add-derived-column new-column-name from-cols f dataset)))
@@ -369,27 +370,26 @@ into data rows look like this.  It does not yet preserve the header row:
 
 (defn build-lookup-table
   "Takes a dataset, a vector of any number of integers corresponding
-  to key column numbers and a integer corresponding to the value column number and
-  returns a function, taking a row (a hash-map) as argument and returning the value wanted"
+  to key column numbers and a integer corresponding to the value
+  column number and returns a function, taking a row (a hash-map) as
+  argument and returning the value wanted"
   ([dataset key-cols]
-
-    (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
-          compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
-                                                      (set (if (sequential? key-cols)
-                                                               key-names
-                                                               [key-names]))))]
-     (build-lookup-table dataset key-cols compl-key-cols)))
+     (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
+           compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
+                                                       (set (if (sequential? key-cols)
+                                                              key-names
+                                                              [key-names]))))]
+       (build-lookup-table dataset key-cols compl-key-cols)))
 
   ([dataset key-cols value-col]
 
-    (let [arg->vector (fn [x] (if (sequential? x) x [x]))
-          keys (:rows (all-columns dataset (arg->vector key-cols)))
-          val (:rows (all-columns dataset (arg->vector value-col)))
-          table (zipmap keys val)]
-      (fn
-        [row]
-        (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") (arg->vector key-cols))
-              lookup (zipmap key-names (map #(row %) key-names))
-              value-from-row (table lookup)]
-          value-from-row)))))
+     (let [arg->vector (fn [x] (if (sequential? x) x [x]))
+           keys (:rows (all-columns dataset (arg->vector key-cols)))
+           val (:rows (all-columns dataset (arg->vector value-col)))
+           table (zipmap keys val)]
 
+       (fn [row]
+         (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") (arg->vector key-cols))
+               lookup (zipmap key-names (map #(row %) key-names))
+               value-from-row (table lookup)]
+           value-from-row)))))

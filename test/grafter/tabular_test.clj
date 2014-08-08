@@ -196,26 +196,38 @@
       (is (= (make-dataset []) (drop-rows dataset 1000))))))
 
 (deftest build-lookup-table-test
-  (let [ds (make-dataset [[1 2 3 4][5 6 7 8][9 10 11 12]])
+  (let [ds (make-dataset [[1 2 3 4]
+                          [5 6 7 8]
+                          [9 10 11 12]])
+
         row {"D" 8, "C" 7, "B" 6, "A" 5}]
     (testing "several key columns"
       (testing "1 value column"
-        (is (= ((build-lookup-table ds ["A" "C"] "B") row) {"B" 6})))
+        (is (= {"B" 6}
+               ((build-lookup-table ds ["A" "C"] "B") row))))
       (testing "several value columns"
-        (is (= ((build-lookup-table ds ["A" "C"] ["B" "D"]) row) {"D" 8, "B" 6})))
+        (is (= {"D" 8, "B" 6}
+               ((build-lookup-table ds ["A" "C"] ["B" "D"]) row))))
       (testing "0 value columns"
-        (is (= ((build-lookup-table ds ["A" "C"]) row) {"D" 8, "B" 6})))
+        (is (= {"D" 8, "B" 6}
+               ((build-lookup-table ds ["A" "C"]) row))))
+
       (testing "value column id"
-        (is (= ((build-lookup-table ds ["A" "C"] 1) row) {"B" 6}))))
+        (is (= {"B" 6}
+               ((build-lookup-table ds ["A" "C"] 1) row)))))
     (testing "1 key column"
       (testing "1 value column"
-        (is (= ((build-lookup-table ds ["A"] "B") row) {"B" 6})))
+        (is (= {"B" 6}
+               ((build-lookup-table ds ["A"] "B") row))))
       (testing "several value columns"
-        (is (= ((build-lookup-table ds ["A"] ["B" "C"]) row) {"C" 7, "B" 6})))
+        (is (= {"C" 7, "B" 6}
+               ((build-lookup-table ds ["A"] ["B" "C"]) row))))
       (testing "key column id"
-        (is (= ((build-lookup-table ds 0 "B") row) {"B" 6})))
+        (is (= {"B" 6}
+               ((build-lookup-table ds 0 "B") row))))
       (testing "key column name"
-        (is (= ((build-lookup-table ds "A" "B") row) {"B" 6}))))
+        (is (= {"B" 6}
+               ((build-lookup-table ds "A" "B") row)))))
     (testing "errors"
       (testing "no key column"
         (is (thrown? IndexOutOfBoundsException
@@ -224,7 +236,28 @@
         (is (thrown? IndexOutOfBoundsException
                      ((build-lookup-table ds ["foo"] "B") row)))))))
 
+
 (comment
+  ;; TODO: Make build-lookup-table work like this:
+
+  (let [friends (make-dataset [["rick"] ["bob"] ["john"] ["kevin"]])
+        debtor-table (make-dataset [["bob" 10] ["john" 20] ["rick" 30]])
+
+        debtor-lookup (build-lookup-table debtor-table :A :B)]
+
+    (-> friends
+        (derive-column :A debtor-lookup :money-owed-by-friend)))
+
+  ;; =>
+  ;; |   :A | :money-owed-by-friend |
+  ;; |------+-----------------------|
+  ;; |  bob |                    10 |
+  ;; | john |                    20 |
+  ;; | rick |                    30 |
+
+
+
+
 
   (deftest grep-test
     (let [dataset (make-dataset [["one" "two" "three"]

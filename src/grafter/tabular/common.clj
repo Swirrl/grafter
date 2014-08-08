@@ -49,7 +49,7 @@
 
 (defmulti open-tabular-file
   "Takes a File or String as an argument and coerces it based upon its
-  file extension into a concrete grafter table.
+file extension into a concrete grafter table.
 
 Supported files are currently csv or Excel's xls or xlsx files.
 
@@ -122,7 +122,7 @@ dataset."
       [common-context (make-dataset-f sheet-or-data)])))
 
 (defn open-all-datasets
-  "Return a seq of incanter.core.Dataset's, recursively found beneath
+  "Returns a sequence of incanter.core.Dataset's, recursively found beneath
   a given directory.
 
   Files may contain one or more datasets.
