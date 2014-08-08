@@ -195,6 +195,34 @@
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
       (is (= (make-dataset []) (drop-rows dataset 1000))))))
 
+(deftest build-lookup-table-test
+  (let [ds (make-dataset [[1 2 3 4][5 6 7 8][9 10 11 12]])
+        row {"D" 8, "C" 7, "B" 6, "A" 5}]
+    (testing "several key columns"
+      (testing "1 value column"
+        (is (= ((build-lookup-table ds ["A" "C"] "B") row) {"B" 6})))
+      (testing "several value columns"
+        (is (= ((build-lookup-table ds ["A" "C"] ["B" "D"]) row) {"D" 8, "B" 6})))
+      (testing "0 value columns"
+        (is (= ((build-lookup-table ds ["A" "C"]) row) {"D" 8, "B" 6})))
+      (testing "value column id"
+        (is (= ((build-lookup-table ds ["A" "C"] 1) row) {"B" 6}))))
+    (testing "1 key column"
+      (testing "1 value column"
+        (is (= ((build-lookup-table ds ["A"] "B") row) {"B" 6})))
+      (testing "several value columns"
+        (is (= ((build-lookup-table ds ["A"] ["B" "C"]) row) {"C" 7, "B" 6})))
+      (testing "key column id"
+        (is (= ((build-lookup-table ds 0 "B") row) {"B" 6})))
+      (testing "key column name"
+        (is (= ((build-lookup-table ds "A" "B") row) {"B" 6}))))
+    (testing "errors"
+      (testing "no key column"
+        (is (thrown? IndexOutOfBoundsException
+                     ((build-lookup-table ds [] "B") row))))
+      (testing "key column not existing"
+        (is (thrown? IndexOutOfBoundsException
+                     ((build-lookup-table ds ["foo"] "B") row)))))))
 
 (comment
 

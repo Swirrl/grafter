@@ -29,7 +29,8 @@
                  ]
 
 
-  :codox {:defaults {:doc "FIXME: write docs"}}
+  :codox {:defaults {:doc "FIXME: write docs"}
+          :output-dir "api-docs"}
 
   :source-paths ["src"]
   :jvm-opts ["-Dapple.awt.UIElement=true"] ;; Prevent Java process
@@ -42,10 +43,9 @@
   :profiles {:uberjar {:aot :all}
 
              :dev {:plugins [[com.aphyr/prism "0.1.1"]  ;; autotest support simply run: lein prism
-                             [codox "0.8.9"]
-                             ]
+                             [codox "0.8.10"]]
+
                    :dependencies [[com.aphyr/prism "0.1.1"]]
 
 
-                   :env {:dev true}}}
-  )
+                   :env {:dev true}}})
