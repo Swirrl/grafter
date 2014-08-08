@@ -272,17 +272,17 @@ the specified column being cloned."
   (let [fs-hash (if (vector? fs)
                     (zipmap (column-names dataset) fs)
                     fs)
-        other-keys (vec (clojure.set/difference (set (:column-names dataset))
-                                                      (set (if (sequential? key-cols)
-                                                               key-names
-                                                               [key-names]))))]
-    (->> dataset
-         (map (fn [row]
-                (map (fn [f c] (f c))
-                     (conj functions (zipmap ;;identity)) row)))
-         ;(map (partial apply vector))
-         )
-    ))
+        other-hash (zipmap (vec (clojure.set/difference (set (:column-names dataset))
+                                                        (set (keys fs))))
+                           (cycle [identity]))
+        functions (conj fs-hash other-hash)]
+   ;(->> dataset
+   ;     (map (fn [row]
+   ;            (map (fn [f c] (f c))
+   ;                 (conj functions (zipmap identity)) row)))
+   ;     ;(map (partial apply vector))
+   ;     )
+    functions))
 
 
 (comment
