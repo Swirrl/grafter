@@ -195,31 +195,6 @@
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
       (is (= (make-dataset []) (drop-rows dataset 1000))))))
 
-(deftest swap-test
-  (let [ordered-ds (make-dataset
-                    [["a" "b" "c" "d"]
-                     ["a" "b" "c" "d"]
-                     ["a" "b" "c" "d"]])
-        reordered-ds-1 (make-dataset
-                        ["B" "A" "C" "D"]
-                        [["b" "a" "c" "d"]
-                         ["b" "a" "c" "d"]
-                         ["b" "a" "c" "d"]])
-        reordered-ds-2 (make-dataset
-                        ["B" "C" "A" "D"]
-                        [["b" "c" "a" "d"]
-                         ["b" "c" "a" "d"]
-                         ["b" "c" "a" "d"]])]
-    (testing "swaping two columns"
-      (is (= reordered-ds-1
-             (swap ordered-ds "A" "B"))))
-    (testing "swaping two times two columns"
-      (is (= reordered-ds-2
-             (swap ordered-ds "A" "B" "A" "C"))))
-    (testing "swaping odd number of columns"
-      (is (thrown? java.lang.Exception
-             (swap ordered-ds "A" "B" "C"))))))
-
 (deftest grep-test
   (let [dataset (make-dataset [["one" "two" "bar"]
                                ["foo" "bar" "b2az"]
@@ -254,6 +229,53 @@
         (is (= expected-dataset
                (grep ds #"\d")))))))
 
+(deftest mapc-test
+  (let [dataset (make-dataset [[1 2 "foo" 4]
+                               [5 6 "bar" 8]
+                               [9 10 "baz" 12]])
+        fs {"A" str, "B" inc, "C" identity, "D" inc}
+        fs-incomplete {"A" str, "B" inc, "D" inc}
+        fs-vec [str inc identity inc]
+        expected-dataset (make-dataset [["1" 3 "foo" 5]
+                                        ["5" 7 "bar" 9]
+                                        ["9" 11 "baz" 13]])]
+    (testing "mapc with a hashmap"
+      (testing "complete hashmap"
+        (is (= expected-dataset
+               (mapc dataset fs))))
+      (testing "incomplete hashmap"
+        (is (= expected-dataset
+               (mapc dataset fs-incomplete)))
+        (is (= dataset
+               (mapc dataset {})))))
+    (testing "mapc with a vector"
+      (is (= expected-dataset
+             (mapc dataset fs-vec))))))
+
+(deftest swap-test
+  (let [ordered-ds (make-dataset
+                    [["a" "b" "c" "d"]
+                     ["a" "b" "c" "d"]
+                     ["a" "b" "c" "d"]])
+        reordered-ds-1 (make-dataset
+                        ["B" "A" "C" "D"]
+                        [["b" "a" "c" "d"]
+                         ["b" "a" "c" "d"]
+                         ["b" "a" "c" "d"]])
+        reordered-ds-2 (make-dataset
+                        ["B" "C" "A" "D"]
+                        [["b" "c" "a" "d"]
+                         ["b" "c" "a" "d"]
+                         ["b" "c" "a" "d"]])]
+    (testing "swaping two columns"
+      (is (= reordered-ds-1
+             (swap ordered-ds "A" "B"))))
+    (testing "swaping two times two columns"
+      (is (= reordered-ds-2
+             (swap ordered-ds "A" "B" "A" "C"))))
+    (testing "swaping odd number of columns"
+      (is (thrown? java.lang.Exception
+             (swap ordered-ds "A" "B" "C"))))))
 
 (comment
 
