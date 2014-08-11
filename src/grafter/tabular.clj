@@ -286,27 +286,26 @@ the specified column being cloned."
 
 
 (defn swap
-"Takes two column names and swaps each column"
+  "Takes two column names and swaps each column"
 
   ([dataset first-col second-col]
-  (let [swapper (fn [v i j]
-                  (-> v
-                      (assoc i (v j))
-                      (assoc j (v i))))
-        data (:rows dataset)
-        header (column-names dataset)]
-    (-> header
-        (swapper (col-position header first-col)
-                 (col-position header second-col))
-        (make-dataset data))))
+   (let [data (:rows dataset)
+         header (column-names dataset)
+         swapper (fn [v i j]
+                   (-> v
+                       (assoc i (v j))
+                       (assoc j (v i))))]
+     (-> header
+         (swapper (col-position header first-col)
+                  (col-position header second-col))
+         (make-dataset data))))
   ([dataset first-col second-col & more]
    (if (seq more)
      (reduce (fn [ds [f s]]
-               (apply swap f s more)) (swap dataset first-col second-col)
-             more)
-     (swap dataset first-col second-col))
-   )
-  )
+               (swap ds f s))
+             (swap dataset first-col second-col)
+             (partition 2 more))
+     (swap dataset first-col second-col))))
 
 (comment
 
