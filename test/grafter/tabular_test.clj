@@ -195,6 +195,35 @@
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
       (is (= (make-dataset []) (drop-rows dataset 1000))))))
 
+(deftest swap-test
+  (let [ordered-ds (make-dataset
+                    [["a" "b" "c" "d"]
+                     ["a" "b" "c" "d"]
+                     ["a" "b" "c" "d"]])
+        reordered-ds-1 (make-dataset
+                        ["B" "A" "C" "D"]
+                        [["b" "a" "c" "d"]
+                         ["b" "a" "c" "d"]
+                         ["b" "a" "c" "d"]])
+        reordered-ds-2 (make-dataset
+                        ["B" "C" "A" "D"]
+                        [["b" "c" "a" "d"]
+                         ["b" "c" "a" "d"]
+                         ["b" "c" "a" "d"]])]
+    (testing "swaping two columns"
+      (is (= reordered-ds-1
+             (swap ordered-ds "A" "B"))))
+    (testing "swaping two times two columns"
+      (is (= reordered-ds-2
+             (swap ordered-ds "A" "B" "A" "C"))))
+    (testing "swaping odd number of columns"
+      (is (thrown? java.lang.Exception
+             (swap ordered-ds "A" "B" "C"))))))
+
+
+
+(comment
+
 (deftest build-lookup-table-test
   (let [ds (make-dataset [[1 2 3 4]
                           [5 6 7 8]
@@ -237,7 +266,7 @@
                      ((build-lookup-table ds ["foo"] "B") row)))))))
 
 
-(comment
+
   ;; TODO: Make build-lookup-table work like this:
 
   (let [friends (make-dataset [["rick"] ["bob"] ["john"] ["kevin"]])

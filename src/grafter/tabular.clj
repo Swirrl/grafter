@@ -286,7 +286,7 @@ the specified column being cloned."
 
 
 (defn swap
-  "Takes two column names and swaps each column"
+  "Takes an even numer of column names and swaps each column"
 
   ([dataset first-col second-col]
    (let [data (:rows dataset)
@@ -300,25 +300,43 @@ the specified column being cloned."
                   (col-position header second-col))
          (make-dataset data))))
   ([dataset first-col second-col & more]
-   (if (seq more)
-     (reduce (fn [ds [f s]]
-               (swap ds f s))
-             (swap dataset first-col second-col)
-             (partition 2 more))
-     (swap dataset first-col second-col))))
+   (if (even? (count more))
+     (if (seq more)
+       (reduce (fn [ds [f s]]
+                 (swap ds f s))
+               (swap dataset first-col second-col)
+               (partition 2 more))
+       (swap dataset first-col second-col))
+     (throw (Exception. "Number of columns should be even")))))
+
+(defn build-lookup-table
+  "Takes a dataset, a vector of any number of integers corresponding
+  to key column numbers and a integer corresponding to the value
+  column number and returns a function, taking a row (a hash-map) as
+  argument and returning the value wanted"
+  ([dataset key-cols]
+     (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
+           compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
+                                                       (set (if (sequential? key-cols)
+                                                              key-names
+                                                              [key-names]))))]
+       (build-lookup-table dataset key-cols compl-key-cols)))
+
+  ([dataset key-cols value-col]
+
+     (let [arg->vector (fn [x] (if (sequential? x) x [x]))
+           keys (:rows (all-columns dataset (arg->vector key-cols)))
+           val (:rows (all-columns dataset (arg->vector value-col)))
+           table (zipmap keys val)]
+
+       (fn [row]
+         (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") (arg->vector key-cols))
+               lookup (zipmap key-names (map #(row %) key-names))
+               value-from-row (table lookup)]
+           value-from-row)))))
+
 
 (comment
-
-(defn select-columns
-  ([srange row]
-     (drop srange row))
-  ([srange erange row]
-     {:pre [(<= srange erange)]}
-     (let [ncols (- (inc erange) srange)]
-       (->> row
-            (drop srange)
-            (take ncols)))))
-
 
 ;; TODO fix this so that it doesn't assume contiguous blocks of
 ;; id/measure columns.  It needs to calculate the set complement of
@@ -377,29 +395,3 @@ into data rows look like this.  It does not yet preserve the header row:
     ;;(filter)
     (apply map vector csv others)))
 
-
-(defn build-lookup-table
-  "Takes a dataset, a vector of any number of integers corresponding
-  to key column numbers and a integer corresponding to the value
-  column number and returns a function, taking a row (a hash-map) as
-  argument and returning the value wanted"
-  ([dataset key-cols]
-     (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
-           compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
-                                                       (set (if (sequential? key-cols)
-                                                              key-names
-                                                              [key-names]))))]
-       (build-lookup-table dataset key-cols compl-key-cols)))
-
-  ([dataset key-cols value-col]
-
-     (let [arg->vector (fn [x] (if (sequential? x) x [x]))
-           keys (:rows (all-columns dataset (arg->vector key-cols)))
-           val (:rows (all-columns dataset (arg->vector value-col)))
-           table (zipmap keys val)]
-
-       (fn [row]
-         (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") (arg->vector key-cols))
-               lookup (zipmap key-names (map #(row %) key-names))
-               value-from-row (table lookup)]
-           value-from-row)))))
