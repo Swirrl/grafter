@@ -209,6 +209,7 @@ column with position col-n.  f should just return the cells value.
 
 If no f is supplied the identity function is used, which results in
 the specified column being cloned."
+
   ([dataset new-column-name from-cols]
    (derive-column dataset new-column-name from-cols identity))
   ;; todo support multiple columns/arguments to f.
@@ -329,10 +330,10 @@ the specified column being cloned."
            val (:rows (all-columns dataset (arg->vector value-col)))
            table (zipmap keys val)]
 
-       (fn [row]
-         (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") (arg->vector key-cols))
-               lookup (zipmap key-names (map #(row %) key-names))
-               value-from-row (table lookup)]
+       (fn [key-cells]
+         (let [lookup (zipmap (arg->vector key-cols) (arg->vector key-cells))
+               value-from-row ((table lookup) value-col)
+               ]
            value-from-row)))))
 
 
