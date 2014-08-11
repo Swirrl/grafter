@@ -246,7 +246,7 @@ the specified column being cloned."
                  (first cols))
         col-set (into #{} cols)]
 
-     (make-dataset cols
+     (make-dataset (column-names dataset)
                    (->> data
                        (filter (fn [row]
                                  (some f

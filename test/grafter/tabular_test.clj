@@ -220,6 +220,39 @@
       (is (thrown? java.lang.Exception
              (swap ordered-ds "A" "B" "C"))))))
 
+(deftest grep-test
+  (let [dataset (make-dataset [["one" "two" "bar"]
+                               ["foo" "bar" "b2az"]
+                               ["foo" "blee" "bl3ah"]])
+
+        expected-dataset (make-dataset [["foo" "bar" "b2az"]
+                                        ["foo" "blee" "bl3ah"]])
+
+        expected-dataset-2 (make-dataset [["one" "two" "bar"]])]
+
+    (testing "grep"
+      (testing "with a function"
+        (testing "receives a single cell as its argument"
+          (grep dataset (fn [cell]
+                          (is (= String (class cell))))))
+
+        (is (= expected-dataset
+               (grep dataset (fn [cell]
+                               (= cell "foo")))))
+
+        (is (= expected-dataset
+               (grep dataset (fn [cell]
+                               (.startsWith cell "f")))))
+
+        (is (= expected-dataset-2
+               (grep dataset (fn [cell]
+                               (= cell "bar")) ["C"]))))
+      (testing "with a string"
+        (is (= expected-dataset
+               (grep dataset "fo"))))
+      (testing "with a regex"
+        (is (= expected-dataset
+               (grep ds #"\d")))))))
 
 
 (comment
@@ -283,29 +316,4 @@
   ;; |  bob |                    10 |
   ;; | john |                    20 |
   ;; | rick |                    30 |
-
-
-
-
-
-  (deftest grep-test
-    (let [dataset (make-dataset [["one" "two" "three"]
-                                 ["foo" "bar" "baz"]
-                                 ["foo" "blee" "blah"]])
-
-                 expected-dataset (make-dataset [["foo" "bar" "baz"]
-                                                 ["foo" "blee" "blah"]])]
-
-      (testing "grep"
-        (testing "with a function"
-          (testing "receives a single cell as its argument"
-            (grep dataset (fn [cell]
-                            (is (= String (class cell))))))
-
-          (is (= expected-dataset
-                 (grep dataset (fn [cell]
-                                 (= cell "foo")))))
-
-          (is (= expected-dataset
-                 (grep dataset (fn [cell]
-                                 (.startsWith cell "b"))))))))))
+)
