@@ -311,31 +311,32 @@ the specified column being cloned."
      (throw (Exception. "Number of columns should be even")))))
 
 (defn build-lookup-table
-  "Takes a dataset, a vector of any number of integers corresponding
-  to key column numbers and a integer corresponding to the value
-  column number and returns a function, taking a row (a hash-map) as
+  "Takes a dataset, a vector of any number of column names corresponding
+  to key columns and a column name corresponding to the value
+  column.
+  Returns a function, taking a vector of keys as
   argument and returning the value wanted"
   ([dataset key-cols]
-     (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
-           compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
-                                                       (set (if (sequential? key-cols)
-                                                              key-names
-                                                              [key-names]))))]
-       (build-lookup-table dataset key-cols compl-key-cols)))
+   (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
+         compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
+                                                     (set (if (sequential? key-cols)
+                                                            key-names
+                                                            [key-names]))))]
+     (build-lookup-table dataset key-cols compl-key-cols)))
 
   ([dataset key-cols value-col]
 
-     (let [arg->vector (fn [x] (if (sequential? x) x [x]))
-           keys (:rows (all-columns dataset (arg->vector key-cols)))
-           val (:rows (all-columns dataset (arg->vector value-col)))
-           table (zipmap keys val)]
+   (let [arg->vector (fn [x] (if (sequential? x) x [x]))
+         keys (:rows (all-columns dataset (arg->vector key-cols)))
+         val (:rows (all-columns dataset (arg->vector value-col)))
+         table (zipmap keys val)]
 
-       (fn [key-cells]
-         (let [lookup (zipmap (arg->vector key-cols) (arg->vector key-cells))
-               value-from-row ((table lookup) value-col)
-               ]
-           value-from-row)
-         ))))
+     (fn [key-cells]
+       (let [lookup (zipmap (arg->vector key-cols) (arg->vector key-cells))
+             value-from-row (if (nil? (table lookup))
+                              nil
+                              ((table lookup) value-col))]
+         value-from-row)))))
 
 
 (comment
