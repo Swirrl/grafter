@@ -334,7 +334,8 @@ the specified column being cloned."
          (let [lookup (zipmap (arg->vector key-cols) (arg->vector key-cells))
                value-from-row ((table lookup) value-col)
                ]
-           value-from-row)))))
+           value-from-row)
+         ))))
 
 
 (comment
