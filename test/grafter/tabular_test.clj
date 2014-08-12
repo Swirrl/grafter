@@ -277,65 +277,30 @@
       (is (thrown? java.lang.Exception
              (swap ordered-ds "A" "B" "C"))))))
 
-(comment
 
 (deftest build-lookup-table-test
-  (let [ds (make-dataset [[1 2 3 4]
-                          [5 6 7 8]
-                          [9 10 11 12]])
+  (let [ds (make-dataset ["name" "age" "debt"]
+                         [["rick" 30 30]
+                          ["rick" 25 33]
+                          ["john" 9 12]
+                          ["bob" 48 20]
+                          ["kevin" 43 10]])
 
-        row {"D" 8, "C" 7, "B" 6, "A" 5}]
-    (testing "several key columns"
-      (testing "1 value column"
-        (is (= {"B" 6}
-               ((build-lookup-table ds ["A" "C"] "B") row))))
-      (testing "several value columns"
-        (is (= {"D" 8, "B" 6}
-               ((build-lookup-table ds ["A" "C"] ["B" "D"]) row))))
-      (testing "0 value columns"
-        (is (= {"D" 8, "B" 6}
-               ((build-lookup-table ds ["A" "C"]) row))))
-
-      (testing "value column id"
-        (is (= {"B" 6}
-               ((build-lookup-table ds ["A" "C"] 1) row)))))
+        key-cell "bob"]
     (testing "1 key column"
-      (testing "1 value column"
-        (is (= {"B" 6}
-               ((build-lookup-table ds ["A"] "B") row))))
-      (testing "several value columns"
-        (is (= {"C" 7, "B" 6}
-               ((build-lookup-table ds ["A"] ["B" "C"]) row))))
-      (testing "key column id"
-        (is (= {"B" 6}
-               ((build-lookup-table ds 0 "B") row))))
-      (testing "key column name"
-        (is (= {"B" 6}
-               ((build-lookup-table ds "A" "B") row)))))
+      (is (= 20
+             ((build-lookup-table debts ["name"] "debt") key-cell)))
+      (is (= nil
+             ((build-lookup-table debts ["name"] "debt") "foo"))))
+    (testing "several key columns"
+      (is (= 33
+             ((build-lookup-table debts ["name" "age"] "debt") ["rick" 25])))
+      (is (= nil
+             ((build-lookup-table debts ["name" "age"] "debt") ["foo" 99]))))
     (testing "errors"
       (testing "no key column"
         (is (thrown? IndexOutOfBoundsException
-                     ((build-lookup-table ds [] "B") row))))
+                     ((build-lookup-table debts [] "debt") key-cell))))
       (testing "key column not existing"
         (is (thrown? IndexOutOfBoundsException
-                     ((build-lookup-table ds ["foo"] "B") row)))))))
-
-
-
-  ;; TODO: Make build-lookup-table work like this:
-
-  (let [friends (make-dataset [["rick"] ["bob"] ["john"] ["kevin"]])
-        debtor-table (make-dataset [["bob" 10] ["john" 20] ["rick" 30]])
-
-        debtor-lookup (build-lookup-table debtor-table :A :B)]
-
-    (-> friends
-        (derive-column :A debtor-lookup :money-owed-by-friend)))
-
-  ;; =>
-  ;; |   :A | :money-owed-by-friend |
-  ;; |------+-----------------------|
-  ;; |  bob |                    10 |
-  ;; | john |                    20 |
-  ;; | rick |                    30 |
-)
+                     ((build-lookup-table debts "foo" "debt") key-cell)))))))
