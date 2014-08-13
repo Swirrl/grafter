@@ -47,7 +47,8 @@
           (is (= [1 2 3] header))))
       (testing "making a dataset from an existing dataset"
         (is (= ds1
-               (make-dataset ds1)))
+               (make-dataset ds1))
+            "Preserves data and column-names")
         (is (= ds2
                (make-dataset ["c" "d"] ds1)))))))
 
@@ -68,11 +69,6 @@
 (def csv-sheet (make-dataset move-first-row-to-header raw-csv-data))
 
 (def excel-sheet (make-dataset move-first-row-to-header raw-excel-data))
-
-(comment
-  (testing "returns a lazy-seq of all datasets beneath a path"
-    (open-all-sheets)
-    ))
 
 (deftest open-tabular-file-tests
   (testing "open-tabular-file"
@@ -208,9 +204,7 @@
                                ["foo" "blee" "bl3ah"]])
 
         expected-dataset (make-dataset [["foo" "bar" "b2az"]
-                                        ["foo" "blee" "bl3ah"]])
-
-        expected-dataset-2 (make-dataset [["one" "two" "bar"]])]
+                                        ["foo" "blee" "bl3ah"]])]
 
     (testing "grep"
       (testing "with a function"
@@ -226,20 +220,29 @@
                (grep dataset (fn [cell]
                                (.startsWith cell "f")))))
 
-        (is (= expected-dataset-2
-               (grep dataset (fn [cell]
-                               (= cell "bar")) ["C"]))))
+
+        (let [expected (make-dataset [["one" "two" "bar"]])]
+          (is (= expected
+                 (grep dataset (fn [cell]
+                                 (= cell "bar")) ["C"])))))
       (testing "with a string"
         (is (= expected-dataset
                (grep dataset "fo"))))
+
       (testing "with a regex"
         (is (= expected-dataset
-               (grep dataset #"\d")))))))
+               (grep dataset #"\d"))))
+
+      (testing "on an empty dataset"
+        (let [empty-ds (make-dataset [])]
+          (is (= empty-ds
+                 (grep empty-ds #"foo"))))))))
 
 (deftest mapc-test
   (let [dataset (make-dataset [[1 2 "foo" 4]
                                [5 6 "bar" 8]
                                [9 10 "baz" 12]])
+
         fs {"A" str, "B" inc, "C" identity, "D" inc}
         fs-incomplete {"A" str, "B" inc, "D" inc}
         fs-vec [str inc identity inc]
@@ -250,35 +253,38 @@
       (testing "complete hashmap"
         (is (= expected-dataset
                (mapc dataset fs))))
-      (testing "incomplete hashmap"
+      (testing "incomplete hashmap implies mapping identity for unspecified columns"
         (is (= expected-dataset
                (mapc dataset fs-incomplete)))
         (is (= dataset
                (mapc dataset {})))))
-    (testing "mapc with a vector"
+    (testing "mapc with a vector of functions works positionally"
       (is (= expected-dataset
-             (mapc dataset fs-vec))))))
+             (mapc dataset fs-vec))))
+    (testing "incomplete vector implies mapping identity over unspecified columns"
+      (let [dataset (make-dataset [[1 2 "foo" 4]])
+            expected (make-dataset [["1" 2 "foo" 4]])]
+        (is (= expected
+               (mapc dataset  [str])))))))
 
 (deftest swap-test
   (let [ordered-ds (make-dataset
                     [["a" "b" "c" "d"]
                      ["a" "b" "c" "d"]
-                     ["a" "b" "c" "d"]])
-        reordered-ds-1 (make-dataset
-                        ["B" "A" "C" "D"]
-                        [["b" "a" "c" "d"]
-                         ["b" "a" "c" "d"]
-                         ["b" "a" "c" "d"]])
-        reordered-ds-2 (make-dataset
-                        ["B" "C" "A" "D"]
-                        [["b" "c" "a" "d"]
-                         ["b" "c" "a" "d"]
-                         ["b" "c" "a" "d"]])]
+                     ["a" "b" "c" "d"]])]
     (testing "swaping two columns"
-      (is (= reordered-ds-1
+      (is (= (make-dataset
+              ["B" "A" "C" "D"]
+              [["b" "a" "c" "d"]
+               ["b" "a" "c" "d"]
+               ["b" "a" "c" "d"]])
              (swap ordered-ds "A" "B"))))
     (testing "swaping two times two columns"
-      (is (= reordered-ds-2
+      (is (= (make-dataset
+              ["B" "C" "A" "D"]
+              [["b" "c" "a" "d"]
+               ["b" "c" "a" "d"]
+               ["b" "c" "a" "d"]])
              (swap ordered-ds "A" "B" "A" "C"))))
     (testing "swaping odd number of columns"
       (is (thrown? java.lang.Exception
@@ -286,20 +292,19 @@
 
 
 (deftest build-lookup-table-test
-  (let [ds (make-dataset ["name" "age" "debt"]
-                         [["rick" 30 30]
-                          ["rick" 25 33]
-                          ["john" 9 12]
-                          ["bob" 48 20]
-                          ["kevin" 43 10]])
+  (let [debts (make-dataset ["name" "age" "debt"]
+                            [["rick"  30     30]
+                             ["rick"  25     33]
+                             ["john"  9      12]
+                             ["bob"   48     20]
+                             ["kevin" 43     10]])]
 
-        key-cell "bob"]
     (testing "1 key column"
       (is (= 20
-             ((build-lookup-table debts ["name"] "debt") key-cell)))
+             ((build-lookup-table debts ["name"] "debt") "bob")))
       (is (= nil
              ((build-lookup-table debts ["name"] "debt") "foo"))))
-    (testing "several key columns"
+    (testing "composite key columns"
       (is (= 33
              ((build-lookup-table debts ["name" "age"] "debt") ["rick" 25])))
       (is (= nil
@@ -307,7 +312,7 @@
     (testing "errors"
       (testing "no key column"
         (is (thrown? IndexOutOfBoundsException
-                     ((build-lookup-table debts [] "debt") key-cell))))
+                     ((build-lookup-table debts [] "debt") "bob"))))
       (testing "key column not existing"
         (is (thrown? IndexOutOfBoundsException
-                     ((build-lookup-table debts "foo" "debt") key-cell)))))))
+                     ((build-lookup-table debts "foo" "debt") "bob")))))))
