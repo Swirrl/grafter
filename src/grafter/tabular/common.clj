@@ -33,10 +33,10 @@
 
   ([data]
    (if (sequential? data)
-     (make-dataset (seqs/alphabetical-column-names) data)
-     (make-dataset (:column-names data) data)))
+     (make-dataset data (seqs/alphabetical-column-names))
+     (make-dataset data (:column-names data))))
 
-  ([columns-or-f data]
+  ([data columns-or-f]
      {:pre [(or (ifn? columns-or-f) (sequential? columns-or-f))]}
      (let [[column-names data] (if (sequential? columns-or-f)
                                  [(take (-> data first count) columns-or-f) data]
