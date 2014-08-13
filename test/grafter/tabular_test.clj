@@ -308,5 +308,3 @@
       (testing "key column not existing"
         (is (thrown? IndexOutOfBoundsException
                      ((build-lookup-table debts "foo" "debt") key-cell)))))))
-
-(run-tests)

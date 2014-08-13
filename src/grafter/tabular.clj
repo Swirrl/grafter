@@ -296,10 +296,10 @@ the specified column being cloned."
                    (-> v
                        (assoc i (v j))
                        (assoc j (v i))))]
-     (make-dataset (-> header
+     (make-dataset data
+                   (-> header
                        (swapper (col-position header first-col)
-                                (col-position header second-col)))
-                   data)))
+                                (col-position header second-col))))))
    ([dataset first-col second-col & more]
     (if (even? (count more))
       (if (seq more)
