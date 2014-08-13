@@ -31,15 +31,21 @@
   and creates an incanter dataset with columns named alphabetically as
   by grafter.sequences/column-names-seq."
 
+  ([]
+   {:column-names [], :rows ()})
+
   ([data]
    (if (sequential? data)
-     (make-dataset (seqs/alphabetical-column-names) data)
+     (make-dataset data (seqs/alphabetical-column-names))
      data))
 
-  ([columns-or-f data]
+  ([data columns-or-f]
      {:pre [(or (ifn? columns-or-f) (sequential? columns-or-f))]}
      (let [[column-names data] (if (sequential? columns-or-f)
-                                 [(take (-> data first count) columns-or-f) data]
+                                 [(if (inc/dataset? data)
+                                    (take (-> data :column-names count) columns-or-f)
+                                    (take (-> data first count) columns-or-f))
+                                   data]
                                  (columns-or-f data))
            data (if (sequential? data)
                   data
