@@ -13,7 +13,8 @@
 (defn copy-first-row-to-header [data]
   "For use with make-dataset.  Copies the first row of data into the
   header, removing it from the source data."
-  [(first data) data])
+  (if (not (inc/dataset? data))
+    [(first data) data]))
 
 (defn move-first-row-to-header [[first-row & other-rows]]
   "For use with make-dataset.  Moves the first row of data into the
