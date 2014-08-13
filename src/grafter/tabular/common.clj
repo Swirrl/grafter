@@ -32,13 +32,19 @@
   by grafter.sequences/column-names-seq."
 
   ([data]
-     (make-dataset (seqs/alphabetical-column-names) data))
+   (if (sequential? data)
+     (make-dataset (seqs/alphabetical-column-names) data)
+     (make-dataset (:column-names data) data)))
 
   ([columns-or-f data]
      {:pre [(or (ifn? columns-or-f) (sequential? columns-or-f))]}
      (let [[column-names data] (if (sequential? columns-or-f)
                                  [(take (-> data first count) columns-or-f) data]
-                                 (columns-or-f data))]
+                                 (columns-or-f data))
+           data (if (sequential? data)
+                  data
+                  (inc/to-list data))]
+
        (inc/dataset column-names data))))
 
 (defn- extension [f]

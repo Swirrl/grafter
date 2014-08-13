@@ -28,7 +28,9 @@
 
 (deftest make-dataset-tests
   (testing "make-dataset"
-    (let [raw-data [[1 2 3] [4 5 6]]]
+    (let [raw-data [[1 2 3] [4 5 6]]
+          ds1 (make-dataset ["a" "b"][[1 2][3 4]])
+          ds2 (make-dataset ["c" "d"][[1 2][3 4]])]
 
       (testing "converts a seq of seqs into a dataset"
         (is (instance? incanter.core.Dataset
@@ -42,7 +44,12 @@
         (let [dataset (make-dataset move-first-row-to-header raw-data)
               header (:column-names dataset)]
 
-          (is (= [1 2 3] header)))))))
+          (is (= [1 2 3] header))))
+      (testing "making a dataset from an existing dataset"
+        (is (= ds1
+               (make-dataset ds1)))
+        (is (= ds2
+               (make-dataset ["c" "d"] ds1)))))))
 
 ;;; These two vars define what the content of the files
 ;;; test/grafter/test.csv and test/grafter/test.xlsx should look like
@@ -227,7 +234,7 @@
                (grep dataset "fo"))))
       (testing "with a regex"
         (is (= expected-dataset
-               (grep ds #"\d")))))))
+               (grep dataset #"\d")))))))
 
 (deftest mapc-test
   (let [dataset (make-dataset [[1 2 "foo" 4]
