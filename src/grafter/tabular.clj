@@ -209,6 +209,7 @@ column with position col-n.  f should just return the cells value.
 
 If no f is supplied the identity function is used, which results in
 the specified column being cloned."
+
   ([dataset new-column-name from-cols]
    (derive-column dataset new-column-name from-cols identity))
   ;; todo support multiple columns/arguments to f.
@@ -237,20 +238,26 @@ the specified column being cloned."
        (filter (fn [[k v]] (col-set k)))
        (map second)))
 
-(defmethod grep clojure.lang.IFn [dataset f & cols]
+(defmethod grep clojure.lang.IFn
+
+  [dataset f & cols]
   (let [data (:rows dataset)
+        cols (if (nil? cols)
+                 (column-names dataset)
+                 (first cols))
         col-set (into #{} cols)]
 
-    (make-dataset (column-names dataset)
-                  (->> data
+     (make-dataset (column-names dataset)
+                   (->> data
                        (filter (fn [row]
-                                 (some f (partial cells-from-columns col-set))))))))
+                                 (some f
+                                       (cells-from-columns col-set row))))))))
 
-(defmethod grep java.lang.String [csv s & cols]
-  (apply grep csv #(.contains % s) cols))
+(defmethod grep java.lang.String [dataset s & cols]
+  (apply grep dataset #(.contains % s) cols))
 
-(defmethod grep java.util.regex.Pattern [csv p & cols]
-  (apply grep csv #(re-find p %) cols))
+(defmethod grep java.util.regex.Pattern [dataset p & cols]
+  (apply grep dataset #(re-find p %) cols))
 
 (defn- remove-indices [col & idxs]
   "Removes the values at the supplied indexes from the given vector."
@@ -260,62 +267,79 @@ the specified column being cloned."
                                     (subvec col (inc pos)))))]
     (reduce remove-index col pos)))
 
+(def _ identity)
+
+(defn mapc [dataset fs]
+"Takes an array or a hashmap of functions and maps each to the key column for every row."
+  (let [fs-hash (if (vector? fs)
+                    (zipmap (column-names dataset) fs)
+                    fs)
+        other-hash (zipmap (vec (clojure.set/difference (set (:column-names dataset))
+                                                        (set (keys fs-hash))))
+                           (cycle [identity]))
+        functions (conj fs-hash other-hash)]
+   (->> dataset
+        (:rows)
+        (map (fn [row]
+               (apply merge (map #(hash-map % ((functions %) (row %)))
+                    (keys row)))))
+        (make-dataset (column-names dataset)))))
+
+
+(defn swap
+  "Takes an even numer of column names and swaps each column"
+
+  ([dataset first-col second-col]
+   (let [data (:rows dataset)
+         header (column-names dataset)
+         swapper (fn [v i j]
+                   (-> v
+                       (assoc i (v j))
+                       (assoc j (v i))))]
+     (-> header
+         (swapper (col-position header first-col)
+                  (col-position header second-col))
+         (make-dataset data))))
+  ([dataset first-col second-col & more]
+   (if (even? (count more))
+     (if (seq more)
+       (reduce (fn [ds [f s]]
+                 (swap ds f s))
+               (swap dataset first-col second-col)
+               (partition 2 more))
+       (swap dataset first-col second-col))
+     (throw (Exception. "Number of columns should be even")))))
+
+(defn build-lookup-table
+  "Takes a dataset, a vector of any number of column names corresponding
+  to key columns and a column name corresponding to the value
+  column.
+  Returns a function, taking a vector of keys as
+  argument and returning the value wanted"
+  ([dataset key-cols]
+   (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
+         compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
+                                                     (set (if (sequential? key-cols)
+                                                            key-names
+                                                            [key-names]))))]
+     (build-lookup-table dataset key-cols compl-key-cols)))
+
+  ([dataset key-cols value-col]
+
+   (let [arg->vector (fn [x] (if (sequential? x) x [x]))
+         keys (:rows (all-columns dataset (arg->vector key-cols)))
+         val (:rows (all-columns dataset (arg->vector value-col)))
+         table (zipmap keys val)]
+
+     (fn [key-cells]
+       (let [lookup (zipmap (arg->vector key-cols) (arg->vector key-cells))
+             value-from-row (if (nil? (table lookup))
+                              nil
+                              ((table lookup) value-col))]
+         value-from-row)))))
+
 
 (comment
-
-  (defn- fuse-row [columns f row]
-    (let [to-drop (drop 1 (sort columns))
-          merged (assoc row (apply min columns)
-                        (apply f (select-columns-from-row columns row)))]
-      (apply remove-indices merged to-drop)))
-
-  (defn fuse [csv f & cols]
-    "Merge columns with the specified function f receives the number of
-cols supplied number of arguments e.g. If you fuse 3 columns f
-must accept 3 arguments"
-    (map (partial fuse-row cols f) csv))
-
-  (defn mapr [csv f]
-    "Logically identical to map but with reversed arguments, so it works
-better with -> .  mapr maps f over each row."
-    (map f csv))
-
-  (defn mapc [csv fs]
-    "Takes an array of functions and maps each to the equivalent column
-position for every row."
-    (->> csv
-         (map (fn [row]
-                (map (fn [f c] (f c))
-                     (lazy-cat fs (cycle [identity])) row)))
-         (map (partial apply vector))))
-
-
-  ;; alias to create a lightweight pattern matching style syntax for use
-  ;; with mapc
-  (def _ identity)
-
-  (defn swap [csv col-map]
-    "Takes a map from column_id -> column_id (int -> int) and swaps each
-column."
-
-    (map (fn [row]
-           (reduce (fn swaper [acc [cola colb]]
-                     (-> row
-                         (assoc cola (row colb))
-                         (assoc colb (row cola))))
-                   [] col-map))
-         csv))
-
-(defn select-columns
-  ([srange row]
-     (drop srange row))
-  ([srange erange row]
-     {:pre [(<= srange erange)]}
-     (let [ncols (- (inc erange) srange)]
-       (->> row
-            (drop srange)
-            (take ncols)))))
-
 
 ;; TODO fix this so that it doesn't assume contiguous blocks of
 ;; id/measure columns.  It needs to calculate the set complement of
@@ -373,33 +397,4 @@ into data rows look like this.  It does not yet preserve the header row:
   (defn join [csv f & others]
     ;;(filter)
     (apply map vector csv others)))
-
-
-(defn build-lookup-table
-  "Takes a CSV file, a vector of any number of key columns - column's name or id - and
-  a value column - column's name or id.
-
-  Returns a function, taking a row (a hash-map) as argument
-  and returning the value wanted"
-  ([csv key-cols]
-
-    (let [key-names (map #(resolve-column-id csv % "this column id doesn't exist!") key-cols)
-          compl-key-cols (vec (clojure.set/difference (set (:column-names csv))
-                                                      (set (if (sequential? key-cols)
-                                                               key-names
-                                                               [key-names]))))]
-     (build-lookup-table csv key-cols compl-key-cols)))
-
-  ([csv key-cols value-col]
-
-    (let [arg->vector (fn [x] (if (sequential? x) x [x]))
-          keys (:rows (all-columns csv (arg->vector key-cols)))
-          val (:rows (all-columns csv (arg->vector value-col)))
-          table (zipmap keys val)]
-      (fn
-        [row]
-        (let [key-names (map #(resolve-column-id csv % "this column id doesn't exist!") (arg->vector key-cols))
-              lookup (zipmap key-names (map #(row %) key-names))
-              value-from-row (table lookup)]
-          value-from-row)))))
 

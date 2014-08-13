@@ -28,7 +28,9 @@
 
 (deftest make-dataset-tests
   (testing "make-dataset"
-    (let [raw-data [[1 2 3] [4 5 6]]]
+    (let [raw-data [[1 2 3] [4 5 6]]
+          ds1 (make-dataset ["a" "b"][[1 2][3 4]])
+          ds2 (make-dataset ["c" "d"][[1 2][3 4]])]
 
       (testing "converts a seq of seqs into a dataset"
         (is (instance? incanter.core.Dataset
@@ -42,7 +44,13 @@
         (let [dataset (make-dataset move-first-row-to-header raw-data)
               header (:column-names dataset)]
 
-          (is (= [1 2 3] header)))))))
+          (is (= [1 2 3] header))))
+      (testing "making a dataset from an existing dataset"
+        (is (= ds1
+               (make-dataset ds1))
+            "Preserves data and column-names")
+        (is (= ds2
+               (make-dataset ["c" "d"] ds1)))))))
 
 ;;; These two vars define what the content of the files
 ;;; test/grafter/test.csv and test/grafter/test.xlsx should look like
@@ -61,11 +69,6 @@
 (def csv-sheet (make-dataset move-first-row-to-header raw-csv-data))
 
 (def excel-sheet (make-dataset move-first-row-to-header raw-excel-data))
-
-(comment
-  (testing "returns a lazy-seq of all datasets beneath a path"
-    (open-all-sheets)
-    ))
 
 (deftest open-tabular-file-tests
   (testing "open-tabular-file"
@@ -195,55 +198,121 @@
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
       (is (= (make-dataset []) (drop-rows dataset 1000))))))
 
+(deftest grep-test
+  (let [dataset (make-dataset [["one" "two" "bar"]
+                               ["foo" "bar" "b2az"]
+                               ["foo" "blee" "bl3ah"]])
+
+        expected-dataset (make-dataset [["foo" "bar" "b2az"]
+                                        ["foo" "blee" "bl3ah"]])]
+
+    (testing "grep"
+      (testing "with a function"
+        (testing "receives a single cell as its argument"
+          (grep dataset (fn [cell]
+                          (is (= String (class cell))))))
+
+        (is (= expected-dataset
+               (grep dataset (fn [cell]
+                               (= cell "foo")))))
+
+        (is (= expected-dataset
+               (grep dataset (fn [cell]
+                               (.startsWith cell "f")))))
+
+
+        (let [expected (make-dataset [["one" "two" "bar"]])]
+          (is (= expected
+                 (grep dataset (fn [cell]
+                                 (= cell "bar")) ["C"])))))
+      (testing "with a string"
+        (is (= expected-dataset
+               (grep dataset "fo"))))
+
+      (testing "with a regex"
+        (is (= expected-dataset
+               (grep dataset #"\d"))))
+
+      (testing "on an empty dataset"
+        (let [empty-ds (make-dataset [])]
+          (is (= empty-ds
+                 (grep empty-ds #"foo"))))))))
+
+(deftest mapc-test
+  (let [dataset (make-dataset [[1 2 "foo" 4]
+                               [5 6 "bar" 8]
+                               [9 10 "baz" 12]])
+
+        fs {"A" str, "B" inc, "C" identity, "D" inc}
+        fs-incomplete {"A" str, "B" inc, "D" inc}
+        fs-vec [str inc identity inc]
+        expected-dataset (make-dataset [["1" 3 "foo" 5]
+                                        ["5" 7 "bar" 9]
+                                        ["9" 11 "baz" 13]])]
+    (testing "mapc with a hashmap"
+      (testing "complete hashmap"
+        (is (= expected-dataset
+               (mapc dataset fs))))
+      (testing "incomplete hashmap implies mapping identity for unspecified columns"
+        (is (= expected-dataset
+               (mapc dataset fs-incomplete)))
+        (is (= dataset
+               (mapc dataset {})))))
+    (testing "mapc with a vector of functions works positionally"
+      (is (= expected-dataset
+             (mapc dataset fs-vec))))
+    (testing "incomplete vector implies mapping identity over unspecified columns"
+      (let [dataset (make-dataset [[1 2 "foo" 4]])
+            expected (make-dataset [["1" 2 "foo" 4]])]
+        (is (= expected
+               (mapc dataset  [str])))))))
+
+(deftest swap-test
+  (let [ordered-ds (make-dataset
+                    [["a" "b" "c" "d"]
+                     ["a" "b" "c" "d"]
+                     ["a" "b" "c" "d"]])]
+    (testing "swaping two columns"
+      (is (= (make-dataset
+              ["B" "A" "C" "D"]
+              [["b" "a" "c" "d"]
+               ["b" "a" "c" "d"]
+               ["b" "a" "c" "d"]])
+             (swap ordered-ds "A" "B"))))
+    (testing "swaping two times two columns"
+      (is (= (make-dataset
+              ["B" "C" "A" "D"]
+              [["b" "c" "a" "d"]
+               ["b" "c" "a" "d"]
+               ["b" "c" "a" "d"]])
+             (swap ordered-ds "A" "B" "A" "C"))))
+    (testing "swaping odd number of columns"
+      (is (thrown? java.lang.Exception
+             (swap ordered-ds "A" "B" "C"))))))
+
+
 (deftest build-lookup-table-test
-  (let [ds (make-dataset [[1 2 3 4][5 6 7 8][9 10 11 12]])
-        row {"D" 8, "C" 7, "B" 6, "A" 5}]
-    (testing "several key columns"
-      (testing "1 value column"
-        (is (= ((build-lookup-table ds ["A" "C"] "B") row) {"B" 6})))
-      (testing "several value columns"
-        (is (= ((build-lookup-table ds ["A" "C"] ["B" "D"]) row) {"D" 8, "B" 6})))
-      (testing "0 value columns"
-        (is (= ((build-lookup-table ds ["A" "C"]) row) {"D" 8, "B" 6})))
-      (testing "value column id"
-        (is (= ((build-lookup-table ds ["A" "C"] 1) row) {"B" 6}))))
+  (let [debts (make-dataset ["name" "age" "debt"]
+                            [["rick"  30     30]
+                             ["rick"  25     33]
+                             ["john"  9      12]
+                             ["bob"   48     20]
+                             ["kevin" 43     10]])]
+
     (testing "1 key column"
-      (testing "1 value column"
-        (is (= ((build-lookup-table ds ["A"] "B") row) {"B" 6})))
-      (testing "several value columns"
-        (is (= ((build-lookup-table ds ["A"] ["B" "C"]) row) {"C" 7, "B" 6})))
-      (testing "key column id"
-        (is (= ((build-lookup-table ds 0 "B") row) {"B" 6})))
-      (testing "key column name"
-        (is (= ((build-lookup-table ds "A" "B") row) {"B" 6}))))
+      (is (= 20
+             ((build-lookup-table debts ["name"] "debt") "bob")))
+      (is (= nil
+             ((build-lookup-table debts ["name"] "debt") "foo"))))
+    (testing "composite key columns"
+      (is (= 33
+             ((build-lookup-table debts ["name" "age"] "debt") ["rick" 25])))
+      (is (= nil
+             ((build-lookup-table debts ["name" "age"] "debt") ["foo" 99]))))
     (testing "errors"
       (testing "no key column"
         (is (thrown? IndexOutOfBoundsException
-                     ((build-lookup-table ds [] "B") row))))
+                     ((build-lookup-table debts [] "debt") "bob"))))
       (testing "key column not existing"
         (is (thrown? IndexOutOfBoundsException
-                     ((build-lookup-table ds ["foo"] "B") row)))))))
-
-(comment
-
-  (deftest grep-test
-    (let [dataset (make-dataset [["one" "two" "three"]
-                                 ["foo" "bar" "baz"]
-                                 ["foo" "blee" "blah"]])
-
-                 expected-dataset (make-dataset [["foo" "bar" "baz"]
-                                                 ["foo" "blee" "blah"]])]
-
-      (testing "grep"
-        (testing "with a function"
-          (testing "receives a single cell as its argument"
-            (grep dataset (fn [cell]
-                            (is (= String (class cell))))))
-
-          (is (= expected-dataset
-                 (grep dataset (fn [cell]
-                                 (= cell "foo")))))
-
-          (is (= expected-dataset
-                 (grep dataset (fn [cell]
-                                 (.startsWith cell "b"))))))))))
+                     ((build-lookup-table debts "foo" "debt") "bob")))))))
