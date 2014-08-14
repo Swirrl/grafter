@@ -29,8 +29,8 @@
 (deftest make-dataset-tests
   (testing "make-dataset"
     (let [raw-data [[1 2 3] [4 5 6]]
-          ds1 (make-dataset ["a" "b"][[1 2][3 4]])
-          ds2 (make-dataset ["c" "d"][[1 2][3 4]])]
+          ds1 (make-dataset [[1 2][3 4]] ["a" "b"])
+          ds2 (make-dataset [[1 2][3 4]] ["c" "d"])]
 
       (testing "converts a seq of seqs into a dataset"
         (is (instance? incanter.core.Dataset
@@ -41,16 +41,17 @@
           (is (= ["A" "B" "C"] header))))
 
       (testing "takes a function that extracts the column names (header row)"
-        (let [dataset (make-dataset move-first-row-to-header raw-data)
+        (let [dataset (make-dataset raw-data move-first-row-to-header)
               header (:column-names dataset)]
 
           (is (= [1 2 3] header))))
+
       (testing "making a dataset from an existing dataset"
         (is (= ds1
                (make-dataset ds1))
             "Preserves data and column-names")
         (is (= ds2
-               (make-dataset ["c" "d"] ds1)))))))
+               (make-dataset ds1 ["c" "d"])))))))
 
 ;;; These two vars define what the content of the files
 ;;; test/grafter/test.csv and test/grafter/test.xlsx should look like
@@ -66,9 +67,9 @@
 (def raw-excel-data [["one" "two" "three"]
                      [1.0 2.0 3.0]])
 
-(def csv-sheet (make-dataset move-first-row-to-header raw-csv-data))
+(def csv-sheet (make-dataset raw-csv-data move-first-row-to-header))
 
-(def excel-sheet (make-dataset move-first-row-to-header raw-excel-data))
+(def excel-sheet (make-dataset raw-excel-data move-first-row-to-header))
 
 (deftest open-tabular-file-tests
   (testing "open-tabular-file"
@@ -234,7 +235,7 @@
                (grep dataset #"\d"))))
 
       (testing "on an empty dataset"
-        (let [empty-ds (make-dataset [])]
+        (let [empty-ds (make-dataset)]
           (is (= empty-ds
                  (grep empty-ds #"foo"))))))))
 
@@ -274,17 +275,17 @@
                      ["a" "b" "c" "d"]])]
     (testing "swaping two columns"
       (is (= (make-dataset
-              ["B" "A" "C" "D"]
               [["b" "a" "c" "d"]
                ["b" "a" "c" "d"]
-               ["b" "a" "c" "d"]])
+               ["b" "a" "c" "d"]]
+              ["B" "A" "C" "D"])
              (swap ordered-ds "A" "B"))))
     (testing "swaping two times two columns"
       (is (= (make-dataset
-              ["B" "C" "A" "D"]
               [["b" "c" "a" "d"]
                ["b" "c" "a" "d"]
-               ["b" "c" "a" "d"]])
+               ["b" "c" "a" "d"]]
+              ["B" "C" "A" "D"])
              (swap ordered-ds "A" "B" "A" "C"))))
     (testing "swaping odd number of columns"
       (is (thrown? java.lang.Exception
@@ -292,12 +293,12 @@
 
 
 (deftest build-lookup-table-test
-  (let [debts (make-dataset ["name" "age" "debt"]
-                            [["rick"  30     30]
+  (let [debts (make-dataset [["rick"  30     30]
                              ["rick"  25     33]
                              ["john"  9      12]
                              ["bob"   48     20]
-                             ["kevin" 43     10]])]
+                             ["kevin" 43     10]]
+                            ["name" "age" "debt"])]
 
     (testing "1 key column"
       (is (= 20

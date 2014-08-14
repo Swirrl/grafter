@@ -33,7 +33,7 @@
   by grafter.sequences/column-names-seq."
 
   ([]
-   {:column-names [], :rows ()})
+   (make-dataset []))
 
   ([data]
    (if (sequential? data)
