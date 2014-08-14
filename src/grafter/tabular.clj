@@ -137,8 +137,8 @@ Returns a lazy sequence of matched rows."
 (defn rows [dataset row-numbers & {:as opts}]
   (let [rows (indexed (inc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
-    (make-dataset (column-names dataset)
-                  filtered-rows)))
+    (make-dataset filtered-rows
+                  (column-names dataset))))
 
 (defn- col-position [column-names col]
   (if-let [canonical-col (resolve-col-id col column-names ::not-found)]
@@ -169,8 +169,8 @@ Returns a lazy sequence of matched rows."
   "Maps the function f over the dataset and returns a new dataset.
   This is really just map/fmap defined on dataset data."
   [dataset f]
-  (make-dataset (column-names dataset)
-                (->> dataset inc/to-list f)))
+  (make-dataset (->> dataset inc/to-list f)
+                (column-names dataset)))
 
 (defn- map-keys [f hash]
   "Apply f to the keys in the supplied hashmap and return a new
@@ -192,8 +192,8 @@ Returns a lazy sequence of matched rows."
                         (inc/to-list dataset))
           new-columns (map col-map-or-fn
                            (column-names dataset))]
-      (make-dataset new-columns
-                    new-data))))
+      (make-dataset new-data
+                    new-columns))))
 
 (defn drop-rows [dataset n]
   "Drops the first n rows from the CSV."
@@ -218,8 +218,8 @@ the specified column being cloned."
 
 (defn- grep-row [dataset f]
   (let [filtered-data (filter f (:rows dataset))]
-    (make-dataset (column-names dataset)
-                  filtered-data)))
+    (make-dataset filtered-data
+                  (column-names dataset))))
 
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
@@ -247,11 +247,11 @@ the specified column being cloned."
                  (first cols))
         col-set (into #{} cols)]
 
-     (make-dataset (column-names dataset)
-                   (->> data
+     (make-dataset (->> data
                        (filter (fn [row]
                                  (some f
-                                       (cells-from-columns col-set row))))))))
+                                       (cells-from-columns col-set row)))))
+                   (column-names dataset))))
 
 (defmethod grep java.lang.String [dataset s & cols]
   (apply grep dataset #(.contains % s) cols))
@@ -278,12 +278,13 @@ the specified column being cloned."
                                                         (set (keys fs-hash))))
                            (cycle [identity]))
         functions (conj fs-hash other-hash)]
-   (->> dataset
-        (:rows)
-        (map (fn [row]
-               (apply merge (map #(hash-map % ((functions %) (row %)))
-                    (keys row)))))
-        (make-dataset (column-names dataset)))))
+
+    (make-dataset (->> dataset
+                       (:rows)
+                       (map (fn [row]
+                              (apply merge (map #(hash-map % ((functions %) (row %)))
+                                                (keys row))))))
+                  (column-names dataset))))
 
 
 (defn swap
@@ -296,10 +297,10 @@ the specified column being cloned."
                    (-> v
                        (assoc i (v j))
                        (assoc j (v i))))]
-     (-> header
-         (swapper (col-position header first-col)
-                  (col-position header second-col))
-         (make-dataset data))))
+     (make-dataset data
+                   (-> header
+                       (swapper (col-position header first-col)
+                                (col-position header second-col))))))
   ([dataset first-col second-col & more]
    (if (even? (count more))
      (if (seq more)
