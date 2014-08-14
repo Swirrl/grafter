@@ -26,7 +26,7 @@
    [org.openrdf.rio.trix TriXParserFactory]
    [org.openrdf.rio.turtle TurtleParserFactory]
    [org.openrdf.sail.nativerdf NativeStore]
-   [org.openrdf.query TupleQuery TupleQueryResult TupleQueryResultHandler BooleanQueryResultHandler BindingSet QueryLanguage BooleanQuery GraphQuery]
+   [org.openrdf.query Update TupleQuery TupleQueryResult TupleQueryResultHandler BooleanQueryResultHandler BindingSet QueryLanguage BooleanQuery GraphQuery]
    [org.openrdf.query.resultio.text BooleanTextWriter]
    [org.openrdf.query.resultio.sparqljson SPARQLResultsJSONWriter]
    [org.openrdf.query.resultio.sparqlxml SPARQLResultsXMLWriter SPARQLBooleanXMLWriter]
@@ -495,17 +495,34 @@ TODO: reimplement with proper resource handling."
 
   GraphQuery
   (evaluate [this]
-    (sesame-results->seq this sesame-statement->IStatement)))
+    (sesame-results->seq this sesame-statement->IStatement))
+
+  Update
+  (evaluate [this]
+    (.execute this)))
+
+(defn ->connection [repo]
+  (if (instance? RepositoryConnection repo)
+    repo
+    (.getConnection repo)))
 
 (defn prepare-query
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string dataset]
-     (let [conn (if (instance? RepositoryConnection repo)
-                  repo
-                  (.getConnection repo))]
+     (let [conn (->connection repo)]
        (doto (.prepareQuery conn
                             QueryLanguage/SPARQL
                             sparql-string)
+         (.setDataset dataset)))))
+
+(defn prepare-update
+  ([repo sparql-update-str] (prepare-update repo sparql-update-str nil))
+  ([repo sparql-update-str dataset]
+     (let [conn (->connection repo)]
+       (doto
+           (.prepareUpdate conn
+                           QueryLanguage/SPARQL
+                           sparql-update-str)
          (.setDataset dataset)))))
 
 (extend-type RepositoryConnection
@@ -519,6 +536,8 @@ TODO: reimplement with proper resource handling."
                                          QueryLanguage/SPARQL
                                          sparql-string)]
       (.execute prepared-query))))
+
+
 
 (defn- ->uri [graph]
   (if (instance? URI graph)
