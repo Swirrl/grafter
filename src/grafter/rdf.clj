@@ -85,24 +85,54 @@ of grafter.rdf.protocols.IStatement's"
   (reduce conj triple-template
           (mapcat vector hash-map)))
 
-(defn- canonicalise-column-names [ds]
-  (tab/make-dataset (map name (tab/column-names ds)) ds))
+(defn- get-column-by-number [ds row index]
+  (let [col-name (grafter.tabular/resolve-column-id ds index ::not-found)]
+    (if-not (= col-name ::not-found)
+      (get row col-name ::not-found))))
+
+(defn- generate-vector-bindings [ds-symbol row-symbol row-bindings]
+  (let [bindings (->> row-bindings
+                      (map-indexed (fn [index binding]
+                                     [binding `(get-column-by-number ~ds-symbol ~row-symbol ~index)]))
+                      (apply concat)
+                      (apply vector))]
+    bindings))
+
+(defn- splice-supplied-bindings [row-sym row-bindings]
+  `[~row-bindings ~row-sym])
 
 (defmacro graph-fn
-  "Takes FIXME followed by a series of graph or triplify forms and concatenates them
-  all together."
+  "A macro that defines an anonymous function to convert a tabular
+  dataset into a graph of RDF quads.  Ultimately it converts a
+  lazy-seq of rows inside a dataset, into a lazy-seq of RDF
+  Statements.
+
+  The function body should be composed of any number of forms, each of
+  which should return a sequence of RDF quads.  These will then be
+  concatenated together into a flattened lazy-seq of RDF statements.
+
+  Rows are passed to the function one at a time as hash-maps, which
+  can be destructured via Clojure's standard destructuring syntax.
+
+  Additionally destructuring can be done on row-indicies (when a
+  vector form is supplied) or column names (when a hash-map form is
+  supplied)."
+
   [[row-bindings] & forms]
   {:pre [(or (symbol? row-bindings) (map? row-bindings)
              (vector? row-bindings))]}
+  (let [row-sym (gensym "row")
+        ds-sym (gensym "ds")]
+    `(fn graphify-dataset [~ds-sym]
+       (letfn [(graphify-row# [~row-sym]
+                 (let ~(if (vector? row-bindings)
+                         (generate-vector-bindings ds-sym row-sym row-bindings)
+                         (splice-supplied-bindings row-sym row-bindings))
+                   (->> (concat ~@forms)
+                        (map (fn with-row-meta [triple#]
+                               (with-meta triple# {::row ~row-sym}))))))]
 
-  `(fn graphify-dataset [ds#]
-     (mapcat (fn graphify-row [row#]
-               (let [~row-bindings row#]
-                 (->> (concat ~@forms)
-                      (map (fn [triple#]
-                             (with-meta triple# {::row row#}))))))
-             (:rows ds#))))
-
+         (mapcat graphify-row# (:rows ~ds-sym))))))
 
 (defn load-triples [my-repo triple-seq]
   (doseq [triple triple-seq]
