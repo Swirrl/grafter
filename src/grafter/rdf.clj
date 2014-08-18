@@ -12,9 +12,10 @@
    [grafter.rdf.ontologies.sdmx-measure]
    [grafter.rdf.ontologies.sdmx-attribute]
    [grafter.rdf.ontologies.sdmx-concept])
-  (:require [clojure.java.io :as io])
-  (:require [grafter.rdf.protocols :as pr])
-  (:require [grafter.rdf.sesame :as ses])
+  (:require [clojure.java.io :as io]
+            [grafter.tabular :as tab]
+            [grafter.rdf.protocols :as pr]
+            [grafter.rdf.sesame :as ses])
   (:import [grafter.rdf.protocols Triple Quad]
            [grafter.rdf.sesame ISesameRDFConverter])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
@@ -84,17 +85,24 @@ of grafter.rdf.protocols.IStatement's"
   (reduce conj triple-template
           (mapcat vector hash-map)))
 
-(defmacro graphify [row-bindings & forms]
-  "Takes a vector in fn binding form (where destructuring is
-supported) followed by a series of graph or triplify forms and
-concatenates them all together."
-  `(fn graphify-rows-fn [rs#]
-     (mapcat (fn graphify-row [row-sym#]
-               (let [~@row-bindings row-sym#]
-                 (->> (concat
-                       ~@forms)
-                      (map (fn [triple#] (with-meta triple# {:row row-sym#}))))))
-             rs#)))
+(defn- canonicalise-column-names [ds]
+  (tab/make-dataset (map name (tab/column-names ds)) ds))
+
+(defmacro graph-fn
+  "Takes FIXME followed by a series of graph or triplify forms and concatenates them
+  all together."
+  [[row-bindings] & forms]
+  {:pre [(or (symbol? row-bindings) (map? row-bindings)
+             (vector? row-bindings))]}
+
+  `(fn graphify-dataset [ds#]
+     (mapcat (fn graphify-row [row#]
+               (let [~row-bindings row#]
+                 (->> (concat ~@forms)
+                      (map (fn [triple#]
+                             (with-meta triple# {::row row#}))))))
+             (:rows ds#))))
+
 
 (defn load-triples [my-repo triple-seq]
   (doseq [triple triple-seq]
@@ -102,7 +110,7 @@ concatenates them all together."
       (pr/add-statement my-repo triple)
       (catch java.lang.IllegalArgumentException e
         (throw (Exception.
-                (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta :row)) e)))))
+                (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta ::row)) e)))))
   my-repo)
 
 (def prefixer ontutils/prefixer)
