@@ -12,9 +12,10 @@
    [grafter.rdf.ontologies.sdmx-measure]
    [grafter.rdf.ontologies.sdmx-attribute]
    [grafter.rdf.ontologies.sdmx-concept])
-  (:require [clojure.java.io :as io])
-  (:require [grafter.rdf.protocols :as pr])
-  (:require [grafter.rdf.sesame :as ses])
+  (:require [clojure.java.io :as io]
+            [grafter.rdf.protocols :as pr]
+            [grafter.rdf.sesame :as ses]
+            [grafter.tabular :refer [make-dataset column-names]])
   (:import [grafter.rdf.protocols Triple Quad]
            [grafter.rdf.sesame ISesameRDFConverter])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
@@ -84,17 +85,23 @@ of grafter.rdf.protocols.IStatement's"
   (reduce conj triple-template
           (mapcat vector hash-map)))
 
-(defmacro graphify [row-bindings & forms]
-  "Takes a vector in fn binding form (where destructuring is
-supported) followed by a series of graph or triplify forms and
-concatenates them all together."
-  `(fn graphify-rows-fn [rs#]
-     (mapcat (fn graphify-row [row-sym#]
-               (let [~@row-bindings row-sym#]
-                 (->> (concat
-                       ~@forms)
-                      (map (fn [triple#] (with-meta triple# {:row row-sym#}))))))
-             rs#)))
+(defn canonicalise-column-names
+  [dataset]
+  (make-dataset dataset (map name (column-names dataset))))
+
+
+(comment
+  (defmacro graphify [row-bindings & forms]
+    "Takes a vector in fn binding form (where destructuring is
+    supported) followed by a series of graph or triplify forms and
+    concatenates them all together."
+    `(fn graphify-rows-fn [rs#]
+       (mapcat (fn graphify-row [row-sym#]
+                 (let [~@row-bindings row-sym#]
+                   (->> (concat
+                         ~@forms)
+                        (map (fn [triple#] (with-meta triple# {:row row-sym#}))))))
+               rs#))))
 
 (defn load-triples [my-repo triple-seq]
   (doseq [triple triple-seq]
