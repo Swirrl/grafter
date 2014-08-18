@@ -14,6 +14,7 @@
    [grafter.rdf.ontologies.sdmx-concept])
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
+            [incanter.core :as inc]
             [grafter.rdf.sesame :as ses]
             [grafter.tabular :refer [make-dataset column-names]])
   (:import [grafter.rdf.protocols Triple Quad]
@@ -89,19 +90,18 @@ of grafter.rdf.protocols.IStatement's"
   [dataset]
   (make-dataset dataset (map name (column-names dataset))))
 
-
-(comment
-  (defmacro graphify [row-bindings & forms]
-    "Takes a vector in fn binding form (where destructuring is
-    supported) followed by a series of graph or triplify forms and
-    concatenates them all together."
-    `(fn graphify-rows-fn [rs#]
-       (mapcat (fn graphify-row [row-sym#]
-                 (let [~@row-bindings row-sym#]
-                   (->> (concat
-                         ~@forms)
-                        (map (fn [triple#] (with-meta triple# {:row row-sym#}))))))
-               rs#))))
+(defmacro graph-fn
+  "Takes FIXME followed by a series of graph or triplify forms and concatenates them
+  all together."
+  [row-bindings & forms]
+  (let [row-sym (gensym "row")
+        row-bindings (conj row-bindings :as row-sym)
+        ]
+    `(fn graphify-dataset [ds#]
+       (mapcat (fn graphify-row [~row-bindings]
+                 (->> (concat ~@forms)
+                      (map (fn [triple#]
+                             (with-meta triple# {:row ~row-sym}))))) (inc/to-list ds#)))))
 
 (defn load-triples [my-repo triple-seq]
   (doseq [triple triple-seq]
