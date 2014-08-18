@@ -547,18 +547,22 @@ TODO: reimplement with proper resource handling."
 (defn make-restricted-dataset
   "Build a dataset to act as a graph restriction.  You can specify for
   both :default-graph and :named-graphs.  Both of which take sequences
-  of URI strings.  If nil is passed in nil is returned, which means we
-  use the default no restriction."
+  of URI strings."
   [& {:as options}]
   (when options
     (let [{:keys [default-graph named-graphs]
            :or {default-graph [] named-graphs []}} options
            private-graph "urn:private-drafter-graph-to-force-restrictions-when-no-graphs-are-listed"
            dataset (DatasetImpl.)]
-      (doseq [graph (conj default-graph private-graph)]
-        (.addDefaultGraph dataset (->uri graph)))
-      (doseq [graph named-graphs]
-        (.addNamedGraph dataset (->uri graph)))
+      (if (string? default-graph)
+        (.addDefaultGraph dataset (->uri default-graph))
+
+        (doseq [graph (conj default-graph private-graph)]
+          (.addDefaultGraph dataset (->uri graph))))
+      (if (string? named-graphs)
+        (.addNamedGraph dataset (->uri named-graphs))
+        (doseq [graph named-graphs]
+          (.addNamedGraph dataset (->uri graph))))
       dataset)))
 
 (defn- mapply [f & args]
