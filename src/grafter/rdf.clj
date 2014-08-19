@@ -118,7 +118,11 @@ of grafter.rdf.protocols.IStatement's"
   (reduce conj triple-template
           (mapcat vector hash-map)))
 
-(defn get-column-by-number* [ds row index]
+(defn ^:no-doc get-column-by-number*
+  "This function is intended for use by the graph-fn macro only, and
+  should not be considered part of this namespaces public interface.
+  It is only public because it is used by a macro."
+  [ds row index]
   (let [col-name (grafter.tabular/resolve-column-id ds index ::not-found)]
     (if-not (= col-name ::not-found)
       (get row col-name ::not-found))))
