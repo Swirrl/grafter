@@ -1,4 +1,5 @@
 (ns grafter.tabular
+"Functions for processing tabular data."
   (:require [clojure.java.io :as io]
             [grafter.tabular.common :as tabcommon]
             [grafter.sequences :as seqs]
@@ -267,7 +268,7 @@ the specified column being cloned."
                                     (subvec col (inc pos)))))]
     (reduce remove-index col pos)))
 
-(def _ identity)
+(def _ "An alias for the identity function, for providing positional arguments to mapc." identity)
 
 (defn mapc [dataset fs]
 "Takes an array or a hashmap of functions and maps each to the key column for every row."
@@ -397,4 +398,3 @@ into data rows look like this.  It does not yet preserve the header row:
   (defn join [csv f & others]
     ;;(filter)
     (apply map vector csv others)))
-

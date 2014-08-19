@@ -1,4 +1,6 @@
 (ns grafter.rdf
+  "Functions and macros for creating RDF data.  Includes a small
+  DSL for creating turtle-like templated forms."
   (:use
    [grafter.rdf.ontologies.rdf]
    [grafter.rdf.ontologies.void]

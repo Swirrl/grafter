@@ -1,5 +1,5 @@
-(ns ^{:doc "A library of useful lazy sequences."}
-  grafter.sequences)
+(ns grafter.sequences
+  "A library of useful lazy sequences.")
 
 (defn integers-from
   ([n]

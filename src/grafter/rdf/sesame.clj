@@ -1,4 +1,6 @@
 (ns grafter.rdf.sesame
+  "Grafter support and wrappers for RDF processing, built on top of
+  the Sesame API (http://www.openrdf.org/)."
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
   (:import
