@@ -105,7 +105,21 @@ of grafter.rdf.protocols.IStatement's"
 
 (defn graph
   "Takes a graph-uri and a turtle-like template of vectors and returns
-  a lazy-sequence of quad Statements."
+  a lazy-sequence of quad Statements.  A turtle-like template should
+  be structured like this:
+
+  [subject [predicate1 object1]
+           [predicate2 object2]
+           [predicate3 [[blank-node-predicate blank-node-object]]]]
+
+  Subjects, predicates and objects can be strings, URI's or URL's,
+  whilst objects can also be literal types such as java numeric types,
+  Dates etc.
+
+  For convenience strings in these templates are assumed to be URI's
+  and are cast as such, as URI's are the most common type in linked
+  data.  If you want an RDF string you should use the s function to
+  build one."
   [graph-uri & triples]
   (map (partial quad graph-uri)
        (apply triplify triples)))
