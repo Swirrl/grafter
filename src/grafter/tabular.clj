@@ -280,7 +280,7 @@ the specified column being cloned."
                                     (subvec col (inc pos)))))]
     (reduce remove-index col pos)))
 
-(def _ "An alias for the identity function, for providing positional arguments to mapc." identity)
+(def _ "An alias for the identity function, used for providing positional arguments to mapc." identity)
 
 (defn mapc
   "Takes an array or a hashmap of functions and maps each to the key
