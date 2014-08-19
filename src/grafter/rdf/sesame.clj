@@ -396,9 +396,10 @@
   ([datadir indexes]
      (NativeStore. datadir indexes)))
 
-(defn http-repo [repo-url]
+(defn http-repo
   "Given a URL as a String return a Sesame HTTPRepository for e.g.
   interacting with the OpenRDF Workbench."
+  [repo-url]
   (doto (HTTPRepository. repo-url)
     (.initialize)))
 
@@ -455,9 +456,10 @@
   (rollback [repo]
     (-> repo .rollback)))
 
-(defmacro with-transaction [repo & forms]
+(defmacro with-transaction
   "Wraps the given forms in a transaction on the supplied repository.
   Exceptions are rolled back on failure."
+  [repo & forms]
   `(try
     (pr/begin ~repo)
     (let [return# (do ~@forms)]
@@ -472,9 +474,9 @@
 string and returns a lazy sequence of results.
 
 It doesn't clear up properly in all cases, for example if the sequence
-isn't fully consumed you may cause a resource leak.
+isn't fully consumed you may cause a resource leak."
 
-TODO: reimplement with proper resource handling."
+  ;; TODO: reimplement interfaces with proper resource handling.
   (query-dataset [this sparql-string model])
 
   (update! [this sparql-string]))
@@ -742,6 +744,7 @@ TODO: reimplement with proper resource handling."
                            (sesame-statement->IStatement msg)))]
           (map read-rdf statements))))))
 
-(defn shutdown [repo]
+(defn shutdown
   "Cleanly shutsdown the repository."
+  [repo]
   (.shutDown repo))
