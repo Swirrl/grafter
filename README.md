@@ -21,7 +21,9 @@ For the Grafter rationale see our blog post:
 
 Grafter is still in early stages of development and is primarily of
 use as an API for specifying data conversion tasks.  To use add the
-following to your Clojure projects `project.clj` file:
+following to your Clojure projects `project.clj` file.  For more
+details on how to do this see the [leiningen](http://leiningen.org/)
+build tool:
 
      [grafter/grafter "0.2"]
 
