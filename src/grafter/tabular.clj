@@ -22,7 +22,7 @@
 
 
 
-(defn test-dataset [r c]
+(defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
 
 (test-dataset 2 2) ;; =>
@@ -31,7 +31,7 @@
 |---+---|
 | 0 | 0 |
 | 1 | 1 |"
-
+  [r c]
   (->> (iterate inc 0)
        (map #(repeat c %))
        (take r)
