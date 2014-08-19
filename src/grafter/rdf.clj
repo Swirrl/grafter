@@ -192,5 +192,7 @@ of grafter.rdf.protocols.IStatement's"
 (defn add
   "Adds a sequence of statements to the specified datasink.  Supports
   all the same targets as add-statement."
-  [target triples]
-  (pr/add target triples))
+  ([target triples]
+     (pr/add target triples))
+  ([target graph triples]
+     (pr/add target graph triples)))
