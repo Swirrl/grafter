@@ -147,6 +147,20 @@ of grafter.rdf.protocols.IStatement's"
 
 (def prefixer ontutils/prefixer)
 
+(defn statements
+  "Attempts to coerce an arbitrary source of RDF statements into a
+  sequence of grafter Statements.
+
+  Takes optional parameters which may be used depending on the
+  context e.g. specifiying the format of the source triples.
+
+  The :format option is supplied by the wrapping function and may be
+  nil, or act as an indicator about the format of the triples to read.
+  Implementers can choose whether or not to ignore or require the
+  format parameter."
+  [this & {:keys [format] :as options}]
+  (pr/to-statements this options))
+
 (defn dataset [dataset-uri data-graph date title label comment description email]
   (let [metadata-graph (str data-graph "/metadata")]
 
