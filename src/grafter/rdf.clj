@@ -88,10 +88,8 @@
          graph))
 
 (defn- expand-subj
-  "Takes a turtle like data structure and converts it to triples e.g.
-
-   [:rick [:a :Person]
-          [:age 34]]"
+  "Takes a turtle like data structure, like that passed to graph and
+  converts it to triples."
   [[subject & po-pairs]]
 
   (mapcat (fn [[predicate object]]
@@ -99,7 +97,8 @@
 
 (defn triplify
   "Takes many turtle like structures and converts them to a lazy-seq
-of grafter.rdf.protocols.IStatement's"
+  of grafter.rdf.protocols.IStatement's.  Users should generally tend
+  to prefer to using graph to triplify."
   [& subjects]
   (mapcat expand-subj subjects))
 
@@ -208,17 +207,6 @@ of grafter.rdf.protocols.IStatement's"
      (pr/add target triples))
   ([target graph triples]
      (pr/add target graph triples)))
-
-(comment
-  ;; pretty sure this function has been superceeded by statements.
-  (defn load-triples [my-repo triple-seq]
-    (doseq [triple triple-seq]
-      (try
-        (add-statement my-repo triple)
-        (catch java.lang.IllegalArgumentException e
-          (throw (Exception.
-                  (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta ::row)) e)))))
-    my-repo))
 
 (defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a
