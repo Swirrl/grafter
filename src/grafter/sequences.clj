@@ -30,5 +30,9 @@
                     (str x y))))
        (apply concat)))
 
-(defn alphabetical-column-names []
+(defn alphabetical-column-names
+  "Returns an infinite sequence of alphabetized column names.  If more
+  than 26 are required the sequence will count AA AB AC ... BA BB BC
+  ... ZZZA ... etc"
+  []
   (column-names-seq "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
