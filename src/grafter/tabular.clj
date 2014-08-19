@@ -180,7 +180,14 @@ Returns a lazy sequence of matched rows."
           (vals hash)))
 
 (defn rename-columns
-  "Renames the columns"
+  "Renames the columns in the dataset.  Takes either a map or a
+  function.  If a map is passed it will rename the specified keys to
+  the corresponding values.
+
+  If a function is supplied it will apply the function to all of the
+  column-names in the supplied dataset.  The return values of this
+  function will then become the new column names in the dataset
+  returned by rename-columns."
   [dataset col-map-or-fn]
   {:pre [(or (map? col-map-or-fn)
              (ifn? col-map-or-fn))]}
@@ -188,21 +195,19 @@ Returns a lazy sequence of matched rows."
   (if (map? col-map-or-fn)
     (inc/rename-cols col-map-or-fn dataset)
     (let [old-key->new-key (partial map-keys col-map-or-fn)
-          new-data (map (fn [row]
-                          (map-keys col-map-or-fn row))
-                        (inc/to-list dataset))
           new-columns (map col-map-or-fn
                            (column-names dataset))]
+
       (make-dataset new-columns
-                    new-data))))
+                    (inc/to-list dataset)))))
 
 (defn drop-rows
-  "Drops the first n rows from the CSV."
+  "Drops the first n rows from the dataset."
   [dataset n]
   (map-rows dataset (partial drop n)))
 
 (defn take-rows
-  "Drops the first n rows from the CSV."
+  "Drops the first n rows from the dataset."
   [dataset n]
   (map-rows dataset (partial take n)))
 
