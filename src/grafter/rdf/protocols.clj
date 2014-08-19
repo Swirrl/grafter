@@ -35,7 +35,7 @@
   want to use grafter.rdf.sesame/with-transaction"
   (begin [repo] "Start a transaction")
   (commit [repo] "Commit a transaction")
-  (rollback [repo]) "Rollback a transaction")
+  (rollback [repo] "Rollback a transaction"))
 
 (defrecord Triple
     [s p o]
