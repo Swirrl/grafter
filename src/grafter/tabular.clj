@@ -135,7 +135,12 @@ Returns a lazy sequence of matched rows."
                                      ;; leave item-numbers as is (i.e. stay on current item after fast forwarding the data)
                                      item-numbers)))
 
-(defn rows [dataset row-numbers & {:as opts}]
+(defn rows
+  "Takes a dataset and a seq of row-numbers and returns a dataset
+  consisting of just the supplied rows.  If a row number is not found
+  the function will assume it has consumed all the rows and return
+  normally."
+  [dataset row-numbers & {:as opts}]
   (let [rows (indexed (inc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
     (make-dataset (column-names dataset)
