@@ -26,7 +26,7 @@
    [org.openrdf.rio.trix TriXParserFactory]
    [org.openrdf.rio.turtle TurtleParserFactory]
    [org.openrdf.sail.nativerdf NativeStore]
-   [org.openrdf.query TupleQuery TupleQueryResult TupleQueryResultHandler BooleanQueryResultHandler BindingSet QueryLanguage BooleanQuery GraphQuery]
+   [org.openrdf.query Update TupleQuery TupleQueryResult TupleQueryResultHandler BooleanQueryResultHandler BindingSet QueryLanguage BooleanQuery GraphQuery]
    [org.openrdf.query.resultio.text BooleanTextWriter]
    [org.openrdf.query.resultio.sparqljson SPARQLResultsJSONWriter]
    [org.openrdf.query.resultio.sparqlxml SPARQLResultsXMLWriter SPARQLBooleanXMLWriter]
@@ -495,17 +495,34 @@ TODO: reimplement with proper resource handling."
 
   GraphQuery
   (evaluate [this]
-    (sesame-results->seq this sesame-statement->IStatement)))
+    (sesame-results->seq this sesame-statement->IStatement))
+
+  Update
+  (evaluate [this]
+    (.execute this)))
+
+(defn ->connection [repo]
+  (if (instance? RepositoryConnection repo)
+    repo
+    (.getConnection repo)))
 
 (defn prepare-query
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string dataset]
-     (let [conn (if (instance? RepositoryConnection repo)
-                  repo
-                  (.getConnection repo))]
+     (let [conn (->connection repo)]
        (doto (.prepareQuery conn
                             QueryLanguage/SPARQL
                             sparql-string)
+         (.setDataset dataset)))))
+
+(defn prepare-update
+  ([repo sparql-update-str] (prepare-update repo sparql-update-str nil))
+  ([repo sparql-update-str dataset]
+     (let [conn (->connection repo)]
+       (doto
+           (.prepareUpdate conn
+                           QueryLanguage/SPARQL
+                           sparql-update-str)
          (.setDataset dataset)))))
 
 (extend-type RepositoryConnection
@@ -520,6 +537,8 @@ TODO: reimplement with proper resource handling."
                                          sparql-string)]
       (.execute prepared-query))))
 
+
+
 (defn- ->uri [graph]
   (if (instance? URI graph)
     graph
@@ -528,18 +547,22 @@ TODO: reimplement with proper resource handling."
 (defn make-restricted-dataset
   "Build a dataset to act as a graph restriction.  You can specify for
   both :default-graph and :named-graphs.  Both of which take sequences
-  of URI strings.  If nil is passed in nil is returned, which means we
-  use the default no restriction."
+  of URI strings."
   [& {:as options}]
   (when options
     (let [{:keys [default-graph named-graphs]
            :or {default-graph [] named-graphs []}} options
            private-graph "urn:private-drafter-graph-to-force-restrictions-when-no-graphs-are-listed"
            dataset (DatasetImpl.)]
-      (doseq [graph (conj default-graph private-graph)]
-        (.addDefaultGraph dataset (->uri graph)))
-      (doseq [graph named-graphs]
-        (.addNamedGraph dataset (->uri graph)))
+      (if (string? default-graph)
+        (.addDefaultGraph dataset (->uri default-graph))
+
+        (doseq [graph (conj default-graph private-graph)]
+          (.addDefaultGraph dataset (->uri graph))))
+      (if (string? named-graphs)
+        (.addNamedGraph dataset (->uri named-graphs))
+        (doseq [graph named-graphs]
+          (.addNamedGraph dataset (->uri graph))))
       dataset)))
 
 (defn- mapply [f & args]
