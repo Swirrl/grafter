@@ -1,8 +1,8 @@
 (defproject grafter "0.2.0-SNAPSHOT"
-  :description "RDFization tools"
-  :url "http://example.com/FIXME"
-  :license {:name "TODO"
-            :url "http://example.com/TODO"}
+  :description "Tools for the hard graft of data processing"
+  :url "http://grafter.org/"
+  :license {:name "Eclipse Public License - v1.0"
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
 
   :repositories [["swirrl-private" {:url "s3p://leiningen-private-repo/releases/"
                                     :username :env
@@ -46,6 +46,5 @@
                              [codox "0.8.10"]]
 
                    :dependencies [[com.aphyr/prism "0.1.1"]]
-
 
                    :env {:dev true}}})
