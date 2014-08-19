@@ -1,4 +1,4 @@
-(ns grafter.rdf.validation
+(ns ^:no-doc grafter.rdf.validation
   (:require [grafter.rdf.protocols :as pr]))
 
 (defn blank? [v]

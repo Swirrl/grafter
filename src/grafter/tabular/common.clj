@@ -1,4 +1,4 @@
-(ns grafter.tabular.common
+(ns ^:no-doc grafter.tabular.common
   (:use [clojure.java.io :only [file]])
   (:require [grafter.sequences :as seqs]
             [incanter.core :as inc]
