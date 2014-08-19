@@ -161,6 +161,23 @@ of grafter.rdf.protocols.IStatement's"
   [this & {:keys [format] :as options}]
   (pr/to-statements this options))
 
+(defn subject
+  "Return the RDF subject from a statement."
+  [statement]
+  (pr/subject statement))
+
+(defn predicate [statement]
+  "Return the RDF predicate from a statement."
+  (pr/predicate statement))
+
+(defn object [statement]
+  "Return the RDF object from a statement."
+  (pr/object statement))
+
+(defn context [statement]
+  "Return the RDF context from a statement."
+  (pr/context statement))
+
 (defn dataset [dataset-uri data-graph date title label comment description email]
   (let [metadata-graph (str data-graph "/metadata")]
 
