@@ -31,10 +31,11 @@
   (to-statements [this options]))
 
 (defprotocol ITransactable
-  "Transactions support"
-  (begin [repo])
-  (commit [repo])
-  (rollback [repo]))
+  "Low level protocol for transactions support.  Most users probably
+  want to use grafter.rdf.sesame/with-transaction"
+  (begin [repo] "Start a transaction")
+  (commit [repo] "Commit a transaction")
+  (rollback [repo]) "Rollback a transaction")
 
 (defrecord Triple
     [s p o]
