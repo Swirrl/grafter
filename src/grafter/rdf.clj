@@ -183,7 +183,9 @@ of grafter.rdf.protocols.IStatement's"
   implement grafter.rdf.protocols/ITripleWriteable.
 
   Datasinks include sesame RDF repositories, connections and anything
-  built by rdf-serializer."
+  built by rdf-serializer.
+
+  Takes an optional string/URI to use as a graph."
   ([target statement]
      (pr/add-statement target statement))
   ([target graph statement]
@@ -191,7 +193,9 @@ of grafter.rdf.protocols.IStatement's"
 
 (defn add
   "Adds a sequence of statements to the specified datasink.  Supports
-  all the same targets as add-statement."
+  all the same targets as add-statement.
+
+  Takes an optional string/URI to use as a graph."
   ([target triples]
      (pr/add target triples))
   ([target graph triples]
