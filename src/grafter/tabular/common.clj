@@ -10,14 +10,18 @@
            [org.apache.poi.ss.usermodel Workbook Sheet]
            [incanter.core Dataset]))
 
-(defn copy-first-row-to-header [data]
+(defn copy-first-row-to-header
   "For use with make-dataset.  Copies the first row of data into the
   header, removing it from the source data."
+  [data]
+
   [(first data) data])
 
-(defn move-first-row-to-header [[first-row & other-rows]]
+(defn move-first-row-to-header
   "For use with make-dataset.  Moves the first row of data into the
   header, removing it from the source data."
+  [[first-row & other-rows]]
+
   [first-row other-rows])
 
 (defn make-dataset
