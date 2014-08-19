@@ -400,12 +400,7 @@ into data rows look like this.  It does not yet preserve the header row:
 
         expand-rows (fn [row] (map normalise-row colids (repeat ncols row)))]
 
-    (mapcat expand-rows data-rows)))
-
-
-  )
-
-
+    (mapcat expand-rows data-rows))))
 
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
