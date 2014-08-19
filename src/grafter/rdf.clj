@@ -177,3 +177,20 @@ of grafter.rdf.protocols.IStatement's"
 (defn context [statement]
   "Return the RDF context from a statement."
   (pr/context statement))
+
+(defn add-statement
+  "Add an RDF statement to the target datasink.  Datasinks must
+  implement grafter.rdf.protocols/ITripleWriteable.
+
+  Datasinks include sesame RDF repositories, connections and anything
+  built by rdf-serializer."
+  ([target statement]
+     (pr/add-statement target statement))
+  ([target graph statement]
+     (pr/add-statement target graph statement)))
+
+(defn add
+  "Adds a sequence of statements to the specified datasink.  Supports
+  all the same targets as add-statement."
+  [target triples]
+  (pr/add target triples))
