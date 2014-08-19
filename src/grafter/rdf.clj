@@ -1,35 +1,34 @@
 (ns grafter.rdf
   "Functions and macros for creating RDF data.  Includes a small
   DSL for creating turtle-like templated forms."
-  (:use
-   [grafter.rdf.ontologies.rdf]
-   [grafter.rdf.ontologies.void]
-   [grafter.rdf.ontologies.dcterms]
-   [grafter.rdf.ontologies.vcard]
-   [grafter.rdf.ontologies.pmd]
-   [grafter.rdf.ontologies.qb]
-   [grafter.rdf.ontologies.os]
-   [grafter.rdf.ontologies.skos]
-   [grafter.rdf.ontologies.owl]
-   [grafter.rdf.ontologies.sdmx-measure]
-   [grafter.rdf.ontologies.sdmx-attribute]
-   [grafter.rdf.ontologies.sdmx-concept])
   (:require [clojure.java.io :as io]
             [grafter.tabular :as tab]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.sesame :as ses]
-            [potemkin.namespaces :refer [import-vars]])
+            [potemkin.namespaces :refer [import-vars]]
+            [grafter.rdf.ontologies.util :as ontutils]
+            [grafter.rdf.ontologies.rdf]
+            [grafter.rdf.ontologies.void]
+            [grafter.rdf.ontologies.dcterms]
+            [grafter.rdf.ontologies.vcard]
+            [grafter.rdf.ontologies.pmd]
+            [grafter.rdf.ontologies.qb]
+            [grafter.rdf.ontologies.os]
+            [grafter.rdf.ontologies.skos]
+            [grafter.rdf.ontologies.owl]
+            [grafter.rdf.ontologies.sdmx-measure]
+            [grafter.rdf.ontologies.sdmx-attribute]
+            [grafter.rdf.ontologies.sdmx-concept])
   (:import [grafter.rdf.protocols Triple Quad]
-           [grafter.rdf.sesame ISesameRDFConverter])
-  (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
+           [grafter.rdf.sesame ISesameRDFConverter]
+           [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
            [org.openrdf.model.impl ValueFactoryImpl LiteralImpl]
            [org.openrdf.repository Repository]
            [org.openrdf.repository.sail SailRepository]
            [org.openrdf.sail.memory MemoryStore]
            [org.openrdf.sail.nativerdf NativeStore]
            [org.openrdf.query TupleQuery TupleQueryResult BindingSet QueryLanguage]
-           [org.openrdf.rio RDFFormat])
-  (:require [grafter.rdf.ontologies.util :as ontutils]))
+           [org.openrdf.rio RDFFormat]))
 
 (import-vars
  [grafter.rdf.sesame
