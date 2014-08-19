@@ -1,6 +1,9 @@
-(ns grafter.rdf.ontologies.util
+(ns ^:no-doc grafter.rdf.ontologies.util
   "Some utility functions for ontology specification and management
-  within Clojure.")
+  within Clojure.
+
+  For internal use, mostly to prevent circular dependencies from the
+  ontology namespaces on grafter.rdf/prefixer")
 
 (defn prefixer
   "Takes the base prefix of a URI string and returns a function that
