@@ -85,7 +85,7 @@ of grafter.rdf.protocols.IStatement's"
   (reduce conj triple-template
           (mapcat vector hash-map)))
 
-(defn- get-column-by-number [ds row index]
+(defn get-column-by-number* [ds row index]
   (let [col-name (grafter.tabular/resolve-column-id ds index ::not-found)]
     (if-not (= col-name ::not-found)
       (get row col-name ::not-found))))
@@ -93,7 +93,7 @@ of grafter.rdf.protocols.IStatement's"
 (defn- generate-vector-bindings [ds-symbol row-symbol row-bindings]
   (let [bindings (->> row-bindings
                       (map-indexed (fn [index binding]
-                                     [binding `(get-column-by-number ~ds-symbol ~row-symbol ~index)]))
+                                     [binding `(get-column-by-number* ~ds-symbol ~row-symbol ~index)]))
                       (apply concat)
                       (apply vector))]
     bindings))
