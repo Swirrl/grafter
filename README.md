@@ -17,6 +17,14 @@ for more details.
 For the Grafter rationale see our blog post:
 [The hard graft of Linked Data ETL](http://blog.swirrl.com/articles/linked-data-etl/).
 
+## Installing
+
+Grafter is still in early stages of development and is primarily of
+use as an API for specifying data conversion tasks.  To use add the
+following to your Clojure projects `project.clj` file:
+
+     [grafter/grafter "0.2"]
+
 ## License
 
 Copyright © 2014 Swirrl IT Ltd.
