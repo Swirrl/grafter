@@ -17,7 +17,8 @@
   (:require [clojure.java.io :as io]
             [grafter.tabular :as tab]
             [grafter.rdf.protocols :as pr]
-            [grafter.rdf.sesame :as ses])
+            [grafter.rdf.sesame :as ses]
+            [potemkin.namespaces :refer [import-vars]])
   (:import [grafter.rdf.protocols Triple Quad]
            [grafter.rdf.sesame ISesameRDFConverter])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
@@ -30,6 +31,10 @@
            [org.openrdf.rio RDFFormat])
   (:require [grafter.rdf.ontologies.util :as ontutils]))
 
+(import-vars
+ [grafter.rdf.sesame
+  s])
+
 ;; TODO move these into their own grafter.rdf.formats namespace that
 ;; can be reused from other namespaces.
 (def format-rdf-xml RDFFormat/RDFXML)
@@ -40,8 +45,6 @@
 (def format-rdf-jsonld RDFFormat/JSONLD)
 (def format-rdf-trix RDFFormat/TRIX)
 (def format-rdf-trig RDFFormat/TRIG)
-
-(def ^{:doc "Coerce a string into an RDF string"} s ses/s)
 
 (defn- make-triples [subject predicate object-or-nested-subject]
   (if (vector? object-or-nested-subject)
