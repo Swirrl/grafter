@@ -33,7 +33,9 @@
 
 (import-vars
  [grafter.rdf.sesame
-  s])
+  s]
+ [grafter.rdf.ontologies.util
+  prefixer])
 
 ;; TODO move these into their own grafter.rdf.formats namespace that
 ;; can be reused from other namespaces.
@@ -57,12 +59,33 @@
     (let [object object-or-nested-subject]
       [(Triple. subject predicate object)])))
 
+(defn subject
+  "Return the RDF subject from a statement."
+  [statement]
+  (pr/subject statement))
+
+(defn predicate
+  "Return the RDF predicate from a statement."
+  [statement]
+  (pr/predicate statement))
+
+(defn object
+  "Return the RDF object from a statement."
+  [statement]
+  (pr/object statement))
+
+(defn context
+  "Return the RDF context from a statement."
+  [statement]
+  (pr/context statement))
+
 (defn quad
-  ([graph triple]
-     (Quad. (pr/subject triple)
-            (pr/predicate triple)
-            (pr/object triple)
-            graph)))
+  "Build a quad from a graph and a grafter.rdf.protocols/Triple."
+  [graph triple]
+  (Quad. (subject triple)
+         (predicate triple)
+         (object triple)
+         graph))
 
 (defn- expand-subj
   "Takes a turtle like data structure and converts it to triples e.g.
@@ -74,19 +97,24 @@
   (mapcat (fn [[predicate object]]
             (make-triples subject predicate object)) po-pairs))
 
-(defn triplify [& subjects]
+(defn triplify
   "Takes many turtle like structures and converts them to a lazy-seq
 of grafter.rdf.protocols.IStatement's"
+  [& subjects]
   (mapcat expand-subj subjects))
 
-(defn graph [graph-uri & triples]
+(defn graph
+  "Takes a graph-uri and a turtle-like template of vectors and returns
+  a lazy-sequence of quad Statements."
+  [graph-uri & triples]
   (map (partial quad graph-uri)
        (apply triplify triples)))
 
-(defn add-properties [triple-template hash-map]
+(defn add-properties
   "Appends the key/value pairs from the supplied hash-map into the
   triple-template form.  Assumes it is given a vector representing a
   single subject."
+  [triple-template hash-map]
   (reduce conj triple-template
           (mapcat vector hash-map)))
 
@@ -139,47 +167,6 @@ of grafter.rdf.protocols.IStatement's"
 
          (mapcat graphify-row# (:rows ~ds-sym))))))
 
-(defn load-triples [my-repo triple-seq]
-  (doseq [triple triple-seq]
-    (try
-      (pr/add-statement my-repo triple)
-      (catch java.lang.IllegalArgumentException e
-        (throw (Exception.
-                (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta ::row)) e)))))
-  my-repo)
-
-(def prefixer ontutils/prefixer)
-
-(defn statements
-  "Attempts to coerce an arbitrary source of RDF statements into a
-  sequence of grafter Statements.
-
-  Takes optional parameters which may be used depending on the
-  context e.g. specifiying the format of the source triples.
-
-  The :format option is supplied by the wrapping function and may be
-  nil, or act as an indicator about the format of the triples to read.
-  Implementers can choose whether or not to ignore or require the
-  format parameter."
-  [this & {:keys [format] :as options}]
-  (pr/to-statements this options))
-
-(defn subject
-  "Return the RDF subject from a statement."
-  [statement]
-  (pr/subject statement))
-
-(defn predicate [statement]
-  "Return the RDF predicate from a statement."
-  (pr/predicate statement))
-
-(defn object [statement]
-  "Return the RDF object from a statement."
-  (pr/object statement))
-
-(defn context [statement]
-  "Return the RDF context from a statement."
-  (pr/context statement))
 
 (defn add-statement
   "Add an RDF statement to the target datasink.  Datasinks must
@@ -203,3 +190,28 @@ of grafter.rdf.protocols.IStatement's"
      (pr/add target triples))
   ([target graph triples]
      (pr/add target graph triples)))
+
+(comment
+  ;; pretty sure this function has been superceeded by statements.
+  (defn load-triples [my-repo triple-seq]
+    (doseq [triple triple-seq]
+      (try
+        (add-statement my-repo triple)
+        (catch java.lang.IllegalArgumentException e
+          (throw (Exception.
+                  (str "Problem loading triple: " (print-str triple) " from row: " (-> triple meta ::row)) e)))))
+    my-repo))
+
+(defn statements
+  "Attempts to coerce an arbitrary source of RDF statements into a
+  sequence of grafter Statements.
+
+  Takes optional parameters which may be used depending on the
+  context e.g. specifiying the format of the source triples.
+
+  The :format option is supplied by the wrapping function and may be
+  nil, or act as an indicator about the format of the triples to read.
+  Implementers can choose whether or not to ignore or require the
+  format parameter."
+  [this & {:keys [format] :as options}]
+  (pr/to-statements this options))
