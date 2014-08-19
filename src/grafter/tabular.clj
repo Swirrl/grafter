@@ -73,7 +73,7 @@
                              (map first))]
     not-found-items))
 
-(defn all-columns [dataset cols]
+(defn all-columns
   "Takes a dataset and any number of integers corresponding to column
   numbers and returns a dataset containing only those columns.
 
@@ -84,7 +84,7 @@
 
   One advantage of this over using columns is that you can duplicate
   an arbitrary number of columns."
-
+ [dataset cols]
   (let [not-found-items (invalid-column-keys cols dataset)]
     (if (and (empty? not-found-items)
             (some identity cols))
@@ -196,12 +196,14 @@ Returns a lazy sequence of matched rows."
       (make-dataset new-columns
                     new-data))))
 
-(defn drop-rows [dataset n]
+(defn drop-rows
   "Drops the first n rows from the CSV."
+  [dataset n]
   (map-rows dataset (partial drop n)))
 
-(defn take-rows [dataset n]
+(defn take-rows
   "Drops the first n rows from the CSV."
+  [dataset n]
   (map-rows dataset (partial take n)))
 
 (defn derive-column
@@ -270,8 +272,10 @@ the specified column being cloned."
 
 (def _ "An alias for the identity function, for providing positional arguments to mapc." identity)
 
-(defn mapc [dataset fs]
-"Takes an array or a hashmap of functions and maps each to the key column for every row."
+(defn mapc
+  "Takes an array or a hashmap of functions and maps each to the key
+  column for every row."
+  [dataset fs]
   (let [fs-hash (if (vector? fs)
                     (zipmap (column-names dataset) fs)
                     fs)
