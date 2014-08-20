@@ -1,4 +1,4 @@
-(ns grafter.tabular.csv
+(ns ^:no-doc grafter.tabular.csv
   (:require [grafter.tabular.common :as tab]
             [clojure-csv.core :as csv]
             [clojure.java.io :as io]))

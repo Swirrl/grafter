@@ -1,4 +1,4 @@
-(ns grafter.js
+(ns ^:no-doc grafter.js
   (:require [clj-rhino :as js]))
 
 (defn js-fn

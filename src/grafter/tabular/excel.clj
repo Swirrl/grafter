@@ -1,4 +1,4 @@
-(ns grafter.tabular.excel
+(ns ^:no-doc grafter.tabular.excel
   (:require [grafter.tabular.common :as tab])
   (:require [clj-excel.core :as xls]))
 

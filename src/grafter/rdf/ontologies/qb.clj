@@ -1,4 +1,5 @@
 (ns grafter.rdf.ontologies.qb
+  "Some convenience terms for the data cube vocabulary."
   (:use [grafter.rdf.ontologies.util]))
 
 (def qb (prefixer "http://purl.org/linked-data/cube#"))

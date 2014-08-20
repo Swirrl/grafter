@@ -1,4 +1,5 @@
 (ns grafter.tabular
+"Functions for processing tabular data."
   (:require [clojure.java.io :as io]
             [grafter.tabular.common :as tabcommon]
             [grafter.sequences :as seqs]
@@ -21,7 +22,7 @@
 
 
 
-(defn test-dataset [r c]
+(defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
 
 (test-dataset 2 2) ;; =>
@@ -30,7 +31,7 @@
 |---+---|
 | 0 | 0 |
 | 1 | 1 |"
-
+  [r c]
   (->> (iterate inc 0)
        (map #(repeat c %))
        (take r)
@@ -72,7 +73,7 @@
                              (map first))]
     not-found-items))
 
-(defn all-columns [dataset cols]
+(defn all-columns
   "Takes a dataset and any number of integers corresponding to column
   numbers and returns a dataset containing only those columns.
 
@@ -83,7 +84,7 @@
 
   One advantage of this over using columns is that you can duplicate
   an arbitrary number of columns."
-
+ [dataset cols]
   (let [not-found-items (invalid-column-keys cols dataset)]
     (if (and (empty? not-found-items)
             (some identity cols))
@@ -134,7 +135,12 @@ Returns a lazy sequence of matched rows."
                                      ;; leave item-numbers as is (i.e. stay on current item after fast forwarding the data)
                                      item-numbers)))
 
-(defn rows [dataset row-numbers & {:as opts}]
+(defn rows
+  "Takes a dataset and a seq of row-numbers and returns a dataset
+  consisting of just the supplied rows.  If a row number is not found
+  the function will assume it has consumed all the rows and return
+  normally."
+  [dataset row-numbers & {:as opts}]
   (let [rows (indexed (inc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
     (make-dataset filtered-rows
@@ -179,7 +185,14 @@ Returns a lazy sequence of matched rows."
           (vals hash)))
 
 (defn rename-columns
-  "Renames the columns"
+  "Renames the columns in the dataset.  Takes either a map or a
+  function.  If a map is passed it will rename the specified keys to
+  the corresponding values.
+
+  If a function is supplied it will apply the function to all of the
+  column-names in the supplied dataset.  The return values of this
+  function will then become the new column names in the dataset
+  returned by rename-columns."
   [dataset col-map-or-fn]
   {:pre [(or (map? col-map-or-fn)
              (ifn? col-map-or-fn))]}
@@ -187,20 +200,20 @@ Returns a lazy sequence of matched rows."
   (if (map? col-map-or-fn)
     (inc/rename-cols col-map-or-fn dataset)
     (let [old-key->new-key (partial map-keys col-map-or-fn)
-          new-data (map (fn [row]
-                          (map-keys col-map-or-fn row))
-                        (inc/to-list dataset))
           new-columns (map col-map-or-fn
                            (column-names dataset))]
-      (make-dataset new-data
-                    new-columns))))
 
-(defn drop-rows [dataset n]
-  "Drops the first n rows from the CSV."
+      (make-dataset new-columns
+                    (inc/to-list dataset)))))
+
+(defn drop-rows
+  "Drops the first n rows from the dataset."
+  [dataset n]
   (map-rows dataset (partial drop n)))
 
-(defn take-rows [dataset n]
-  "Drops the first n rows from the CSV."
+(defn take-rows
+  "Drops the first n rows from the dataset."
+  [dataset n]
   (map-rows dataset (partial take n)))
 
 (defn derive-column
@@ -267,10 +280,12 @@ the specified column being cloned."
                                     (subvec col (inc pos)))))]
     (reduce remove-index col pos)))
 
-(def _ identity)
+(def _ "An alias for the identity function, used for providing positional arguments to mapc." identity)
 
-(defn mapc [dataset fs]
-"Takes an array or a hashmap of functions and maps each to the key column for every row."
+(defn mapc
+  "Takes an array or a hashmap of functions and maps each to the key
+  column for every row."
+  [dataset fs]
   (let [fs-hash (if (vector? fs)
                     (zipmap (column-names dataset) fs)
                     fs)
@@ -386,16 +401,10 @@ into data rows look like this.  It does not yet preserve the header row:
 
         expand-rows (fn [row] (map normalise-row colids (repeat ncols row)))]
 
-    (mapcat expand-rows data-rows)))
-
-
-  )
-
-
+    (mapcat expand-rows data-rows))))
 
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
   (defn join [csv f & others]
     ;;(filter)
     (apply map vector csv others)))
-

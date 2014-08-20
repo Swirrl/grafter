@@ -1,4 +1,5 @@
 (ns grafter.rdf.ontologies.dcterms
+  "Some convenience variables for the dublin core vocabulary."
   (:use [grafter.rdf.ontologies.util]))
 
 

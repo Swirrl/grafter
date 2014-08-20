@@ -1,4 +1,6 @@
 (ns grafter.rdf.sesame
+  "Grafter support and wrappers for RDF processing, built on top of
+  the Sesame API (http://www.openrdf.org/)."
   (:require [clojure.java.io :as io])
   (:require [grafter.rdf.protocols :as pr])
   (:import
@@ -47,11 +49,14 @@
   (context [this] (.getContext this)))
 
 (defprotocol ISesameRDFConverter
-  (->sesame-rdf-type [this])
-  (sesame-rdf-type->type [this]))
+  (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
+  (sesame-rdf-type->type [this] "Convert a Sesaem RDF Type into a Native Type"))
 
 (defn s
-  "Cast a string to an RDF literal"
+  "Cast a string to an RDF literal.  The second optional argument can
+  either be a keyword corresponding to an RDF language tag
+  e.g. :en, :en-gb, or :fr or a string or URI in which case it is
+  assumed to be a URI identifying the RDF type of the literal."
   ([str]
      {:pre [(string? str)]}
      (reify Object
@@ -70,9 +75,13 @@
                               lang-or-uri))))))
 
 
-(defmulti literal-datatype->type (fn [literal]
-                                   (when-let [datatype (-> literal .getDatatype)]
-                                     (str datatype))))
+(defmulti literal-datatype->type
+  "A multimethod to convert an RDF literal into a corresponding
+  Clojure type.  This method can be extended to provide custom
+  conversions."
+  (fn [literal]
+    (when-let [datatype (-> literal .getDatatype)]
+      (str datatype))))
 
 (defmethod literal-datatype->type nil [literal]
   (s (.stringValue literal) (.getLanguage literal)))
@@ -253,7 +262,9 @@
   (->sesame-rdf-type [this]
     (BNodeImpl. (name this))))
 
-(defn IStatement->sesame-statement [is]
+(defn IStatement->sesame-statement
+  "Convert a grafter IStatement into a Sesame statement."
+  [is]
   (if (:c is)
     (do
       (ContextStatementImpl. (->sesame-rdf-type (.s is))
@@ -264,7 +275,9 @@
                     (URIImpl. (.p is))
                     (->sesame-rdf-type (.o is)))))
 
-(defn sesame-statement->IStatement [st]
+(defn sesame-statement->IStatement
+  "Convert a sesame Statement into a grafter Quad."
+  [st]
   ;; TODO fix this to work properly with object & context.
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
@@ -371,20 +384,28 @@
        ;; them... otherwise.. ignore the graph param
        (pr/add this triples))))
 
-(defn memory-store []
+(defn memory-store
+  "Instantiate a sesame RDF MemoryStore."
+  []
   (MemoryStore.))
 
 (defn native-store
+  "Instantiate a sesame RDF NativeStore."
   ([datadir]
      (native-store (io/file datadir) "spoc,posc,cosp"))
   ([datadir indexes]
      (NativeStore. datadir indexes)))
 
-(defn http-repo [repo-url]
+(defn http-repo
+  "Given a URL as a String return a Sesame HTTPRepository for e.g.
+  interacting with the OpenRDF Workbench."
+  [repo-url]
   (doto (HTTPRepository. repo-url)
     (.initialize)))
 
 (defn sparql-repo
+  "Given a query-url and an optional update-url String return a Sesame
+  SPARQLRepository for communicating with remote repositories."
   ([query-url]
      (doto (SPARQLRepository. query-url)
        (.initialize)))
@@ -393,12 +414,18 @@
        (.initialize))))
 
 (defn repo
+  "Given a sesame Store of some type, return a sesame SailRepository."
   ([] (repo (MemoryStore.)))
   ([store]
      (doto (SailRepository. store)
        (.initialize))))
 
-(defn load-rdf [connection file base-uri-str format]
+(defn load-rdf
+  "Loads the specified RDF file into the supplied repository.
+
+  Takes a String or File (specifying a path to an RDF file) a base-uri
+  String and an RDFFormat."
+  [connection file base-uri-str format]
   (.add connection (io/file file) base-uri-str format (into-array Resource [])))
 
 (defn- query-bindings->map [qbs]
@@ -429,9 +456,10 @@
   (rollback [repo]
     (-> repo .rollback)))
 
-(defmacro with-transaction [repo & forms]
+(defmacro with-transaction
   "Wraps the given forms in a transaction on the supplied repository.
   Exceptions are rolled back on failure."
+  [repo & forms]
   `(try
     (pr/begin ~repo)
     (let [return# (do ~@forms)]
@@ -446,9 +474,9 @@
 string and returns a lazy sequence of results.
 
 It doesn't clear up properly in all cases, for example if the sequence
-isn't fully consumed you may cause a resource leak.
+isn't fully consumed you may cause a resource leak."
 
-TODO: reimplement with proper resource handling."
+  ;; TODO: reimplement interfaces with proper resource handling.
   (query-dataset [this sparql-string model])
 
   (update! [this sparql-string]))
@@ -482,7 +510,8 @@ TODO: reimplement with proper resource handling."
        (run-query))))
 
 (defprotocol IQueryEvaluator
-  (evaluate [this]))
+  (evaluate [this] "Low level protocol to evaluate a sesame RDF Query
+  object, and convert the results into a grafter representation."))
 
 (extend-protocol IQueryEvaluator
   BooleanQuery
@@ -501,12 +530,19 @@ TODO: reimplement with proper resource handling."
   (evaluate [this]
     (.execute this)))
 
-(defn ->connection [repo]
+(defn ->connection
+  "Given a sesame repository return a connection to it."
+  [repo]
   (if (instance? RepositoryConnection repo)
     repo
     (.getConnection repo)))
 
 (defn prepare-query
+  "Low level function to prepare (parse, but not process) a sesame RDF
+  query.  Takes a repository a query string and an optional sesame
+  Dataset to act as a query restriction.
+
+  Prepared queries still need to be evaluated with evaluate."
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string dataset]
      (let [conn (->connection repo)]
@@ -516,6 +552,9 @@ TODO: reimplement with proper resource handling."
          (.setDataset dataset)))))
 
 (defn prepare-update
+  "Prepare (parse but don't process) a SPARQL update request.
+
+  Prepared updates still need to be evaluated with evaluate."
   ([repo sparql-update-str] (prepare-update repo sparql-update-str nil))
   ([repo sparql-update-str dataset]
      (let [conn (->connection repo)]
@@ -586,7 +625,9 @@ TODO: reimplement with proper resource handling."
   (let [dataset (mapply make-restricted-dataset (or options {}))]
     (query-dataset repo sparql dataset)))
 
-(defn format->parser [format]
+(defn ^:no-doc format->parser
+  "Convert a format into a sesame parser for that format."
+  [format]
   (let [table {RDFFormat/NTRIPLES NTriplesParserFactory
                RDFFormat/TRIX TriXParserFactory
                RDFFormat/TRIG TriGParserFactory
@@ -609,7 +650,7 @@ TODO: reimplement with proper resource handling."
   (Rio/getParserFormatForFileName fname))
 
 ;; http://clj-me.cgrand.net/2010/04/02/pipe-dreams-are-not-necessarily-made-of-promises/
-(defn pipe
+(defn- pipe
   "Returns a pair: a seq (the read end) and a function (the write end).
   The function can takes either no arguments to close the pipe
   or one argument which is appended to the seq. Read is blocking."
@@ -703,6 +744,7 @@ TODO: reimplement with proper resource handling."
                            (sesame-statement->IStatement msg)))]
           (map read-rdf statements))))))
 
-(defn shutdown [repo]
+(defn shutdown
   "Cleanly shutsdown the repository."
+  [repo]
   (.shutDown repo))

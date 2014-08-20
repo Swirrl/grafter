@@ -1,4 +1,4 @@
-(ns grafter.tabular.common
+(ns ^:no-doc grafter.tabular.common
   (:use [clojure.java.io :only [file]])
   (:require [grafter.sequences :as seqs]
             [incanter.core :as inc]
@@ -10,15 +10,17 @@
            [org.apache.poi.ss.usermodel Workbook Sheet]
            [incanter.core Dataset]))
 
-(defn copy-first-row-to-header [data]
+(defn copy-first-row-to-header
   "For use with make-dataset.  Copies the first row of data into the
   header, removing it from the source data."
-  (if (not (inc/dataset? data))
-    [(first data) data]))
+  [data]
+  [(first data) data])
 
-(defn move-first-row-to-header [[first-row & other-rows]]
+(defn move-first-row-to-header
   "For use with make-dataset.  Moves the first row of data into the
   header, removing it from the source data."
+  [[first-row & other-rows]]
+
   [first-row other-rows])
 
 (defn make-dataset
@@ -33,7 +35,7 @@
   by grafter.sequences/column-names-seq."
 
   ([]
-   (make-dataset []))
+   (inc/dataset []))
 
   ([data]
    (if (sequential? data)
@@ -41,13 +43,16 @@
      data))
 
   ([data columns-or-f]
-     {:pre [(or (ifn? columns-or-f) (sequential? columns-or-f))]}
+     {:pre [(or (ifn? columns-or-f)
+                (sequential? columns-or-f))]}
      (let [[column-names data] (if (sequential? columns-or-f)
                                  [(if (inc/dataset? data)
                                     (take (-> data :column-names count) columns-or-f)
                                     (take (-> data first count) columns-or-f))
                                    data]
-                                 (columns-or-f data))
+                                 (columns-or-f (if (inc/dataset? data)
+                                                 (inc/to-list data)
+                                                 data)))
            data (if (sequential? data)
                   data
                   (inc/to-list data))]

@@ -85,7 +85,7 @@
 
 (deftest open-all-datasets-tests
   (testing "open-all-datasets"
-    (let [sheets (open-all-datasets "./test/grafter" :make-dataset-fn (partial make-dataset move-first-row-to-header))]
+    (let [sheets (open-all-datasets "./test/grafter" :make-dataset-fn #(make-dataset % move-first-row-to-header))]
 
       (is (seq? sheets) "should yield a seq")
       (is (= 2 (count sheets)) "should be 2 datasets")

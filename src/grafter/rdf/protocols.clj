@@ -1,4 +1,5 @@
 (ns grafter.rdf.protocols
+  "Grafter protocols and types for RDF processing"
   (:require [clojure.set :as set])
   (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]))
 
@@ -30,10 +31,11 @@
   (to-statements [this options]))
 
 (defprotocol ITransactable
-  "Transactions support"
-  (begin [repo])
-  (commit [repo])
-  (rollback [repo]))
+  "Low level protocol for transactions support.  Most users probably
+  want to use grafter.rdf.sesame/with-transaction"
+  (begin [repo] "Start a transaction")
+  (commit [repo] "Commit a transaction")
+  (rollback [repo] "Rollback a transaction"))
 
 (defrecord Triple
     [s p o]
@@ -59,20 +61,6 @@
     (second this))
   (object [this]
     (nth this 2)))
-
-(defn statements
-  "Attempts to coerce an arbitrary source of RDF statements into a
-  sequence of grafter Statements.
-
-  Takes optional parameters which may be used depending on the
-  context e.g. specifiying the format of the source triples.
-
-  The :format option is supplied by the wrapping function and may be
-  nil, or act as an indicator about the format of the triples to read.
-  Implementers can choose whether or not to ignore or require the
-  format parameter."
-  [this & {:keys [format] :as options}]
-  (to-statements this options))
 
 (comment
   (expand-subject [:rick

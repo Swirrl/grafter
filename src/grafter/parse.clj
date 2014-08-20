@@ -1,4 +1,4 @@
-(ns grafter.parse
+(ns ^:no-doc grafter.parse
   (:use [clojure.algo.monads])
   (:require [clj-time.core :as t]
             [clojure.string :as s]))
