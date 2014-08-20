@@ -38,7 +38,7 @@
 
       (testing "assigns column names alphabetically by default"
         (let [header (:column-names (make-dataset raw-data))]
-          (is (= ["A" "B" "C"] header))))
+          (is (= ["a" "b" "c"] header))))
 
       (testing "takes a function that extracts the column names (header row)"
         (let [dataset (make-dataset raw-data move-first-row-to-header)
@@ -109,28 +109,28 @@
 
       (testing "Automatically assigns column names alphabetically if none are given"
         (let [columns (:column-names (make-dataset [(range 30)]))]
-          (is (= "AA" (nth columns 26)))
-          (is (= "AB" (nth columns 27))))))))
+          (is (= "aa" (nth columns 26)))
+          (is (= "ab" (nth columns 27))))))))
 
 (deftest resolve-column-id-tests
   (testing "resolve-column-id"
     (let [dataset (test-dataset 5 5)]
       (are [expected lookup]
            (= expected (resolve-column-id dataset lookup :not-found))
-           "A" "A"
-           "A" :A
-           "A" 0
-           :not-found "Z"
-           :not-found :Z))))
+           "a" "a"
+           "a" :a
+           "a" 0
+           :not-found "z"
+           :not-found :z))))
 
 (deftest invalid-column-keys-tests
   (testing "invalid-column-keys"
     (let [dataset (test-dataset 5 5)]
       (testing "Returns the keys not in the dataset"
-        (is (= ["X" "Z" 5 :F] (invalid-column-keys ["A" "B" "X" "Z" "C" "D" "E" 0 1 2 3 4 5 :A :B :C :D :E :F] dataset)))
+        (is (= ["x" "z" 5 :f] (invalid-column-keys ["a" "b" "x" "z" "c" "d" "e" 0 1 2 3 4 5 :a :b :c :d :e :f] dataset)))
 
         (testing "Preserves the order of invalid keys"
-          (is (= ["Z" "X"] (invalid-column-keys ["A" "B" "Z" "X" "C" "D" "E"] dataset))))))))
+          (is (= ["z" "x"] (invalid-column-keys ["a" "b" "z" "x" "c" "d" "e"] dataset))))))))
 
 (deftest columns-tests
   (let [expected-dataset (test-dataset 5 2)
@@ -138,15 +138,15 @@
     (testing "columns"
       (testing "Narrows by string names"
         (is (= expected-dataset
-               (columns test-data ["A" "B"]))  "Should select just columns A and B"))
+               (columns test-data ["a" "b"]))  "Should select just columns a and b"))
 
       (testing "Narrows by numeric ids"
         (is (= expected-dataset
-               (columns test-data [0 1])) "Should select columns 0 and 1 (A and B)"))
+               (columns test-data [0 1])) "Should select columns 0 and 1 (a and b)"))
 
       (testing "Narrows by keywords"
         (is (= expected-dataset
-               (columns test-data [:A :B])) "Should select columns 0 and 1 (A and B)"))
+               (columns test-data [:a :b])) "should select columns 0 and 1 (a and b)"))
 
       (testing "works with infinite sequences"
         (is (columns test-data (grafter.sequences/integers-from 5))
@@ -225,7 +225,7 @@
         (let [expected (make-dataset [["one" "two" "bar"]])]
           (is (= expected
                  (grep dataset (fn [cell]
-                                 (= cell "bar")) ["C"])))))
+                                 (= cell "bar")) ["c"])))))
       (testing "with a string"
         (is (= expected-dataset
                (grep dataset "fo"))))
@@ -244,8 +244,8 @@
                                [5 6 "bar" 8]
                                [9 10 "baz" 12]])
 
-        fs {"A" str, "B" inc, "C" identity, "D" inc}
-        fs-incomplete {"A" str, "B" inc, "D" inc}
+        fs {"a" str, "b" inc, "c" identity, "d" inc}
+        fs-incomplete {"a" str, "b" inc, "d" inc}
         fs-vec [str inc identity inc]
         expected-dataset (make-dataset [["1" 3 "foo" 5]
                                         ["5" 7 "bar" 9]
@@ -278,18 +278,18 @@
               [["b" "a" "c" "d"]
                ["b" "a" "c" "d"]
                ["b" "a" "c" "d"]]
-              ["B" "A" "C" "D"])
-             (swap ordered-ds "A" "B"))))
+              ["b" "a" "c" "d"])
+             (swap ordered-ds "a" "b"))))
     (testing "swaping two times two columns"
       (is (= (make-dataset
               [["b" "c" "a" "d"]
                ["b" "c" "a" "d"]
                ["b" "c" "a" "d"]]
-              ["B" "C" "A" "D"])
-             (swap ordered-ds "A" "B" "A" "C"))))
+              ["b" "c" "a" "d"])
+             (swap ordered-ds "a" "b" "a" "c"))))
     (testing "swaping odd number of columns"
       (is (thrown? java.lang.Exception
-             (swap ordered-ds "A" "B" "C"))))))
+             (swap ordered-ds "a" "b" "c"))))))
 
 
 (deftest build-lookup-table-test

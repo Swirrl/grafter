@@ -20,7 +20,7 @@
 (defn column-names-seq "Given an alphabet string generate a lazy sequences of column
   names e.g.
 
-  (column-names-seq \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\") ;; => (\"A\" \"B\" \"C\" ... \"AA\" \"AB\")
+  (column-names-seq \"abcdefghijklmnopqrstuvwxyz\") ;; => (\"a\" \"b\" \"c\" ... \"aa\" \"ab\")
 "
   [alphabet]
   (->> (map str alphabet)
@@ -35,4 +35,4 @@
   than 26 are required the sequence will count AA AB AC ... BA BB BC
   ... ZZZA ... etc"
   []
-  (column-names-seq "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+  (column-names-seq "abcdefghijklmnopqrstuvwxyz"))
