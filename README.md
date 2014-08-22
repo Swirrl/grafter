@@ -4,12 +4,9 @@
 
 Grafter is a library, DSL and suite of tools for flexible, efficient,
 ETL, data transformation and processing.  Its primary use is for
-handling relatively Linked Data conversions from tabular data formats
-into RDF linked data format, but it is equally adept at handling
-tabular data conversions.
-
-And is being used to transform lots of data for our clients at
-[Swirrl](http://swirrl.com/).
+handling Linked Data conversions from tabular data formats into RDF
+linked data format, but it is equally adept at handling tabular data
+conversions.
 
 See the official grafter website at [grafter.org](http://grafter.org/)
 for more details.
@@ -17,15 +14,29 @@ for more details.
 For the Grafter rationale see our blog post:
 [The hard graft of Linked Data ETL](http://blog.swirrl.com/articles/linked-data-etl/).
 
+## What plans are there for Grafter?
+
+Grafter is currently in the early stages of development, however we
+[Swirrl](http://swirrl.com/) have been using it to transform
+significant amounts of data for our clients within the government.
+
+Grafter is currently an API and a small DSL for converting tabular
+data into Linked Data.  However we have ambitious plans to develop a
+suite of tools on top of it.  These tools are planned to include:
+
+1. Command line tools for data processing.
+1. Import services to load pipelines and execute predefined data
+   transformations.
+1. A Graphical ETL Tool to assist non-programmers in creating data
+   transformation pipelines.
+
 ## Installing
 
-Grafter is still in early stages of development and is primarily of
-use as an API for specifying data conversion tasks.  To use add the
-following to your Clojure projects `project.clj` file.  For more
-details on how to do this see the [leiningen](http://leiningen.org/)
-build tool:
+To use the Drafter API please add the following to your Clojure
+projects `project.clj` file.  For more details on how to do this see
+the [leiningen](http://leiningen.org/) build tool:
 
-     [grafter/grafter "0.2"]
+     [grafter/grafter "0.2-SNAPSHOT"]
 
 ## License
 
