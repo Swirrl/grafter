@@ -1,3 +1,6 @@
+*WARNING* these notes are out of date, and are left here as an
+indication of some ideas.
+
 * Grafter
 
 Exploring the use of Clojure for RDFizing, DSL's, RDF tooling and more

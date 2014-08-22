@@ -1,6 +1,9 @@
 #+TITLE: Grafter V0.2 DSL Notes
 #+AUTHOR: Rick Moynihan
 
+*WARNING* these notes may be out of date regarding the latest API
+changes.
+
 This file consists of some notes about how grafter 0.2 is fitting
 together.  Its primary purpose is to try and open up how the DSL is
 built and how it fits together for further discussion.
@@ -63,7 +66,7 @@ We can supply our own column names like so:
 
 #+NAME: make-dataset-with-names
 #+BEGIN_SRC clojure :results raw
-(make-dataset ["First" "Second" "Third"] [[1 2 3] [4 5 6]])
+(make-dataset [[1 2 3] [4 5 6]] ["First" "Second" "Third"])
 #+END_SRC
 
 #+RESULTS: make-dataset-with-names
@@ -81,7 +84,7 @@ point... e.g.
 
 #+NAME: make-dataset-with-integers-from-10
 #+BEGIN_SRC clojure :results raw
-(make-dataset (integers-from 10) [[1 2 3] [4 5 6]])
+(make-dataset [[1 2 3] [4 5 6]] (integers-from 10))
 #+END_SRC
 
 Produces the following, because there are three columns of data and we
