@@ -12,7 +12,8 @@ A release candidate and Grafter's first external release.
 - Documentation site grafter.org
 - API documentation api.grafter.org
 
-## `VERSION: 0.1.1-SNAPSHOT`
+## 2014-07-23
+`VERSION: 0.1.1-SNAPSHOT`
 
 An internal release.  Used for some client work.
 
