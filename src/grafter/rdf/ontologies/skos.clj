@@ -9,3 +9,10 @@
 
 (def skos:Concept (skos "Concept"))
 (def skos:inScheme (skos "inScheme"))
+(def skos:topConceptOf (skos "topConceptOf"))
+
+(def skos:prefLabel (skos "prefLabel"))
+(def skos:definition (skos "definition"))
+(def skos:notation (skos "notation"))
+(def skos:altLabel (skos "altLabel"))
+(def skos:note (skos "note"))

@@ -74,7 +74,6 @@
                               (name lang-or-uri)
                               lang-or-uri))))))
 
-
 (defmulti literal-datatype->type
   "A multimethod to convert an RDF literal into a corresponding
   Clojure type.  This method can be extended to provide custom
@@ -169,6 +168,13 @@
   (sesame-rdf-type->type [this]
     (literal-datatype->type this))
 
+  java.lang.Float
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this))
+
+  (sesame-rdf-type->type [this]
+    this)
+
   java.lang.Double
   (->sesame-rdf-type [this]
     (NumericLiteralImpl. this))
@@ -244,6 +250,13 @@
     (URIImpl. (.toString this)))
 
   BNode
+  (->sesame-rdf-type [this]
+    this)
+
+  (sesame-rdf-type->type [this]
+    (-> this .getID keyword))
+
+  BNodeImpl
   (->sesame-rdf-type [this]
     this)
 
@@ -513,6 +526,7 @@ isn't fully consumed you may cause a resource leak."
   (evaluate [this] "Low level protocol to evaluate a sesame RDF Query
   object, and convert the results into a grafter representation."))
 
+
 (extend-protocol IQueryEvaluator
   BooleanQuery
   (evaluate [this]
@@ -635,7 +649,8 @@ isn't fully consumed you may cause a resource leak."
                RDFFormat/NQUADS NQuadsParserFactory
                RDFFormat/TURTLE TurtleParserFactory
                RDFFormat/JSONLD RDFJSONParserFactory
-               RDFFormat/N3 N3ParserFactory}
+               RDFFormat/N3 N3ParserFactory
+               }
         parser-class (table format)]
     (if-not parser-class
       (throw (ex-info (str "Unsupported format: " (pr-str format)) {:type :unsupported-format})))
