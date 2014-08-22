@@ -3,7 +3,7 @@
 Copyright © 2014 Swirrl IT Ltd.
 
 ## 2014-08-22
-`VERSION: 0.2-SNAPSHOT`
+`VERSION: 0.2-SNAPSHOT (v0.2-rc1)`
 
 A release candidate and Grafter's first external release.
 
