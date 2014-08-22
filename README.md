@@ -52,6 +52,9 @@ minor versions at least until we reach `1.0.0`.
 `PATCH` versions should be *close* to being backwardly compatible with
 previous `MINOR` versions.
 
+Releases will be tagged with an appropriate tag indicating their
+`MAJOR.MINOR.PATCH` version.
+
 ## License
 
 Copyright © 2014 Swirrl IT Ltd.
