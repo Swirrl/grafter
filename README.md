@@ -33,8 +33,7 @@ suite of tools on top of it.  These tools are planned to include:
 ## Development
 
 Grafter is deployed on the standard Clojure build repository
-[Clojars](http://clojars.org/) and follows the standard community
-[Semantic Versioning](http://semver.org/) practices.
+[Clojars](http://clojars.org/).
 
 To use the Grafter API please add the following to your Clojure
 projects `project.clj` file.  For more details on how to do this see
@@ -45,6 +44,13 @@ the [leiningen](http://leiningen.org/) build tool:
 Release candidates are released as `SNAPSHOT` builds and our first
 official release will be `0.2`, this will hopefully be released in the
 coming weeks.
+
+We are currently following a `MAJOR.MINOR.PATCH` versioning scheme,
+but are anticipating significant breaking API changes between minor
+versions at least until we reach `1.0.0`.
+
+`PATCH` versions should be close to being backwardly compatible with
+previous `MINOR` versions.
 
 ## License
 
