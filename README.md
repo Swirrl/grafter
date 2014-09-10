@@ -55,6 +55,7 @@ previous `MINOR` versions.
 Releases will be tagged with an appropriate tag indicating their
 `MAJOR.MINOR.PATCH` version.
 
+
 ## License
 
 Copyright © 2014 Swirrl IT Ltd.
