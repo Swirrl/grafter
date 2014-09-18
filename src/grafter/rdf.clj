@@ -211,6 +211,9 @@
   "Attempts to coerce an arbitrary source of RDF statements into a
   sequence of grafter Statements.
 
+  If the source is a quad store quads from all the named graphs will
+  be returned.  Any triples in an unnamed graph will be ignored.
+
   Takes optional parameters which may be used depending on the
   context e.g. specifiying the format of the source triples.
 
