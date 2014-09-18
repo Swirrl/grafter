@@ -322,13 +322,14 @@
   (pr/add-statement
     ([this statement]
        {:pre [(instance? IStatement statement)]}
-       (if-let [graph (:c statement)]
-         (doto this
-           (.add (IStatement->sesame-statement statement)
-                 (into-array Resource [(URIImpl. graph)])))
-         (doto this
-           (.add statement
-                 (into-array Resource [])))))
+       (let [sesame-statement (IStatement->sesame-statement statement)]
+         (if-let [graph (:c statement)]
+           (doto this
+             (.add sesame-statement
+                   (into-array Resource [(URIImpl. graph)])))
+           (doto this
+             (.add sesame-statement
+                   (into-array Resource []))))))
 
     ([this graph statement]
        {:pre [(instance? IStatement statement)]}
