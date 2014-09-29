@@ -9,15 +9,6 @@
 
 (deftest header-functions-tests
   (let [raw-data [[:a :b :c] [1 2 3] [4 5 6]]]
-
-    (testing "copy-first-row-to-header"
-      (let [retval (copy-first-row-to-header raw-data)]
-        (testing "returns a pair"
-          (testing "where first item is the header"
-            (is (= [:a :b :c] (first retval))))
-          (testing "and the second item is the unmodified source data"
-            (is (= raw-data (second retval)))))))
-
     (testing "move-first-row-to-header"
       (let [retval (move-first-row-to-header raw-data)]
         (testing "returns a pair"
