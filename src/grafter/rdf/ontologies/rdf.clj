@@ -1,6 +1,6 @@
 (ns grafter.rdf.ontologies.rdf
   "Some convenience terms for the RDF and RDFS vocabularies."
-  (:use grafter.rdf.ontologies.util))
+  (:require grafter.rdf.ontologies.util :refer :all))
 
 (def rdf (prefixer "http://www.w3.org/1999/02/22-rdf-syntax-ns#"))
 (def rdfs (prefixer "http://www.w3.org/2000/01/rdf-schema#"))
