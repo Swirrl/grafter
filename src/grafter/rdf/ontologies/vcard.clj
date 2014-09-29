@@ -2,7 +2,7 @@
   "Convenience terms for the VCard vocabulary."
   (:use [grafter.rdf.ontologies.util]))
 
-(def vcard (prefixer "http://www.w3.org/2006/vcard/ns"))
+(def vcard (prefixer "http://www.w3.org/2006/vcard/ns#"))
 
 (def vcard:Address (vcard "Address"))
 
