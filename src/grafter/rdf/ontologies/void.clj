@@ -8,3 +8,4 @@
 (def void:dataDump (void "dataDump"))
 (def void:sparqlEndpoint (void "sparqlEndpoint"))
 (def void:triples (void "triples"))
+(def void:vocabulary (void "vocabulary"))
