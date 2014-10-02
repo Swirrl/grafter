@@ -61,7 +61,12 @@
 
 (defmulti open-tabular-file
   "Takes a File or String as an argument and coerces it based upon its
-file extension into a concrete grafter table.
+file extension into its concrete low-level representation, provided by
+the file adapter.
+
+This is intended to be used by adapter developers, and developers who
+need access to low level details.  Specific to the adapter.  Normal
+users should prefer open-all-datasets.
 
 Supported files are currently csv or Excel's xls or xlsx files.
 
