@@ -665,6 +665,14 @@ isn't fully consumed you may cause a resource leak."
   [fname]
   (Rio/getParserFormatForFileName fname))
 
+(defn mimetype->rdf-format
+  "Given a mimetype string we attempt to return an appropriate
+  RDFFormat object based on the files extension."
+  [mime-type]
+  (condp = mime-type
+    "application/n-triples" RDFFormat/NTRIPLES ;; Sesame doesn't yet support application/n-triples
+    (Rio/getParserFormatForMIMEType mime-type)))
+
 ;; http://clj-me.cgrand.net/2010/04/02/pipe-dreams-are-not-necessarily-made-of-promises/
 (defn- pipe
   "Returns a pair: a seq (the read end) and a function (the write end).
