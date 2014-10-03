@@ -114,15 +114,6 @@
            :not-found "z"
            :not-found :z))))
 
-(deftest invalid-column-keys-tests
-  (testing "invalid-column-keys"
-    (let [dataset (test-dataset 5 5)]
-      (testing "Returns the keys not in the dataset"
-        (is (= ["x" "z" 5 :f] (invalid-column-keys ["a" "b" "x" "z" "c" "d" "e" 0 1 2 3 4 5 :a :b :c :d :e :f] dataset)))
-
-        (testing "Preserves the order of invalid keys"
-          (is (= ["z" "x"] (invalid-column-keys ["a" "b" "z" "x" "c" "d" "e"] dataset))))))))
-
 (deftest columns-tests
   (let [expected-dataset (test-dataset 5 2)
         test-data (test-dataset 5 10)]
