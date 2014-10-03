@@ -339,16 +339,16 @@
 
   (pr/add
     ([this triples]
+       {:pre [(or (nil? triples)
+                  (sequential? triples))]}
        (if (seq triples)
          (doseq [t triples]
-           (pr/add-statement this t))
-         (pr/add-statement this triples)))
+           (pr/add-statement this t))))
 
     ([this graph triples]
        (if (seq triples)
          (doseq [t triples]
-           (pr/add-statement this graph t))
-         (pr/add-statement this graph triples)))))
+           (pr/add-statement this graph t))))))
 
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
