@@ -59,10 +59,10 @@
   (let [headers (column-names dataset)]
     (resolve-col-id column-key headers not-found)))
 
-(defn invalid-column-keys
+(defn- invalid-column-keys
   "Takes a sequence of column key names and a dataset and returns a
   sequence of keys that are not in the dataset."
-  [keys dataset]
+  [dataset keys]
 
   (let [not-found (Object.)
         not-found-items (->> keys
@@ -84,7 +84,7 @@
   One advantage of this over using columns is that you can duplicate
   an arbitrary number of columns."
  [dataset cols]
-  (let [not-found-items (invalid-column-keys cols dataset)]
+  (let [not-found-items (invalid-column-keys dataset cols)]
     (if (and (empty? not-found-items)
             (some identity cols))
       (inc/$ cols dataset)
