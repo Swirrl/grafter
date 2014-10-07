@@ -53,6 +53,26 @@
 
        (inc/dataset column-names data))))
 
+(def column-names
+  "If given a dataset, it returns its column names. If given a dataset and a sequence
+  of column names, it returns a dataset with the given column names."
+  inc/col-names)
+
+(defn apply-rows
+  "Applies the function f to the collection of rows in the dataset and
+  returns a dataset.
+
+  f should expect a collection of row maps and return a collection of
+  rows.
+
+  This function is intended to be used by Grafter itself and Grafter
+  library authors.  It's not recommended to by users of the DSL
+  because users of this function need to be aware of Dataset
+  implementation details."
+  [dataset f]
+  (make-dataset (->> dataset :rows f)
+                (column-names dataset)))
+
 (defn- extension [f]
   (when-let [ext (-> f fs/extension)]
     (-> ext

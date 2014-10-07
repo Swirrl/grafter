@@ -1,7 +1,7 @@
 (ns grafter.tabular
 "Functions for processing tabular data."
   (:require [clojure.java.io :as io]
-            [grafter.tabular.common :as tabcommon]
+            [grafter.tabular.common :as tabc]
             [grafter.sequences :as seqs]
             [grafter.tabular.excel]
             [clojure.string :as str]
@@ -12,14 +12,13 @@
 
 (import-vars
  [grafter.tabular.common
+  column-names
   make-dataset
   move-first-row-to-header
   open-tabular-file
   open-all-datasets
   with-metadata-columns
   without-metadata-columns])
-
-
 
 (defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
@@ -35,11 +34,6 @@
        (map #(repeat c %))
        (take r)
        make-dataset))
-
-(def column-names
-  "If given a dataset, it returns its column names. If given a dataset and a sequence
-  of column names, it returns a dataset with the given column names."
-  inc/col-names)
 
 (defn- resolve-col-id [column-key headers not-found]
   (let [converted-column-key (cond
@@ -170,13 +164,6 @@ Returns a lazy sequence of matched rows."
         selected-cols (select-indexed (indexed col-names) matched-columns)]
     (all-columns dataset selected-cols)))
 
-(defn map-rows
-  "Maps the function f over the dataset and returns a new dataset.
-  This is really just map/fmap defined on dataset data."
-  [dataset f]
-  (make-dataset (->> dataset inc/to-list f)
-                (column-names dataset)))
-
 (defn- map-keys [f hash]
   "Apply f to the keys in the supplied hashmap and return a new
   hashmap."
@@ -208,12 +195,12 @@ Returns a lazy sequence of matched rows."
 (defn drop-rows
   "Drops the first n rows from the dataset."
   [dataset n]
-  (map-rows dataset (partial drop n)))
+  (tabc/apply-rows dataset (partial drop n)))
 
 (defn take-rows
   "Drops the first n rows from the dataset."
   [dataset n]
-  (map-rows dataset (partial take n)))
+  (tabc/apply-rows dataset (partial take n)))
 
 (defn derive-column
   "Adds a new column to the end of the row which is derived from
@@ -293,12 +280,11 @@ the specified column being cloned."
                            (cycle [identity]))
         functions (conj fs-hash other-hash)]
 
-    (make-dataset (->> dataset
-                       (:rows)
-                       (map (fn [row]
-                              (apply merge (map #(hash-map % ((functions %) (row %)))
-                                                (keys row))))))
-                  (column-names dataset))))
+    (tabc/apply-rows dataset (fn [rows]
+                               (->> rows
+                                    (map (fn [row]
+                                           (apply merge (map #(hash-map % ((functions %) (row %)))
+                                                             (keys row))))))))))
 
 
 (defn swap
