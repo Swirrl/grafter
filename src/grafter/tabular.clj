@@ -46,12 +46,14 @@
 
 (defn resolve-column-id
   "Finds and resolves the column id by converting between symbols and
-  strings.  If column-key is not found in the datsets headers then nil
-  is returned."
-  [dataset column-key not-found]
+  strings.  If column-key is not found in the datsets headers then
+  not-found is returned."
 
-  (let [headers (column-names dataset)]
-    (resolve-col-id column-key headers not-found)))
+  ([dataset column-key] (resolve-column-id dataset column-key nil))
+  ([dataset column-key not-found]
+
+     (let [headers (column-names dataset)]
+       (resolve-col-id column-key headers not-found))))
 
 (defn- invalid-column-keys
   "Takes a sequence of column key names and a dataset and returns a
