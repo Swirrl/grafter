@@ -385,53 +385,28 @@ the specified column being cloned."
          value-from-row)))))
 
 
-(comment
+(defn melt
+  "
+Melt an object into a form suitable for easy casting, like a melt function in R.
+It accepts multiple pivot keys (identifier variables that are reproduced for each
+row in the output).
+(use '(incanter core charts datasets))
+(view (with-data (melt (get-dataset :flow-meter) :Subject)
+(line-chart :Subject :value :group-by :variable :legend true)))
+See http://www.statmethods.net/management/reshape.html for more examples."
+  [dataset & pivot-keys]
+  (let [resolve-keys (partial resolve-column-id dataset)
+        pivot-keys (map resolve-keys pivot-keys)
+        in-m (map-keys resolve-keys (inc/to-map dataset))
+        nrows (inc/nrow dataset)
+        ks (keys in-m)]
 
-;; TODO fix this so that it doesn't assume contiguous blocks of
-;; id/measure columns.  It needs to calculate the set complement of
-;; the selected measure column ids and use those.
-
-(defn normalise [[header-row & data-rows] measure-col-ids]
-  "Takes a CSV with a header row and normalises it by transforming the
-selected columns into values within the rows.
-
-Essentially the following call:
-
-(normalise csv 3 4)
-
-will convert a table that looks like this:
-
-| cola | colb | colc | normalise-me-a | normalise-me-b |
-|------+------+------+----------------+----------------|
-|    0 |    0 |    0 | normal-a-0     | normal-b-0     |
-|    1 |    1 |    1 | normal-a-1     | normal-b-1     |
-
-into data rows look like this.  It does not yet preserve the header row:
-
-|   |   |   |                |            |
-|---+---+---+----------------+------------+
-| 0 | 0 | 0 | normalise-me-a | normal-0-a |
-| 0 | 0 | 0 | normalise-me-b | normal-0-b |
-| 1 | 1 | 1 | normalise-me-a | normal-1-a |
-| 1 | 1 | 1 | normalise-me-b | normal-1-b |
-"
-  (let [ncols            (count header-row)
-        colids           (-> (take ncols measure-col-ids) set sort) ;; incase its an infinite seq
-        srange           (first colids)
-        colids           (take (- ncols srange) colids)
-        erange           (last colids)
-        ncols            (count colids)
-        headers-to-move  (select-columns srange erange header-row)
-
-        normalise-row (fn [id row]
-                        (let [rowv (->> row (take srange) (apply vector))]
-                          (-> rowv
-                              (conj (nth header-row id))
-                              (conj (nth row id)))))
-
-        expand-rows (fn [row] (map normalise-row colids (repeat ncols row)))]
-
-    (mapcat expand-rows data-rows))))
+    (inc/to-dataset
+     (for [k ks i (range nrows) :when (not-any? #(= k %) pivot-keys)]
+       (zipmap (conj pivot-keys :variable :value)
+               (conj (map #(nth (get in-m %) i) pivot-keys)
+                     k
+                     (nth (get in-m k) i)))))))
 
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
