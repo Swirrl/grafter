@@ -270,24 +270,67 @@ the specified column being cloned."
 
 (def _ "An alias for the identity function, used for providing positional arguments to mapc." identity)
 
-(defn mapc
-  "Takes an array or a hashmap of functions and maps each to the key
-  column for every row."
+(defn- normalise-mapping
+  "Given a dataset and a map/vector mapping ids or positions to
+  values.  Return a map with normalised keys that map to the
+  appropriate values.  A normalised mapping will contain identity
+  mappings for any ommitted columns."
   [dataset fs]
-  (let [fs-hash (if (vector? fs)
-                    (zipmap (column-names dataset) fs)
-                    fs)
+  (let [resolve-ids (fn [id] (resolve-column-id dataset id nil))
+        fs-hash (if (vector? fs)
+                  (zipmap (column-names dataset) fs)
+                  (map-keys resolve-ids fs))
         other-hash (zipmap (vec (clojure.set/difference (set (:column-names dataset))
                                                         (set (keys fs-hash))))
-                           (cycle [identity]))
+                           (repeat identity))
         functions (conj fs-hash other-hash)]
+
+    functions))
+
+(defn mapc
+  "Takes a vector or a hashmap of functions and maps each to the key
+  column for every row.  Each function should be from a cell to a
+  cell, where as with apply-columns it should be from a column to a
+  column i.e. its function from a collection of cells to a collection
+  of cells."
+  [dataset fs]
+  (let [functions (normalise-mapping dataset fs)
+        apply-functions (fn [row]
+                          (let [apply-column-f (fn [col-id]
+                                                 (let [f (functions col-id)
+                                                       fval (f (row col-id))]
+                                                   {col-id fval}))]
+                            (apply merge (map apply-column-f
+                                              (keys row)))))]
 
     (tabc/apply-rows dataset (fn [rows]
                                (->> rows
-                                    (map (fn [row]
-                                           (apply merge (map #(hash-map % ((functions %) (row %)))
-                                                             (keys row))))))))))
+                                    (map apply-functions))))))
 
+
+(defn apply-columns
+  "Like mapc in that you associate functions with particular columns,
+  though it differs in that the functions given to mapc should receive
+  and return values for individual cells.
+
+  With apply-columns, the function receives a collection of cell
+  values from the column and should return a collection of values for
+  the column."
+  [dataset fs]
+  (let [functions (normalise-mapping dataset fs)]
+
+    (tabc/apply-rows dataset (fn [rows]
+                               ;; TODO consider implementing this in
+                               ;; terms of either incanter.core/to-map
+                               ;; or zipmap
+                               (let [apply-to-cols (fn [[col f]]
+                                                     (->> rows
+                                                          (map (fn [r] (get r col)))
+                                                          f
+                                                          (map (fn [r] {col r}))))]
+                                 (->> functions
+                                      (map apply-to-cols)
+                                      (apply (partial map merge))))))))
 
 (defn swap
   "Takes an even numer of column names and swaps each column"
