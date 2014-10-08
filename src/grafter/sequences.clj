@@ -1,5 +1,6 @@
 (ns grafter.sequences
-  "A library of useful lazy sequences.")
+  "A library of useful lazy sequences."
+  (:require [clojure.string :refer [blank? split]]))
 
 (defn integers-from
   "Returns an infinite sequence of integers counting from the supplied
@@ -36,3 +37,28 @@
   ... ZZZA ... etc"
   []
   (column-names-seq "abcdefghijklmnopqrstuvwxyz"))
+
+(defn fill-when
+  "EXPERIMENTAL FUNCTION:
+
+  Takes a sequence of values and copies a
+  value through the sequence depending on the supplied predicate
+  function.
+
+  The default predicate function is not-blank? which means that a cell
+  will be copied through the sequence over blank cells until the next
+  non-blank one.  For example:
+
+  (fill-when [:a \"\" \" \" :b nil nil nil]) ; => (:a :a :a :b :b :b :b)
+
+  A start value to copy can also be provided as the 3rd argument.
+"
+  ([col] (fill-when (complement blank?) col))
+  ([p col]
+     (fill-when p col (first col)))
+  ([p col start]
+     (when (seq col)
+       (let [f (first col)]
+         (if (p f)
+           (cons f (lazy-seq (fill-when p (next col) f)))
+           (cons start (lazy-seq (fill-when p (next col) start))))))))
