@@ -197,12 +197,12 @@ Returns a lazy sequence of matched rows."
 (defn drop-rows
   "Drops the first n rows from the dataset."
   [dataset n]
-  (tabc/apply-rows dataset (partial drop n)))
+  (tabc/pass-rows dataset (partial drop n)))
 
 (defn take-rows
   "Drops the first n rows from the dataset."
   [dataset n]
-  (tabc/apply-rows dataset (partial take n)))
+  (tabc/pass-rows dataset (partial take n)))
 
 (defn derive-column
   "Adds a new column to the end of the row which is derived from
@@ -303,7 +303,7 @@ the specified column being cloned."
                             (apply merge (map apply-column-f
                                               (keys row)))))]
 
-    (tabc/apply-rows dataset (fn [rows]
+    (tabc/pass-rows dataset (fn [rows]
                                (->> rows
                                     (map apply-functions))))))
 
@@ -319,7 +319,7 @@ the specified column being cloned."
   [dataset fs]
   (let [functions (normalise-mapping dataset fs)]
 
-    (tabc/apply-rows dataset (fn [rows]
+    (tabc/pass-rows dataset (fn [rows]
                                ;; TODO consider implementing this in
                                ;; terms of either incanter.core/to-map
                                ;; or zipmap

@@ -58,9 +58,9 @@
   of column names, it returns a dataset with the given column names."
   inc/col-names)
 
-(defn apply-rows
-  "Applies the function f to the collection of rows in the dataset and
-  returns a dataset.
+(defn pass-rows
+  "Passes the function f the collection of raw rows from the dataset
+   and returns a new dataset containing (f rows) as its data.
 
   f should expect a collection of row maps and return a collection of
   rows.
