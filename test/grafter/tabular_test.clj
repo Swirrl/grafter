@@ -273,6 +273,15 @@
       (is (thrown? java.lang.Exception
              (swap ordered-ds "a" "b" "c"))))))
 
+(deftest derive-column-test
+  (let [subject (make-dataset [[1 2] [3 4]])
+        expected (make-dataset [[1 2 3] [3 4 7]])]
+
+    (is (= (derive-column subject "c" ["a" "b"] +)
+           expected))
+
+    (is (= (derive-column subject "c" [:a :b] +)
+           expected))))
 
 (deftest build-lookup-table-test
   (let [debts (make-dataset [["rick"  30     30]
