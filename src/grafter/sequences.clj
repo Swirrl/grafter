@@ -54,11 +54,9 @@
   A start value to copy can also be provided as the 3rd argument.
 "
   ([col] (fill-when (complement blank?) col))
-  ([p col]
-     (fill-when p col (first col)))
+  ([p col] (fill-when p col (first col)))
   ([p col start]
      (when (seq col)
-       (let [f (first col)]
-         (if (p f)
-           (cons f (lazy-seq (fill-when p (next col) f)))
-           (cons start (lazy-seq (fill-when p (next col) start))))))))
+       (let [f (first col)
+             current (if (p f) f start)]
+         (cons current (lazy-seq (fill-when p (next col) current)))))))
