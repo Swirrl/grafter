@@ -37,13 +37,28 @@
   (commit [repo] "Commit a transaction")
   (rollback [repo] "Rollback a transaction"))
 
+(defn destructure-quad [quad i default]
+  (case i
+    0 (:s quad)
+    1 (:p quad)
+    2 (:o quad)
+    3 (or (:c quad) default)
+    :else default))
+
 (defrecord Triple
     [s p o]
   IStatement
   (subject [s] (.s s))
   (predicate [s] (.p s))
   (object [s] (.o s))
-  (context [s] nil))
+  (context [s] nil)
+
+  clojure.lang.Indexed
+  (nth [this ^int i]
+    (destructure-quad this i nil))
+
+  (nth [this ^int i default]
+    (destructure-quad this i default)))
 
 (defrecord Quad
     [s p o c]
@@ -51,7 +66,22 @@
   (subject [s] (.s s))
   (predicate [s] (.p s))
   (object [s] (.o s))
-  (context [s] (.c s)))
+  (context [s] (.c s))
+
+  clojure.lang.Indexed
+  (nth [this ^int i]
+    (destructure-quad this i nil))
+
+  (nth [this ^int i default]
+    (destructure-quad this i default)))
+
+(defrecord Bar [s p o c]
+  clojure.lang.Indexed
+  (nth [this ^int i]
+    )
+
+  (nth [this ^int i default]
+    ))
 
 (extend-type clojure.lang.IPersistentVector
   IStatement
