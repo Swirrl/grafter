@@ -1,7 +1,8 @@
-(ns ^:no-doc grafter.tabular.csv
-  (:require [grafter.tabular.common :as tab]
-            [clojure-csv.core :as csv]
-            [clojure.java.io :as io]))
+(ns grafter.tabular.csv
+  {:no-doc true}
+  (:require [clojure-csv.core :as csv]
+            [clojure.java.io :as io]
+            [grafter.tabular.common :as tab]))
 
 (defmethod tab/open-tabular-file :csv
   [f & {:as opts}]

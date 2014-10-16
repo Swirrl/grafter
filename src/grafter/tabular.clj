@@ -1,14 +1,11 @@
 (ns grafter.tabular
-"Functions for processing tabular data."
-  (:require [clojure.java.io :as io]
+  "Functions for processing tabular data."
+  (:require [clojure.string :as str]
             [grafter.tabular.common :as tabc]
-            [grafter.sequences :as seqs]
-            [grafter.tabular.excel]
-            [clojure.string :as str]
             [grafter.tabular.csv]
+            [grafter.tabular.excel]
             [incanter.core :as inc]
-            [potemkin.namespaces :refer [import-vars]])
-  (:import [incanter.core Dataset]))
+            [potemkin.namespaces :refer [import-vars]]))
 
 (import-vars
  [grafter.tabular.common

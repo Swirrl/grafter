@@ -1,5 +1,5 @@
 (ns grafter.rdf.ontologies.dcat
-  (:use [grafter.rdf.ontologies.util]))
+  (:require [grafter.rdf.ontologies.util :refer :all]))
 
 (def dcat (prefixer "http://www.w3.org/ns/dcat#"))
 

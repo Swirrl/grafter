@@ -1,6 +1,6 @@
 (ns grafter.rdf.ontologies.vcard
   "Convenience terms for the VCard vocabulary."
-  (:use [grafter.rdf.ontologies.util]))
+  (:require [grafter.rdf.ontologies.util :refer :all]))
 
 (def vcard (prefixer "http://www.w3.org/2006/vcard/ns#"))
 

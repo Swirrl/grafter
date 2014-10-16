@@ -1,6 +1,6 @@
 (ns grafter.rdf.ontologies.void
   "Some convenience terms for the VOID vocabulary."
-  (:use grafter.rdf.ontologies.util))
+  (:require [grafter.rdf.ontologies.util :refer :all]))
 
 (def void (prefixer "http://rdfs.org/ns/void#"))
 

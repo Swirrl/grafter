@@ -1,11 +1,8 @@
 (ns grafter.tabular-test
   (:require [clojure.test :refer :all]
-            [grafter.tabular :refer :all]
-            [grafter.tabular.csv]
-            [grafter.tabular.excel]
             [grafter.sequences :as seqs]
-            [incanter.core :as inc]
-            [me.raynes.fs :as fs]))
+            [grafter.tabular :refer :all]
+            [incanter.core :as inc]))
 
 (deftest header-functions-tests
   (let [raw-data [[:a :b :c] [1 2 3] [4 5 6]]]

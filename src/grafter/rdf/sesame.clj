@@ -1,44 +1,39 @@
 (ns grafter.rdf.sesame
   "Grafter support and wrappers for RDF processing, built on top of
   the Sesame API (http://www.openrdf.org/)."
-  (:require [clojure.java.io :as io])
-  (:require [grafter.rdf.protocols :as pr])
-  (:import
-   [java.net URL MalformedURLException]
-   [java.io File]
-   [grafter.rdf.protocols IStatement Triple Quad]
-   [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]
-   [org.openrdf.model.impl CalendarLiteralImpl ValueFactoryImpl URIImpl
-    BooleanLiteralImpl LiteralImpl IntegerLiteralImpl NumericLiteralImpl
-    StatementImpl BNodeImpl ContextStatementImpl]
-   [org.openrdf.repository Repository RepositoryConnection]
-   [org.openrdf.query.resultio TupleQueryResultFormat]
-   [org.openrdf.repository.sail SailRepository]
-   [org.openrdf.repository.http HTTPRepository]
-   [org.openrdf.repository.sparql SPARQLRepository]
-   [org.openrdf.sail.memory MemoryStore]
-   [org.openrdf.rio Rio RDFWriter RDFHandler]
-   [org.openrdf.rio.binary BinaryRDFParserFactory]
-   [org.openrdf.rio.nquads NQuadsParserFactory]
-   [org.openrdf.rio.ntriples NTriplesParserFactory]
-   [org.openrdf.rio.n3 N3ParserFactory]
-   [org.openrdf.rio.rdfjson RDFJSONParserFactory]
-   [org.openrdf.rio.rdfxml RDFXMLParserFactory]
-   [org.openrdf.rio.trig TriGParserFactory]
-   [org.openrdf.rio.trix TriXParserFactory]
-   [org.openrdf.rio.turtle TurtleParserFactory]
-   [org.openrdf.sail.nativerdf NativeStore]
-   [org.openrdf.query Update TupleQuery TupleQueryResult TupleQueryResultHandler BooleanQueryResultHandler BindingSet QueryLanguage BooleanQuery GraphQuery]
-   [org.openrdf.query.resultio.text BooleanTextWriter]
-   [org.openrdf.query.resultio.sparqljson SPARQLResultsJSONWriter]
-   [org.openrdf.query.resultio.sparqlxml SPARQLResultsXMLWriter SPARQLBooleanXMLWriter]
-   [org.openrdf.query.resultio.binary BinaryQueryResultWriter]
-   [org.openrdf.query.resultio.text.csv SPARQLResultsCSVWriter]
-   [org.openrdf.query.resultio.text.tsv SPARQLResultsTSVWriter]
-   [org.openrdf.query.impl DatasetImpl]
-   [javax.xml.datatype XMLGregorianCalendar DatatypeFactory]
-   [java.util GregorianCalendar Date]
-   [org.openrdf.rio RDFFormat]))
+  (:require [clojure.java.io :as io]
+            [grafter.rdf.protocols :as pr])
+  (:import (grafter.rdf.protocols IStatement Quad Triple)
+           (java.io File)
+           (java.net MalformedURLException URL)
+           (java.util GregorianCalendar)
+           (javax.xml.datatype DatatypeFactory)
+           (org.openrdf.model BNode Literal Resource Statement URI
+                              Value)
+           (org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
+                                   CalendarLiteralImpl
+                                   ContextStatementImpl
+                                   IntegerLiteralImpl LiteralImpl
+                                   NumericLiteralImpl StatementImpl
+                                   URIImpl)
+           (org.openrdf.query BooleanQuery GraphQuery QueryLanguage
+                              TupleQuery Update)
+           (org.openrdf.query.impl DatasetImpl)
+           (org.openrdf.repository Repository RepositoryConnection)
+           (org.openrdf.repository.http HTTPRepository)
+           (org.openrdf.repository.sail SailRepository)
+           (org.openrdf.repository.sparql SPARQLRepository)
+           (org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio)
+           (org.openrdf.rio.n3 N3ParserFactory)
+           (org.openrdf.rio.nquads NQuadsParserFactory)
+           (org.openrdf.rio.ntriples NTriplesParserFactory)
+           (org.openrdf.rio.rdfjson RDFJSONParserFactory)
+           (org.openrdf.rio.rdfxml RDFXMLParserFactory)
+           (org.openrdf.rio.trig TriGParserFactory)
+           (org.openrdf.rio.trix TriXParserFactory)
+           (org.openrdf.rio.turtle TurtleParserFactory)
+           (org.openrdf.sail.memory MemoryStore)
+           (org.openrdf.sail.nativerdf NativeStore)))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.

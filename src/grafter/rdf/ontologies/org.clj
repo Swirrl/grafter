@@ -1,5 +1,5 @@
 (ns grafter.rdf.ontologies.org
-  (:use [grafter.rdf.ontologies.util]))
+  (:require [grafter.rdf.ontologies.util :refer :all]))
 
 (def org (prefixer "http://www.w3.org/ns/org#"))
 

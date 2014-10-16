@@ -1,5 +1,5 @@
 (ns grafter.rdf.ontologies.foaf
-  (:use [grafter.rdf.ontologies.util]))
+  (:require [grafter.rdf.ontologies.util :refer :all]))
 
 (def foaf (prefixer "http://xmlns.com/foaf/0.1/"))
 (def foaf:Person (foaf "Person"))

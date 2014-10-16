@@ -1,6 +1,6 @@
 (ns grafter.rdf.ontologies.pmd
   "Some convenience terms for the Publish My Data vocabulary."
-  (:use [grafter.rdf.ontologies.util]))
+  (:require [grafter.rdf.ontologies.util :refer :all]))
 
 
 (def pmd                 (prefixer "http://publishmydata.com/def/dataset#"))

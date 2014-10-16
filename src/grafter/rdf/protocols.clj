@@ -1,7 +1,5 @@
 (ns grafter.rdf.protocols
-  "Grafter protocols and types for RDF processing"
-  (:require [clojure.set :as set])
-  (:import [org.openrdf.model Statement Value Resource Literal URI BNode ValueFactory]))
+  "Grafter protocols and types for RDF processing")
 
 (defprotocol IStatement
   "An RDF triple"

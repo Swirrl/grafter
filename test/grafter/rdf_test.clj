@@ -1,8 +1,8 @@
 (ns grafter.rdf-test
-  (:require [grafter.rdf :refer :all]
-            [grafter.tabular :refer [make-dataset]]
+  (:require [clojure.test :refer :all]
+            [grafter.rdf :refer :all]
             [grafter.rdf.protocols :refer [->Quad ->Triple]]
-            [clojure.test :refer :all]))
+            [grafter.tabular :refer [make-dataset]]))
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])

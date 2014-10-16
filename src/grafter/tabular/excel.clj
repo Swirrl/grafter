@@ -1,6 +1,7 @@
-(ns ^:no-doc grafter.tabular.excel
-  (:require [grafter.tabular.common :as tab])
-  (:require [clj-excel.core :as xls]))
+(ns grafter.tabular.excel
+  {:no-doc true}
+  (:require [clj-excel.core :as xls]
+            [grafter.tabular.common :as tab]))
 
 (defmethod tab/open-tabular-file :xls
   [f & args]

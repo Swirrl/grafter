@@ -1,6 +1,7 @@
-(ns ^:no-doc grafter.parse
-  (:use [clojure.algo.monads])
+(ns grafter.parse
+  {:no-doc true}
   (:require [clj-time.core :as t]
+            [clojure.algo.monads :refer :all]
             [clojure.string :as s]))
 
 (defmonad blank-m

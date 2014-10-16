@@ -1,14 +1,10 @@
-(ns ^:no-doc grafter.tabular.common
-  (:use [clojure.java.io :only [file]])
-  (:require [grafter.sequences :as seqs]
+(ns grafter.tabular.common
+  {:no-doc true}
+  (:require [clj-excel.core :as xls]
+            [grafter.sequences :as seqs]
             [incanter.core :as inc]
-            [me.raynes.fs :as fs]
-            [clj-excel.core :as xls])
-  (:import [java.io File]
-           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFSheet]
-           [org.apache.poi.hssf.usermodel HSSFWorkbook HSSFSheet]
-           [org.apache.poi.ss.usermodel Workbook Sheet]
-           [incanter.core Dataset]))
+            [me.raynes.fs :as fs])
+  (:import (org.apache.poi.ss.usermodel Sheet)))
 
 (defn move-first-row-to-header
   "For use with make-dataset.  Moves the first row of data into the

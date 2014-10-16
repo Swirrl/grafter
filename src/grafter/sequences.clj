@@ -1,6 +1,6 @@
 (ns grafter.sequences
   "A library of useful lazy sequences."
-  (:require [clojure.string :refer [blank? split]]))
+  (:require [clojure.string :refer [blank?]]))
 
 (defn integers-from
   "Returns an infinite sequence of integers counting from the supplied
