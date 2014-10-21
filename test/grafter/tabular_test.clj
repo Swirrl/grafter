@@ -335,22 +335,31 @@
 
     (testing "1 key column"
       (is (= {"debt" 20}
-             ((build-lookup-table debts ["name"] "debt") "bob")))
+             ((build-lookup-table debts ["name"] ["debt"]) "bob")))
 
       (is (= {"age" 48}
              ((build-lookup-table debts ["name"] "age") "bob")))
 
       (is (= nil
              ((build-lookup-table debts ["name"] "debt") "foo"))))
+
+    (testing "many explicit return value columns"
+      (is (= {"debt" 20, "age" 48, "name" "bob"}
+             ((build-lookup-table debts ["name"] ["name" "age" :debt]) "bob"))))
+
     (testing "composite key columns"
       (is (= {"debt" 33}
              ((build-lookup-table debts ["name" "age"] "debt") ["rick" 25])))
       (is (= nil
              ((build-lookup-table debts ["name" "age"] "debt") ["foo" 99]))))
+
+
+    ;; TODO when we find a better error handling approach we should
+    ;; support it here too.
     (testing "errors"
       (testing "no key column"
         (is (thrown? IndexOutOfBoundsException
                      ((build-lookup-table debts [] "debt") "bob"))))
       (testing "key column not existing"
-        (is (thrown? IndexOutOfBoundsException
+        (is (thrown? IllegalArgumentException
                      ((build-lookup-table debts "foo" "debt") "bob")))))))

@@ -398,14 +398,21 @@ the specified column being cloned."
        (swap dataset first-col second-col))
      (throw (Exception. "Number of columns should be even")))))
 
+(defn resolve-key-cols [dataset key-cols]
+  (->> (set (if (sequential? key-cols)
+              key-cols
+              [key-cols]))
+       (order-values key-cols)
+       (resolve-all-col-ids dataset)))
+
 (defn- remaining-keys [dataset key-cols]
-  (let [unique-keys (set (if (sequential? key-cols)
-                           key-cols
-                           [key-cols]))
-        remaining-keys (->> unique-keys
-                            (set/difference (set (:column-names dataset)))
-                            (resolve-all-col-ids dataset))]
+  (let [remaining-keys (->> key-cols
+                            (set/difference (set (:column-names dataset))))]
+
     remaining-keys))
+
+(defn- order-values [key-cols hash]
+  (map #(get hash %) key-cols))
 
 (defn build-lookup-table
   "Takes a dataset, a vector of any number of column names corresponding
@@ -414,17 +421,16 @@ the specified column being cloned."
   Returns a function, taking a vector of keys as
   argument and returning the value wanted"
   ([dataset key-cols]
-     (let [unique-keys (set (if (sequential? key-cols)
-                              key-cols
-                              [key-cols]))
-           remaining-keys (->> unique-keys
-                               (set/difference (set (:column-names dataset)))
-                               (resolve-all-col-ids dataset))]
+     (build-lookup-table dataset key-cols nil))
 
-       (build-lookup-table dataset key-cols remaining-keys)))
-
-  ([dataset key-cols value-col]
+  ([dataset key-cols return-keys]
      (let [arg->vector (fn [x] (if (sequential? x) x [x]))
+           key-cols (resolve-key-cols dataset key-cols)
+           return-keys (resolve-all-col-ids dataset
+                                            (if (nil? return-keys)
+                                              (remaining-keys dataset key-cols)
+                                              (arg->vector return-keys)))
+
            keys (->> (all-columns dataset (arg->vector key-cols))
                      :rows
                      (map (fn [hash]
@@ -432,8 +438,8 @@ the specified column being cloned."
                               (if (= (count v) 1)
                                 (first v)
                                 ;; else return them in key-col order
-                                (map #(get hash %) key-cols))))))
-           val (:rows (all-columns dataset (arg->vector value-col)))
+                                (order-values key-cols hash))))))
+           val (:rows (all-columns dataset return-keys))
            table (zipmap keys val)]
        table)))
 
