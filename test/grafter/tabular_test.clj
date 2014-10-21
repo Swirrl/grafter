@@ -93,7 +93,7 @@
   (let [dataset (make-dataset csv-sheet)]
     (testing "make-dataset"
       (testing "makes incanter datasets."
-        (is (= (inc/dataset? dataset))))
+        (is (inc/dataset? dataset)))
 
       (testing "Automatically assigns column names alphabetically if none are given"
         (let [columns (:column-names (make-dataset [(range 30)]))]
@@ -247,6 +247,7 @@
         (is (= expected
                (mapc dataset  [str])))))))
 
+
 (deftest swap-test
   (let [ordered-ds (make-dataset
                     [["a" "b" "c" "d"]
@@ -280,21 +281,69 @@
     (is (= (derive-column subject "c" [:a :b] +)
            expected))))
 
+(deftest add-columns-test
+  (let [subject (make-dataset [[1 2 3] [4 5 6]])]
+    (testing "add-columns"
+      (testing "with hash-map"
+        (is (= (make-dataset [[1 2 3 "kitten" "trousers"]
+                              [4 5 6 "kitten" "trousers"]]
+                             ["a" "b" "c" "animal" "clothes"])
+
+               (add-columns subject {"animal" "kitten" "clothes" "trousers"}))
+            "adds cells to every row of the specified columns"))
+
+      (testing "with function"
+        (testing "of 1 argument"
+
+          (is (= (make-dataset [[1 2 3 1 1]
+                                [4 5 6 4 4]]
+                               ["a" "b" "c" "foo" "bar"])
+
+                 (add-columns subject ["a"] (fn [v]
+                                              {"foo" v "bar" v})))
+
+              "When given a function and a selection of column ids - it applies ƒ to the source cells, and merges the returned map into the cell")
+
+          )
+
+        (testing "of multiple arguments"
+          (let [expected (make-dataset [[1 2 3 3 0]
+                                        [4 5 6 9 3]]
+                                       ["a" "b" "c" :d :e])]
+            (is (= expected (add-columns subject [:a "b"]
+                                         (fn [a b] {:d (+ a b) :e (dec a)})))
+                "")))))))
+
+(comment (let [debts (make-dataset [["rick"  25     33]
+                                    ["john"  9      12]
+                                    ["bob"   48     20]
+                                    ["kevin" 43     10]]
+                                   ["name" "age" "debt"])]
+           (-> (make-dataset [["rick"] ["bob"]])
+               (add-columns ["a"] (build-lookup-table debts ["name"])))))
+
 (deftest build-lookup-table-test
-  (let [debts (make-dataset [["rick"  30     30]
-                             ["rick"  25     33]
+  (let [debts (make-dataset [["rick"  25     33]
                              ["john"  9      12]
                              ["bob"   48     20]
                              ["kevin" 43     10]]
                             ["name" "age" "debt"])]
 
+    (testing "with no specified return column return a map of all columns except the chosen key"
+      (is (= {"age" 25 "debt" 33}
+             ((build-lookup-table debts ["name"]) "rick"))))
+
     (testing "1 key column"
-      (is (= 20
+      (is (= {"debt" 20}
              ((build-lookup-table debts ["name"] "debt") "bob")))
+
+      (is (= {"age" 48}
+             ((build-lookup-table debts ["name"] "age") "bob")))
+
       (is (= nil
              ((build-lookup-table debts ["name"] "debt") "foo"))))
     (testing "composite key columns"
-      (is (= 33
+      (is (= {"debt" 33}
              ((build-lookup-table debts ["name" "age"] "debt") ["rick" 25])))
       (is (= nil
              ((build-lookup-table debts ["name" "age"] "debt") ["foo" 99]))))

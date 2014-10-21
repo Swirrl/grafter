@@ -1,6 +1,7 @@
 (ns grafter.tabular
   "Functions for processing tabular data."
-  (:require [clojure.string :as str]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [grafter.tabular.common :as tabc]
             [grafter.tabular.csv]
             [grafter.tabular.excel]
@@ -214,6 +215,50 @@ the specified column being cloned."
   ([dataset new-column-name from-cols f]
      (inc/add-derived-column new-column-name from-cols f dataset)))
 
+(defn- resolve-keys [headers hash]
+  (map-keys #(resolve-col-id % headers nil) hash))
+
+(defn- select-row-values [src-col-ids row]
+  (map #(get row %) src-col-ids))
+
+(defn- apply-f-to-row-hash [src-col-ids new-header f row]
+  (let [args-from-cols (select-row-values src-col-ids row)
+        new-cols-and-values (resolve-keys new-header (apply f args-from-cols))]
+    (merge row new-cols-and-values)))
+
+(defn- resolve-all-col-ids [dataset source-cols]
+  (map (partial resolve-column-id dataset) source-cols))
+
+(defn- infer-new-columns-from-first-row [dataset source-cols f]
+  (let [source-cols (resolve-all-col-ids dataset source-cols)
+        first-row-values (->> dataset
+                              :rows
+                              first
+                              (select-row-values source-cols))
+        first-result (apply f first-row-values)
+        new-col-ids (keys first-result)]
+
+    new-col-ids))
+
+(defn add-columns
+  ([dataset hash]
+     (let [merge-cols (fn [ds k]
+                        (inc/add-column k (repeat (hash k)) ds))
+           keys (-> hash keys sort)]
+       (reduce merge-cols dataset keys)))
+
+  ([dataset source-cols f]
+     (let [new-col-ids (infer-new-columns-from-first-row dataset source-cols f)]
+       (add-columns dataset new-col-ids source-cols f)))
+
+  ([dataset new-col-ids source-cols f]
+     (let [new-header (concat (:column-names dataset) new-col-ids)
+           col-ids (resolve-all-col-ids dataset source-cols)
+           apply-f-to-row (partial apply-f-to-row-hash col-ids new-header f)]
+
+       (make-dataset (map apply-f-to-row (:rows dataset))
+                     new-header))))
+
 (defn- grep-row [dataset f]
   (let [filtered-data (filter f (:rows dataset))]
     (make-dataset filtered-data
@@ -277,8 +322,8 @@ the specified column being cloned."
         fs-hash (if (vector? fs)
                   (zipmap (column-names dataset) fs)
                   (map-keys resolve-ids fs))
-        other-hash (zipmap (vec (clojure.set/difference (set (:column-names dataset))
-                                                        (set (keys fs-hash))))
+        other-hash (zipmap (vec (set/difference (set (:column-names dataset))
+                                                (set (keys fs-hash))))
                            (repeat identity))
         functions (conj fs-hash other-hash)]
 
@@ -353,6 +398,15 @@ the specified column being cloned."
        (swap dataset first-col second-col))
      (throw (Exception. "Number of columns should be even")))))
 
+(defn- remaining-keys [dataset key-cols]
+  (let [unique-keys (set (if (sequential? key-cols)
+                           key-cols
+                           [key-cols]))
+        remaining-keys (->> unique-keys
+                            (set/difference (set (:column-names dataset)))
+                            (resolve-all-col-ids dataset))]
+    remaining-keys))
+
 (defn build-lookup-table
   "Takes a dataset, a vector of any number of column names corresponding
   to key columns and a column name corresponding to the value
@@ -360,27 +414,28 @@ the specified column being cloned."
   Returns a function, taking a vector of keys as
   argument and returning the value wanted"
   ([dataset key-cols]
-   (let [key-names (map #(resolve-column-id dataset % "this column id doesn't exist!") key-cols)
-         compl-key-cols (vec (clojure.set/difference (set (:column-names dataset))
-                                                     (set (if (sequential? key-cols)
-                                                            key-names
-                                                            [key-names]))))]
-     (build-lookup-table dataset key-cols compl-key-cols)))
+     (let [unique-keys (set (if (sequential? key-cols)
+                              key-cols
+                              [key-cols]))
+           remaining-keys (->> unique-keys
+                               (set/difference (set (:column-names dataset)))
+                               (resolve-all-col-ids dataset))]
+
+       (build-lookup-table dataset key-cols remaining-keys)))
 
   ([dataset key-cols value-col]
-
-   (let [arg->vector (fn [x] (if (sequential? x) x [x]))
-         keys (:rows (all-columns dataset (arg->vector key-cols)))
-         val (:rows (all-columns dataset (arg->vector value-col)))
-         table (zipmap keys val)]
-
-     (fn [key-cells]
-       (let [lookup (zipmap (arg->vector key-cols) (arg->vector key-cells))
-             value-from-row (if (nil? (table lookup))
-                              nil
-                              ((table lookup) value-col))]
-         value-from-row)))))
-
+     (let [arg->vector (fn [x] (if (sequential? x) x [x]))
+           keys (->> (all-columns dataset (arg->vector key-cols))
+                     :rows
+                     (map (fn [hash]
+                            (let [v (vals hash)]
+                              (if (= (count v) 1)
+                                (first v)
+                                ;; else return them in key-col order
+                                (map #(get hash %) key-cols))))))
+           val (:rows (all-columns dataset (arg->vector value-col)))
+           table (zipmap keys val)]
+       table)))
 
 (defn melt
   "
