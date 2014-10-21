@@ -398,13 +398,6 @@ the specified column being cloned."
        (swap dataset first-col second-col))
      (throw (Exception. "Number of columns should be even")))))
 
-(defn resolve-key-cols [dataset key-cols]
-  (->> (set (if (sequential? key-cols)
-              key-cols
-              [key-cols]))
-       (order-values key-cols)
-       (resolve-all-col-ids dataset)))
-
 (defn- remaining-keys [dataset key-cols]
   (let [remaining-keys (->> key-cols
                             (set/difference (set (:column-names dataset))))]
@@ -413,6 +406,13 @@ the specified column being cloned."
 
 (defn- order-values [key-cols hash]
   (map #(get hash %) key-cols))
+
+(defn resolve-key-cols [dataset key-cols]
+  (->> (set (if (sequential? key-cols)
+              key-cols
+              [key-cols]))
+       (order-values key-cols)
+       (resolve-all-col-ids dataset)))
 
 (defn build-lookup-table
   "Takes a dataset, a vector of any number of column names corresponding
