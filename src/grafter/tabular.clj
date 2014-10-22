@@ -240,6 +240,9 @@ the specified column being cloned."
 
     new-col-ids))
 
+(defn lift->vector [x]
+  (if (sequential? x) x [x]))
+
 (defn add-columns
   ([dataset hash]
      (let [merge-cols (fn [ds k]
@@ -248,11 +251,13 @@ the specified column being cloned."
        (reduce merge-cols dataset keys)))
 
   ([dataset source-cols f]
-     (let [new-col-ids (infer-new-columns-from-first-row dataset source-cols f)]
+     (let [source-cols (lift->vector source-cols)
+           new-col-ids (infer-new-columns-from-first-row dataset source-cols f)]
        (add-columns dataset new-col-ids source-cols f)))
 
   ([dataset new-col-ids source-cols f]
-     (let [new-header (concat (:column-names dataset) new-col-ids)
+     (let [source-cols (lift->vector source-cols)
+           new-header (concat (:column-names dataset) new-col-ids)
            col-ids (resolve-all-col-ids dataset source-cols)
            apply-f-to-row (partial apply-f-to-row-hash col-ids new-header f)]
 
@@ -408,9 +413,7 @@ the specified column being cloned."
   (map #(get hash %) key-cols))
 
 (defn resolve-key-cols [dataset key-cols]
-  (->> (set (if (sequential? key-cols)
-              key-cols
-              [key-cols]))
+  (->> (set (lift->vector key-cols))
        (order-values key-cols)
        (resolve-all-col-ids dataset)))
 
@@ -424,12 +427,11 @@ the specified column being cloned."
      (build-lookup-table dataset key-cols nil))
 
   ([dataset key-cols return-keys]
-     (let [arg->vector (fn [x] (if (sequential? x) x [x]))
-           key-cols (resolve-key-cols dataset (arg->vector key-cols))
+     (let [key-cols (resolve-key-cols dataset( lift->vector key-cols))
            return-keys (resolve-all-col-ids dataset
                                             (if (nil? return-keys)
                                               (remaining-keys dataset key-cols)
-                                              (arg->vector return-keys)))
+                                              (lift->vector return-keys)))
 
            keys (->> (all-columns dataset key-cols)
                      :rows

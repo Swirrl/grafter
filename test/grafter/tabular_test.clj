@@ -295,14 +295,16 @@
       (testing "with function"
         (testing "with 1 argument"
 
-          (is (= (make-dataset [[1 2 3 1 1]
-                                [4 5 6 4 4]]
-                               ["a" "b" "c" "foo" "bar"])
+          (let [foo-bar (fn [v]
+                          {"foo" v "bar" v})]
+            (is (= (make-dataset [[1 2 3 1 1]
+                                  [4 5 6 4 4]]
+                                 ["a" "b" "c" "foo" "bar"])
 
-                 (add-columns subject ["a"] (fn [v]
-                                              {"foo" v "bar" v})))
+                   (add-columns subject ["a"] foo-bar)
+                   (add-columns subject "a" foo-bar))
 
-              "When given a function and a selection of column ids - it applies ƒ to the source cells, and merges the returned map into the cell"))
+                "When given a function and a selection of column ids - it applies ƒ to the source cells, and merges the returned map into the cell")))
 
         (testing "with multiple arguments"
           (let [expected (make-dataset [[1 2 3 3 0]
