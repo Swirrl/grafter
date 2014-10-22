@@ -26,7 +26,7 @@
                  [commons-httpclient/commons-httpclient "3.1"] ;; FIXME: bodge to fix strange transitive dependency issue - sesame should bring this in for us
                  [potemkin "0.3.4"]
                  [incanter "1.5.5"] ; Include all of incanter
-                 ]
+                 [com.novemberain/pantomime "2.3.0"]]
 
 
   :codox {:defaults {:doc "FIXME: write docs"}

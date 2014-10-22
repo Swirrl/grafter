@@ -2,7 +2,8 @@
   "Grafter support and wrappers for RDF processing, built on top of
   the Sesame API (http://www.openrdf.org/)."
   (:require [clojure.java.io :as io]
-            [grafter.rdf.protocols :as pr])
+            [grafter.rdf.protocols :as pr]
+            [pantomime.media :as mime])
   (:import (grafter.rdf.protocols IStatement Quad Triple)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -664,9 +665,10 @@ isn't fully consumed you may cause a resource leak."
   "Given a mimetype string we attempt to return an appropriate
   RDFFormat object based on the files extension."
   [mime-type]
-  (condp = mime-type
-    "application/n-triples" RDFFormat/NTRIPLES ;; Sesame doesn't yet support application/n-triples
-    (Rio/getParserFormatForMIMEType mime-type)))
+  (let [base-type (str (mime/base-type mime-type))]
+    (condp = base-type
+      "application/n-triples" RDFFormat/NTRIPLES ;; Sesame doesn't yet support application/n-triples
+      (Rio/getParserFormatForMIMEType mime-type))))
 
 ;; http://clj-me.cgrand.net/2010/04/02/pipe-dreams-are-not-necessarily-made-of-promises/
 (defn- pipe

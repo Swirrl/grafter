@@ -4,7 +4,8 @@
             [grafter.rdf.ontologies.rdf :refer :all]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.sesame :refer :all]
-            [me.raynes.fs :as fs]))
+            [me.raynes.fs :as fs])
+  (:import [org.openrdf.rio RDFFormat]))
 
 (def test-db-path "MyDatabases/test-db")
 
@@ -28,6 +29,17 @@
                                  ["http://test/1" [rdf:a "http://test/Test"]])))
 
       (is (query *test-db* "ASK WHERE { <http://test/1> ?p ?o }")))))
+
+(deftest mimetype->rdf-format-test
+  (testing "mimetype->rdf-format"
+
+    (is (= RDFFormat/NTRIPLES
+           (mimetype->rdf-format "application/n-triples; charset=UTF-8"))
+        "works with charset parameters")
+
+    (is (= RDFFormat/RDFXML
+           (mimetype->rdf-format "application/rdf+xml"))
+        "works without charset parameters")))
 
 (deftest import-graph
   (testing "Importing graph"
