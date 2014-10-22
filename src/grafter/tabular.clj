@@ -425,13 +425,13 @@ the specified column being cloned."
 
   ([dataset key-cols return-keys]
      (let [arg->vector (fn [x] (if (sequential? x) x [x]))
-           key-cols (resolve-key-cols dataset key-cols)
+           key-cols (resolve-key-cols dataset (arg->vector key-cols))
            return-keys (resolve-all-col-ids dataset
                                             (if (nil? return-keys)
                                               (remaining-keys dataset key-cols)
                                               (arg->vector return-keys)))
 
-           keys (->> (all-columns dataset (arg->vector key-cols))
+           keys (->> (all-columns dataset key-cols)
                      :rows
                      (map (fn [hash]
                             (let [v (vals hash)]

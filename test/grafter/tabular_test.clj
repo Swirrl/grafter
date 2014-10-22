@@ -293,7 +293,7 @@
             "adds cells to every row of the specified columns"))
 
       (testing "with function"
-        (testing "of 1 argument"
+        (testing "with 1 argument"
 
           (is (= (make-dataset [[1 2 3 1 1]
                                 [4 5 6 4 4]]
@@ -302,25 +302,14 @@
                  (add-columns subject ["a"] (fn [v]
                                               {"foo" v "bar" v})))
 
-              "When given a function and a selection of column ids - it applies ƒ to the source cells, and merges the returned map into the cell")
+              "When given a function and a selection of column ids - it applies ƒ to the source cells, and merges the returned map into the cell"))
 
-          )
-
-        (testing "of multiple arguments"
+        (testing "with multiple arguments"
           (let [expected (make-dataset [[1 2 3 3 0]
                                         [4 5 6 9 3]]
                                        ["a" "b" "c" :d :e])]
             (is (= expected (add-columns subject [:a "b"]
-                                         (fn [a b] {:d (+ a b) :e (dec a)})))
-                "")))))))
-
-(comment (let [debts (make-dataset [["rick"  25     33]
-                                    ["john"  9      12]
-                                    ["bob"   48     20]
-                                    ["kevin" 43     10]]
-                                   ["name" "age" "debt"])]
-           (-> (make-dataset [["rick"] ["bob"]])
-               (add-columns ["a"] (build-lookup-table debts ["name"])))))
+                                         (fn [a b] {:d (+ a b) :e (dec a)}))))))))))
 
 (deftest build-lookup-table-test
   (let [debts (make-dataset [["rick"  25     33]
@@ -331,17 +320,19 @@
 
     (testing "with no specified return column return a map of all columns except the chosen key"
       (is (= {"age" 25 "debt" 33}
+             ((build-lookup-table debts "name") "rick")
              ((build-lookup-table debts ["name"]) "rick"))))
 
     (testing "1 key column"
       (is (= {"debt" 20}
-             ((build-lookup-table debts ["name"] ["debt"]) "bob")))
+             ((build-lookup-table debts "name" ["debt"]) "bob")
+             ((build-lookup-table debts "name" "debt") "bob")))
 
       (is (= {"age" 48}
-             ((build-lookup-table debts ["name"] "age") "bob")))
+             ((build-lookup-table debts "name" "age") "bob")))
 
       (is (= nil
-             ((build-lookup-table debts ["name"] "debt") "foo"))))
+             ((build-lookup-table debts "name" "debt") "foo"))))
 
     (testing "many explicit return value columns"
       (is (= {"debt" 20, "age" 48, "name" "bob"}
@@ -363,3 +354,17 @@
       (testing "key column not existing"
         (is (thrown? IllegalArgumentException
                      ((build-lookup-table debts "foo" "debt") "bob")))))))
+
+(deftest add-columns-with-lookup-table-test
+  (testing "add-columns and build-lookup-table compose nicely"
+
+    (let [customer (make-dataset [[1 "bob" "hope"] [2 "john" "doe"] [3 "jane" "blogs"]]
+                                 ["id" "fname" "sname"])
+
+          accounts (make-dataset [[123 1 32]
+                                  [124 3 300]
+                                  [125 2 -500]]
+                                 ["account" "customer-id" "balance"])]
+
+      (-> customer
+          (add-columns "id" (build-lookup-table accounts ["customer-id"]))))))
