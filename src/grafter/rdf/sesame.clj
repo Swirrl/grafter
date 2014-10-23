@@ -338,13 +338,14 @@
        {:pre [(or (nil? triples)
                   (sequential? triples))]}
        (if (seq triples)
-         (doseq [t triples]
-           (pr/add-statement this t))))
+         (.add this (map IStatement->sesame-statement triples) (into-array Resource []))
+         (pr/add-statement this triples)))
 
     ([this graph triples]
        (if (seq triples)
-         (doseq [t triples]
-           (pr/add-statement this graph t))))))
+         (.add this (map IStatement->sesame-statement triples) (into-array Resource [(URIImpl. graph)]))
+         (pr/add-statement this graph triples)))))
+
 
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
