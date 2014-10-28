@@ -202,6 +202,9 @@ Returns a lazy sequence of matched rows."
   [dataset n]
   (tabc/pass-rows dataset (partial take n)))
 
+(defn lift->vector [x]
+  (if (sequential? x) x [x]))
+
 (defn derive-column
   "Adds a new column to the end of the row which is derived from
 column with position col-n.  f should just return the cells value.
@@ -213,7 +216,7 @@ the specified column being cloned."
    (derive-column dataset new-column-name from-cols identity))
   ;; todo support multiple columns/arguments to f.
   ([dataset new-column-name from-cols f]
-     (inc/add-derived-column new-column-name from-cols f dataset)))
+     (inc/add-derived-column new-column-name (lift->vector from-cols) f dataset)))
 
 (defn- resolve-keys [headers hash]
   (map-keys #(resolve-col-id % headers nil) hash))
@@ -239,9 +242,6 @@ the specified column being cloned."
         new-col-ids (keys first-result)]
 
     new-col-ids))
-
-(defn lift->vector [x]
-  (if (sequential? x) x [x]))
 
 (defn add-columns
   ([dataset hash]
