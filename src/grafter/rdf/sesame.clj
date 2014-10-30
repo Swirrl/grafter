@@ -512,7 +512,7 @@ isn't fully consumed you may cause a resource leak."
                        (if (.hasNext results)
                          (let [current-result (try
                                                 (converter-f (.next results))
-                                                (catch Exception e
+                                                (finally
                                                   (.close results)))]
                            (lazy-cat
                             [current-result]
