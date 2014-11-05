@@ -116,6 +116,74 @@
   literal)
 
 (extend-protocol ISesameRDFConverter
+  ;; Numeric Types
+
+  java.lang.Byte
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#byte")))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  java.lang.Short
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#short")))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  java.math.BigDecimal
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#decimal")))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  java.lang.Double
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  java.lang.Float
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  java.lang.Integer
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  java.math.BigInteger
+  (->sesame-rdf-type [this]
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#integer")))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  java.lang.Long
+  (->sesame-rdf-type [this]
+    ;; hacky and probably a little slow but works for now
+    (IntegerLiteralImpl. (BigInteger. (str this))))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  clojure.lang.BigInt
+  (->sesame-rdf-type [this]
+    ;; hacky and probably a little slow but works for now
+    (IntegerLiteralImpl. (BigInteger. (str this))))
+
+  (sesame-rdf-type->type [this]
+    this))
+
+(extend-protocol ISesameRDFConverter
 
   java.lang.Boolean
   (->sesame-rdf-type [this]
@@ -146,53 +214,12 @@
   (sesame-rdf-type->type [this]
     (str this))
 
-  java.lang.Integer
-  (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this))
-
-  java.math.BigInteger
-  (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#integer")))
-
-  (sesame-rdf-type->type [this]
-    this)
-
   LiteralImpl
   (->sesame-rdf-type [this]
     this)
 
   (sesame-rdf-type->type [this]
     (literal-datatype->type this))
-
-  java.lang.Float
-  (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this))
-
-  (sesame-rdf-type->type [this]
-    this)
-
-  java.lang.Double
-  (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this))
-
-  (sesame-rdf-type->type [this]
-    this)
-
-  java.lang.Long
-  (->sesame-rdf-type [this]
-    ;; hacky and probably a little slow but works for now
-    (IntegerLiteralImpl. (BigInteger. (str this))))
-
-  (sesame-rdf-type->type [this]
-    this)
-
-  clojure.lang.BigInt
-  (->sesame-rdf-type [this]
-    ;; hacky and probably a little slow but works for now
-    (IntegerLiteralImpl. (BigInteger. (str this))))
-
-  (sesame-rdf-type->type [this]
-    this)
 
   Statement
   (->sesame-rdf-type [this]

@@ -5,7 +5,13 @@
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.sesame :refer :all]
             [me.raynes.fs :as fs])
-  (:import [org.openrdf.rio RDFFormat]))
+  (:import [org.openrdf.rio RDFFormat]
+           [org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
+            CalendarLiteralImpl
+            ContextStatementImpl
+            IntegerLiteralImpl LiteralImpl
+            NumericLiteralImpl StatementImpl
+            URIImpl]))
 
 (def test-db-path "MyDatabases/test-db")
 
@@ -41,11 +47,15 @@
            (mimetype->rdf-format "application/rdf+xml"))
         "works without charset parameters")))
 
-(deftest import-graph
-  (testing "Importing graph"
-
-    ;(import-graph test-db "http://example.org/my-graph" "drafter-live.ttl")
-    )
-  )
+(deftest round-trip-integer-types-test
+  (let [types [["http://www.w3.org/2001/XMLSchema#byte" Byte "10"]
+               ["http://www.w3.org/2001/XMLSchema#short" Short "10"]
+               ["http://www.w3.org/2001/XMLSchema#decimal" java.math.BigDecimal "10"]
+               ["http://www.w3.org/2001/XMLSchema#double" Double "10.7"]
+               ["http://www.w3.org/2001/XMLSchema#float" Float "10.6"]
+               ["http://www.w3.org/2001/XMLSchema#integer" BigInteger "10"]
+               ["http://www.w3.org/2001/XMLSchema#int" Integer "10"]]]
+    (doseq [[xsd type number] types]
+      (is (= number (.stringValue (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd))))))))))
 
 (use-fixtures :each wrap-with-clean-test-db)
