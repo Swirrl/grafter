@@ -430,9 +430,9 @@
 (defn native-store
   "Instantiate a sesame RDF NativeStore."
   ([datadir]
-     (native-store (io/file datadir) "spoc,posc,cosp"))
+     (native-store datadir "spoc,posc,cosp"))
   ([datadir indexes]
-     (NativeStore. datadir indexes)))
+     (NativeStore. (io/file datadir) indexes)))
 
 (defn http-repo
   "Given a URL as a String return a Sesame HTTPRepository for e.g.
