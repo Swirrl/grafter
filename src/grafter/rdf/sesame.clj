@@ -539,8 +539,9 @@ isn't fully consumed you may cause a resource leak."
                        (if (.hasNext results)
                          (let [current-result (try
                                                 (converter-f (.next results))
-                                                (finally
-                                                  (.close results)))]
+                                                (catch Exception e
+                                                  (.close results)
+                                                  (throw e)))]
                            (lazy-cat
                             [current-result]
                             (pull-query)))
