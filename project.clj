@@ -4,10 +4,6 @@
   :license {:name "Eclipse Public License - v1.0"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
 
-  :repositories [["swirrl-private" {:url "s3p://leiningen-private-repo/releases/"
-                                    :username :env
-                                    :passphrase :env}]]
-
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.openrdf.sesame/sesame-runtime "2.7.12"
 
@@ -20,12 +16,11 @@
                  [org.clojure/algo.monads "0.1.5"]
                  [clj-time "0.7.0"]
                  [clojure-csv/clojure-csv "2.0.1"]
-                 [clj-excel "0.0.1"]
+                 [clj-excel "0.0.1" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.4"]
                  [org.marianoguerra/clj-rhino "0.2.1"]
-                 [commons-httpclient/commons-httpclient "3.1"] ;; FIXME: bodge to fix strange transitive dependency issue - sesame should bring this in for us
                  [potemkin "0.3.4"]
-                 [incanter "1.5.5"] ; Include all of incanter
+                 [incanter/incanter-core "1.5.5" :exclusions [net.sf.opencsv/opencsv commons-codec]]
                  [com.novemberain/pantomime "2.3.0"]]
 
 
@@ -37,8 +32,6 @@
                                            ;; from appearing as a GUI
                                            ;; app in OSX when Swing
                                            ;; classes are loaded.
-
-  :plugins [[s3-wagon-private "1.1.2"]] ;; private maven repo's on s3
 
   :profiles {:uberjar {:aot :all}
 
