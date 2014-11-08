@@ -88,9 +88,3 @@
     (second this))
   (object [this]
     (nth this 2)))
-
-(comment
-  (expand-subject [:rick
-                   [:a :Person]
-                   [:age 35]
-                   [:married_to :katie]]))
