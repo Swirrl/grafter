@@ -1,4 +1,4 @@
-(defproject grafter "0.2.0-SNAPSHOT"
+(defproject grafter "0.3.0-SNAPSHOT"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -29,15 +29,24 @@
           :output-dir "api-docs"}
 
   :source-paths ["src"]
-  :jvm-opts ["-Dapple.awt.UIElement=true"] ;; Prevent Java process
-                                           ;; from appearing as a GUI
-                                           ;; app in OSX when Swing
-                                           ;; classes are loaded.
+  :jvm-opts ["-Dapple.awt.UIElement=true"] ; Prevent Java process
+                                        ; from appearing as a GUI
+                                        ; app in OSX when Swing
+                                        ; classes are loaded.
+
+
+  :pedantic? :abort
+
+  :repack [{:type :clojure
+            :path "src"
+            :levels 2}]
 
   :profiles {:uberjar {:aot :all}
 
-             :dev {:plugins [[com.aphyr/prism "0.1.1"]  ;; autotest support simply run: lein prism
-                             [codox "0.8.10"]]
+             :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
+                             [codox "0.8.10"]
+                             [lein-repack "0.2.4"]
+                             ]
 
                    :dependencies [[com.aphyr/prism "0.1.1"]]
 
