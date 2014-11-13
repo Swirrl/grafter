@@ -14,3 +14,5 @@
 (def dcterms:publisher (dcterms "publisher"))
 (def dcterms:creator (dcterms "creator"))
 (def dcterms:references (dcterms "references"))
+(def dcterms:isReplacedBy (dcterms "isReplacedBy"))
+(def dcterms:replaces     (dcterms "replaces"))
