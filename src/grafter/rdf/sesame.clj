@@ -18,13 +18,13 @@
                                    NumericLiteralImpl StatementImpl
                                    URIImpl)
            (org.openrdf.query BooleanQuery GraphQuery QueryLanguage
-                              TupleQuery Update)
+                              TupleQuery Update BindingSet)
            (org.openrdf.query.impl DatasetImpl)
            (org.openrdf.repository Repository RepositoryConnection)
            (org.openrdf.repository.http HTTPRepository)
            (org.openrdf.repository.sail SailRepository)
            (org.openrdf.repository.sparql SPARQLRepository)
-           (org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio)
+           (org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio RDFParserFactory RDFParser)
            (org.openrdf.rio.n3 N3ParserFactory)
            (org.openrdf.rio.nquads NQuadsParserFactory)
            (org.openrdf.rio.ntriples NTriplesParserFactory)
@@ -34,7 +34,8 @@
            (org.openrdf.rio.trix TriXParserFactory)
            (org.openrdf.rio.turtle TurtleParserFactory)
            (org.openrdf.sail.memory MemoryStore)
-           (org.openrdf.sail.nativerdf NativeStore)))
+           (org.openrdf.sail.nativerdf NativeStore)
+           (info.aduna.iteration CloseableIteration)))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -46,7 +47,7 @@
 
 (defprotocol ISesameRDFConverter
   (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
-  (sesame-rdf-type->type [this] "Convert a Sesaem RDF Type into a Native Type"))
+  (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
 (defn s
   "Cast a string to an RDF literal.  The second optional argument can
@@ -60,55 +61,56 @@
        ISesameRDFConverter
        (->sesame-rdf-type [this]
          (LiteralImpl. str))))
-  ([str lang-or-uri]
+  ([^String str lang-or-uri]
      {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (nil? lang-or-uri) (instance? URI lang-or-uri))]}
      (reify Object
        (toString [_] str)
        ISesameRDFConverter
        (->sesame-rdf-type [this]
-         (LiteralImpl.  str (if (keyword? lang-or-uri)
-                              (name lang-or-uri)
-                              lang-or-uri))))))
+         (if (instance? URI lang-or-uri)
+           (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
+           (let [^String t (name lang-or-uri)]
+             (LiteralImpl. str t)))))))
 
 (defmulti literal-datatype->type
   "A multimethod to convert an RDF literal into a corresponding
   Clojure type.  This method can be extended to provide custom
   conversions."
-  (fn [literal]
+  (fn [^Literal literal]
     (when-let [datatype (-> literal .getDatatype)]
       (str datatype))))
 
-(defmethod literal-datatype->type nil [literal]
+(defmethod literal-datatype->type nil [^Literal literal]
   (s (.stringValue literal) (.getLanguage literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [^Literal literal]
   (.byteValue literal))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#short" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#short" [^Literal literal]
   (.shortValue literal))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [^Literal literal]
   (.decimalValue literal))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [^Literal literal]
   (.doubleValue literal))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [^Literal literal]
   (.floatValue literal))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [^Literal literal]
   (.integerValue literal))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [^Literal literal]
   (.intValue literal))
 
-(defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Literal literal]
   (s (.stringValue literal) (.getLanguage literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [^Literal literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
 
-(defmethod literal-datatype->type :default [literal]
+(defmethod literal-datatype->type :default [^Literal literal]
   ;; If we don't have a type conversion for it, let the sesame type
   ;; through, as it's not really up to grafter to fail the processing,
   ;; as they might just want to pass data through rather than
@@ -300,20 +302,20 @@
 
 (defn IStatement->sesame-statement
   "Convert a grafter IStatement into a Sesame statement."
-  [is]
-  (if (:c is)
+  [^IStatement is]
+  (if (pr/context is)
     (do
-      (ContextStatementImpl. (->sesame-rdf-type (.s is))
-                             (URIImpl. (.p is))
-                             (->sesame-rdf-type (.o is))
-                             (URIImpl. (:c is))))
-    (StatementImpl. (->sesame-rdf-type (.s is))
-                    (URIImpl. (.p is))
-                    (->sesame-rdf-type (.o is)))))
+      (ContextStatementImpl. (->sesame-rdf-type (pr/subject is))
+                             (URIImpl. (pr/predicate is))
+                             (->sesame-rdf-type (pr/object is))
+                             (URIImpl. (pr/context is))))
+    (StatementImpl. (->sesame-rdf-type (pr/subject is))
+                    (URIImpl. (pr/predicate is))
+                    (->sesame-rdf-type (pr/object is)))))
 
 (defn sesame-statement->IStatement
   "Convert a sesame Statement into a grafter Quad."
-  [st]
+  [^Statement st]
   ;; TODO fix this to work properly with object & context.
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
@@ -339,38 +341,39 @@
     ([this graph triples]
        (pr/add (.getConnection this) graph triples))))
 
+(defn resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
+  (into-array Resource rs))
+
 (extend-type RepositoryConnection
   pr/ITripleWriteable
 
   (pr/add-statement
     ([this statement]
        {:pre [(instance? IStatement statement)]}
-       (let [sesame-statement (IStatement->sesame-statement statement)]
-         (if-let [graph (:c statement)]
-           (doto this
-             (.add sesame-statement
-                   (into-array Resource [(URIImpl. graph)])))
-           (doto this
-             (.add sesame-statement
-                   (into-array Resource []))))))
+       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
+             resources (if-let [graph (pr/context statement)] (resource-array (URIImpl. graph)) (resource-array))]
+         (doto this (.add sesame-statement resources))))
 
     ([this graph statement]
        {:pre [(instance? IStatement statement)]}
-       (doto this
-         (.add (IStatement->sesame-statement statement)
-               (into-array Resource [(URIImpl. graph)])))))
+       (let [^Statement stm (IStatement->sesame-statement statement)
+             resources (resource-array (URIImpl. graph))]
+         (doto this
+           (.add stm resources)))))
 
   (pr/add
     ([this triples]
        {:pre [(or (nil? triples)
                   (sequential? triples))]}
        (if (seq triples)
-         (.add this (map IStatement->sesame-statement triples) (into-array Resource []))
+         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+           (.add this stmts (resource-array)))
          (pr/add-statement this triples)))
 
     ([this graph triples]
        (if (seq triples)
-         (.add this (map IStatement->sesame-statement triples) (into-array Resource [(URIImpl. graph)]))
+         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+           (.add this stmts (resource-array (URIImpl. graph))))
          (pr/add-statement this graph triples)))))
 
 
@@ -392,7 +395,7 @@
 
   ([destination & {:keys [append format encoding] :or {append false
                                                        encoding "UTF-8"}}]
-     (let [format (or format
+     (let [^RDFFormat format (or format
                       (condp = (class destination)
                         String (Rio/getWriterFormatForFileName destination)
                         File   (Rio/getWriterFormatForFileName (str destination))
@@ -463,10 +466,10 @@
 
   Takes a String or File (specifying a path to an RDF file) a base-uri
   String and an RDFFormat."
-  [connection file base-uri-str format]
-  (.add connection (io/file file) base-uri-str format (into-array Resource [])))
+  [^RepositoryConnection connection file ^String base-uri-str ^RDFFormat format]
+  (.add connection (io/file file) base-uri-str format (resource-array)))
 
-(defn- query-bindings->map [qbs]
+(defn- query-bindings->map [^BindingSet qbs]
   (let [boundvars (.getBindingNames qbs)]
     (->> boundvars
          (mapcat (fn [k]
@@ -533,8 +536,8 @@ isn't fully consumed you may cause a resource leak."
 
 (defn- sesame-results->seq
   ([prepared-query] (sesame-results->seq prepared-query identity))
-  ([prepared-query converter-f]
-     (let [results (.evaluate prepared-query)
+  ([^TupleQuery prepared-query converter-f]
+     (let [^CloseableIteration results (.evaluate prepared-query)
            run-query (fn pull-query []
                        (if (.hasNext results)
                          (let [current-result (try
@@ -572,7 +575,8 @@ isn't fully consumed you may cause a resource leak."
 
 (defn ->connection
   "Given a sesame repository return a connection to it."
-  [repo]
+  ^RepositoryConnection
+  [^Repository repo]
   (if (instance? RepositoryConnection repo)
     repo
     (.getConnection repo)))
@@ -667,6 +671,7 @@ isn't fully consumed you may cause a resource leak."
 
 (defn ^:no-doc format->parser
   "Convert a format into a sesame parser for that format."
+  ^RDFParser
   [format]
   (let [table {RDFFormat/NTRIPLES NTriplesParserFactory
                RDFFormat/TRIX TriXParserFactory
@@ -677,12 +682,11 @@ isn't fully consumed you may cause a resource leak."
                RDFFormat/JSONLD RDFJSONParserFactory
                RDFFormat/N3 N3ParserFactory
                }
-        parser-class (table format)]
+        ^Class parser-class (table format)]
     (if-not parser-class
       (throw (ex-info (str "Unsupported format: " (pr-str format)) {:type :unsupported-format})))
-    (-> parser-class
-        .newInstance
-        .getParser)))
+    (let [^RDFParserFactory factory (.newInstance parser-class)]
+      (.getParser factory))))
 
 (defn filename->rdf-format
   "Given a filename we attempt to return an appropriate RDFFormat
@@ -704,7 +708,7 @@ isn't fully consumed you may cause a resource leak."
   "Returns a pair: a seq (the read end) and a function (the write end).
   The function can takes either no arguments to close the pipe
   or one argument which is appended to the seq. Read is blocking."
-  [size]
+  [^Integer size]
   (let [q (java.util.concurrent.LinkedBlockingQueue. size)
         EOQ (Object.)
         NIL (Object.)
@@ -796,5 +800,5 @@ isn't fully consumed you may cause a resource leak."
 
 (defn shutdown
   "Cleanly shutsdown the repository."
-  [repo]
+  [^Repository repo]
   (.shutDown repo))
