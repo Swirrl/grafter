@@ -39,5 +39,6 @@
                              [codox "0.8.10"]]
 
                    :dependencies [[com.aphyr/prism "0.1.1"]]
+                   :global-vars {*warn-on-reflection* true}
 
                    :env {:dev true}}})
