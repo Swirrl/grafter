@@ -18,7 +18,7 @@
                                    NumericLiteralImpl StatementImpl
                                    URIImpl)
            (org.openrdf.query BooleanQuery GraphQuery QueryLanguage
-                              TupleQuery Update BindingSet)
+                              Query TupleQuery Update BindingSet)
            (org.openrdf.query.impl DatasetImpl)
            (org.openrdf.repository Repository RepositoryConnection)
            (org.openrdf.repository.http HTTPRepository)
@@ -536,7 +536,7 @@ isn't fully consumed you may cause a resource leak."
 
 (defn- sesame-results->seq
   ([prepared-query] (sesame-results->seq prepared-query identity))
-  ([^TupleQuery prepared-query converter-f]
+  ([^Query prepared-query converter-f]
      (let [^CloseableIteration results (.evaluate prepared-query)
            run-query (fn pull-query []
                        (if (.hasNext results)
