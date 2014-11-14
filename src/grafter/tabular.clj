@@ -139,7 +139,9 @@ Returns a lazy sequence of matched rows."
     (make-dataset filtered-rows
                   (column-names dataset))))
 
-(defn- col-position [column-names col]
+;; This type hint is actually correct as APersistentVector implements .indexOf
+;; from java.util.List.
+(defn- col-position [^java.util.List column-names col]
   (if-let [canonical-col (resolve-col-id col column-names ::not-found)]
     (let [val (.indexOf column-names canonical-col)]
       (if (not= -1 val)
@@ -302,7 +304,7 @@ the specified column being cloned."
                    (column-names dataset))))
 
 (defmethod grep java.lang.String [dataset s & cols]
-  (apply grep dataset #(.contains % s) cols))
+  (apply grep dataset (fn [^String cell] (.contains cell s)) cols))
 
 (defmethod grep java.util.regex.Pattern [dataset p & cols]
   (apply grep dataset #(re-find p %) cols))

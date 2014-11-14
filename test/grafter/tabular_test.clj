@@ -197,7 +197,7 @@
                                (= cell "foo")))))
 
         (is (= expected-dataset
-               (grep dataset (fn [cell]
+               (grep dataset (fn [^String cell]
                                (.startsWith cell "f")))))
 
 
