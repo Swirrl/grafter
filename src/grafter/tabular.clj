@@ -139,6 +139,8 @@ Returns a lazy sequence of matched rows."
     (make-dataset filtered-rows
                   (column-names dataset))))
 
+;; This type hint is actually correct as APersistentVector implements .indexOf
+;; from java.util.List.
 (defn- col-position [^java.util.List column-names col]
   (if-let [canonical-col (resolve-col-id col column-names ::not-found)]
     (let [val (.indexOf column-names canonical-col)]
