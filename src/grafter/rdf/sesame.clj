@@ -329,17 +329,21 @@
 
   (pr/add-statement
     ([this statement]
-       (pr/add-statement (.getConnection this) statement))
+       (with-open [connection (.getConnection this)]
+         (pr/add-statement connection statement)))
 
     ([this graph statement]
-       (pr/add-statement (.getConnection this) graph statement)))
+       (with-open [connection (.getConnection this)]
+         (pr/add-statement (.getConnection this) graph statement))))
 
   (pr/add
     ([this triples]
-       (pr/add (.getConnection this) triples))
+       (with-open [connection (.getConnection this)]
+         (pr/add connection triples)))
 
     ([this graph triples]
-       (pr/add (.getConnection this) graph triples))))
+       (with-open [connection (.getConnection this)]
+         (pr/add connection graph triples)))))
 
 (defn resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
