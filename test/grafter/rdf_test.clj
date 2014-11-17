@@ -77,19 +77,28 @@
         (is (= [first-quad second-quad]
                (f ds)))))))
 
+(deftest quad-test
+  (testing "quads function"
+    (let [q (quad "http://example.com/graphs/1" first-triple)]
+      (is (= first-graph-quad q)))))
+
 (deftest triplify-test
   (testing "triplify"
     (testing "with one template"
-      (let [g (triplify first-turtle-template)]
+      (let [triples (triplify first-turtle-template)]
         (is (= 3
-               (count g)))
+               (count triples)))
         (is (= first-triple
-               (first g)
-               ))))
+               (first triples)
+               ))
+        (let [[s p o] (first triples)]
+          (is (= "http://example.com/subjects/1" s))
+          (is (= "http://example.com/p1" p))
+          (is (= "http://example.com/o1" o)))))
     (testing "with multiple templates"
-      (let [g (triplify first-turtle-template second-turtle-template)]
+      (let [triples (triplify first-turtle-template second-turtle-template)]
         (is (= 6
-               (count g)))))))
+               (count triples)))))))
 
 (deftest graph-test
   (testing "graph function"
