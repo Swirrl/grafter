@@ -14,6 +14,7 @@
                   :exclusions [org.openrdf.sesame/sesame-repository-manager]]
 
                  [org.clojure/algo.monads "0.1.5"]
+                 [org.clojure/tools.logging "0.2.6"]
                  [clj-time "0.7.0"]
                  [clojure-csv/clojure-csv "2.0.1"]
                  [clj-excel "0.0.1" :exclusions [commons-codec]]

@@ -3,6 +3,7 @@
   the Sesame API (http://www.openrdf.org/)."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
+            [clojure.tools.logging :as log]
             [pantomime.media :as mime])
   (:import (grafter.rdf.protocols IStatement Quad Triple)
            (java.io File)
@@ -330,20 +331,28 @@
   (pr/add-statement
     ([this statement]
        (with-open [connection (.getConnection this)]
-         (pr/add-statement connection statement)))
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add-statement connection statement)
+         (log/debug "Closing connection" connection "on repo" this)))
 
     ([this graph statement]
        (with-open [connection (.getConnection this)]
-         (pr/add-statement (.getConnection this) graph statement))))
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add-statement (.getConnection this) graph statement)
+         (log/debug "Closing connection" connection "on repo" this))))
 
   (pr/add
     ([this triples]
        (with-open [connection (.getConnection this)]
-         (pr/add connection triples)))
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add connection triples)
+         (log/debug "Closing connection" connection "on repo" this)))
 
     ([this graph triples]
        (with-open [connection (.getConnection this)]
-         (pr/add connection graph triples)))))
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add connection graph triples)
+         (log/debug "Closing connection" connection "on repo" this)))))
 
 (defn resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
@@ -532,7 +541,8 @@ isn't fully consumed you may cause a resource leak."
     (query-dataset (.getConnection this) query-str model))
 
   (update! [this query-str]
-    (update! (.getConnection this) query-str))
+    (with-open [connection (.getConnection this)]
+      (update! connection query-str)))
 
   pr/ITripleReadable
   (pr/to-statements [this options]
@@ -766,7 +776,7 @@ isn't fully consumed you may cause a resource leak."
   ;; back into a lazy sequence on the calling thread.  The queue has a
   ;; bounded size of 1 forcing it be in lockstep with the consumer.
   ;;
-  ;; NOTE also none of these functions don't really allow for proper
+  ;; NOTE also none of these functions really allow for proper
   ;; resource clean-up unless the whole sequence is consumed.
   ;;
   ;; So, the good news is that this means you should be able to read
