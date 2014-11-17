@@ -524,12 +524,26 @@
       (throw e#))))
 
 (defprotocol ISPARQLable
-  "Quick and dirty sparql SELECT results.  Takes a connection and query
-string and returns a lazy sequence of results.
+  "NOTE this protocol is intended for low-level access.  End users
+  should use query instead.
 
-It doesn't clear up properly in all cases, for example if the sequence
-isn't fully consumed you may cause a resource leak."
+  Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
+  and SELECT queries.
 
+  You can call this on a Repository however if you do you may in some
+  cases cause a resource leak, for example if the sequence of results
+  isn't fully consumed.
+
+  To use this without leaking resources it is recommended that you
+  call ->connection on your repository, inside a with-open; and then
+  consume all your results inside of a nested doseq/dorun/etc...
+
+  e.g.
+
+  (with-open [conn (->connection repo)]
+     (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
+        (println res)))
+  "
   ;; TODO: reimplement interfaces with proper resource handling.
   (query-dataset [this sparql-string model])
 
@@ -666,7 +680,25 @@ isn't fully consumed you may cause a resource leak."
   (apply f (apply concat (butlast args) (last args))))
 
 (defn query
-  "Takes a repo and sparql string and an optional set of k/v argument
+  "Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
+  and SELECT queries.
+
+  You can call this on a Repository however if you do you may in some
+  cases cause a resource leak, for example if the sequence of results
+  isn't fully consumed.
+
+  To use this without leaking resources it is recommended that you
+  call ->connection on your repository, inside a with-open; and then
+  consume all your results inside of a nested doseq/dorun/etc...
+
+  e.g.
+
+  (with-open [conn (->connection repo)]
+     (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
+        (println res)))
+
+
+  Takes a repo and sparql string and an optional set of k/v argument
   pairs, and executes the sparql query on the repository.
 
   Options are:
