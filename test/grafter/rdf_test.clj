@@ -112,7 +112,12 @@
           (is (= "http://example.com/subjects/1" s))
           (is (= "http://example.com/p1" p))
           (is (= "http://example.com/o1" o))
-          (is (= "http://example.com/graphs/1" c)))))
+          (is (= "http://example.com/graphs/1" c))
+          (testing "accessor methods"
+            (is (= "http://example.com/subjects/1" (subject (first g))))
+            (is (= "http://example.com/p1" (predicate (first g))))
+            (is (= "http://example.com/o1" (object (first g))))
+            (is (= "http://example.com/graphs/1" (context (first g))))))))
     (testing "with blank nodes"
       (let [g (graph "http://example.com/graphs/1" turtle-template-blank-nodes)]
         (let [[s p o c] (first g)]
