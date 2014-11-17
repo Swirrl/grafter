@@ -11,6 +11,30 @@
 
 (def second-quad (->Quad "http://a2" "http://b2" "http://c2" "http://graph2"))
 
+(def first-turtle-template ["http://example.com/subjects/1"
+                      ["http://example.com/p1" "http://example.com/o1"]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def second-turtle-template ["http://example.com/subjects/2"
+                      ["http://example.com/p1" "http://example.com/o1"]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def turtle-template-blank-nodes ["http://example.com/subjects/1"
+                      ["http://example.com/p1" [["http://example.com/blank/p1" "http://example.com/blank/o1"]]]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def invalid-blank-nodes-template ["http://example.com/subjects/1"
+                      ["http://example.com/p1" []]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def first-graph-quad (->Quad "http://example.com/subjects/1" "http://example.com/p1" "http://example.com/o1" "http://example.com/graphs/1"))
+
+(def first-triple (->Triple "http://example.com/subjects/1" "http://example.com/p1" "http://example.com/o1"))
+
 (deftest graph-fn-test
   (testing "graph-fn"
     (testing "destructuring"
@@ -52,6 +76,43 @@
 
         (is (= [first-quad second-quad]
                (f ds)))))))
+
+(deftest triplify-test
+  (testing "triplify"
+    (testing "with one template"
+      (let [g (triplify first-turtle-template)]
+        (is (= 3
+               (count g)))
+        (is (= first-triple
+               (first g)
+               ))))
+    (testing "with multiple templates"
+      (let [g (triplify first-turtle-template second-turtle-template)]
+        (is (= 6
+               (count g)))))))
+
+(deftest graph-test
+  (testing "graph function"
+    (testing "with all nodes"
+      (let [g (graph "http://example.com/graphs/1" first-turtle-template second-turtle-template)]
+        (is (= 6
+               (count g)))
+        (is (= first-graph-quad
+               (first g)))
+        (let [[s p o c] (first g)]
+          (is (= "http://example.com/subjects/1" s))
+          (is (= "http://example.com/p1" p))
+          (is (= "http://example.com/o1" o))
+          (is (= "http://example.com/graphs/1" c)))))
+    (testing "with blank nodes"
+      (let [g (graph "http://example.com/graphs/1" turtle-template-blank-nodes)]
+        (let [[s p o c] (first g)]
+          (is (= "http://example.com/subjects/1" s))
+          (is (= "http://example.com/p1" p))
+          (is (keyword? o))
+          (is (= "http://example.com/graphs/1" c))
+          (is (= o
+               (first (keep (fn [[k v]] (if (= o k) k)) g)))))))))
 
 (deftest quads-and-triples-test
   (testing "Triples"

@@ -76,7 +76,7 @@
 (defn triplify
   "Takes many turtle like structures and converts them to a lazy-seq
   of grafter.rdf.protocols.IStatement's.  Users should generally tend
-  to prefer to using graph to triplify."
+  to prefer using graph to triplify."
   [& subjects]
   (mapcat expand-subj subjects))
 
