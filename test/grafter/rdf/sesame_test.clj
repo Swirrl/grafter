@@ -6,6 +6,7 @@
             [grafter.rdf.sesame :refer :all]
             [me.raynes.fs :as fs])
   (:import [org.openrdf.rio RDFFormat]
+           [org.openrdf.model Value]
            [org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
             CalendarLiteralImpl
             ContextStatementImpl
@@ -44,5 +45,6 @@
                ["http://www.w3.org/2001/XMLSchema#float" Float "10.6"]
                ["http://www.w3.org/2001/XMLSchema#integer" BigInteger "10"]
                ["http://www.w3.org/2001/XMLSchema#int" Integer "10"]]]
+
     (doseq [[xsd type number] types]
       (is (= number (.stringValue (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd))))))))))

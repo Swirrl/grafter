@@ -4,7 +4,8 @@
             [grafter.sequences :as seqs]
             [incanter.core :as inc]
             [me.raynes.fs :as fs])
-  (:import (org.apache.poi.ss.usermodel Sheet)))
+  (:import (org.apache.poi.ss.usermodel Sheet)
+           (java.io File)))
 
 (defn move-first-row-to-header
   "For use with make-dataset.  Moves the first row of data into the
@@ -70,7 +71,7 @@
                 (column-names dataset)))
 
 (defn- extension [f]
-  (when-let [ext (-> f fs/extension)]
+  (when-let [^String ext (-> f fs/extension)]
     (-> ext
         (.substring 1)
         keyword)))
@@ -134,7 +135,7 @@ Supported options are currently:
                             dataset-acc))]
     (reduce merge-metadata-column data context)))
 
-(defn- pair-with-context [make-dataset-f file sheet-or-data]
+(defn- pair-with-context [make-dataset-f ^File file sheet-or-data]
   "Takes a function make-dataset-f a file representing the file
 containing the dataset and the raw sheet object, which should either
 be an apache poi Sheet or a seq-of-seqs row representation.
@@ -150,8 +151,9 @@ dataset."
                                    :file (.getName file))]
 
     (if (instance? Sheet sheet-or-data)
-      [(assoc common-context :sheet-name (.getSheetName sheet-or-data))
-       (make-dataset-f (xls/lazy-sheet sheet-or-data))]
+      (let [^Sheet sheet sheet-or-data]
+        [(assoc common-context :sheet-name (.getSheetName sheet))
+         (make-dataset-f (xls/lazy-sheet sheet-or-data))])
       [common-context (make-dataset-f sheet-or-data)])))
 
 (defn open-all-datasets
