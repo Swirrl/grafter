@@ -7,7 +7,8 @@
             [grafter.rdf.ontologies.util]
             [grafter.tabular])
   (:import (grafter.rdf.protocols Quad Triple)
-           (org.openrdf.rio RDFFormat)))
+           (org.openrdf.rio RDFFormat)
+           (org.openrdf.model.impl URIImpl)))
 
 (import-vars
  [grafter.rdf.sesame
@@ -26,16 +27,42 @@
 (def format-rdf-trix RDFFormat/TRIX)
 (def format-rdf-trig RDFFormat/TRIG)
 
+(defn- is-uri-or-string-type? [node]
+  (let [types [java.lang.String java.net.URL java.net.URI URIImpl]
+        node-type (type node)]
+    (some #{node-type} types)))
+
+(defn- is-literal-type? [node]
+  (let [types [java.lang.String java.lang.Byte java.lang.Short
+               java.math.BigDecimal java.lang.Double java.lang.Float
+               java.math.BigInteger java.lang.Integer java.lang.Long
+               java.lang.Boolean java.util.Date]
+        node-type (type node)]
+    (some #{node-type} types)))
+
+(defn- valid-subject-or-predicate? [node]
+  (is-uri-or-string-type? node))
+
+(defn- valid-object? [object]
+  (if (vector? object)
+    (let [[p o] object]
+      (and (valid-subject-or-predicate? p)
+           (valid-object? o)))
+    (or (is-uri-or-string-type? object)
+        (is-literal-type? object))))
+
 (defn- make-triples [subject predicate object-or-nested-subject]
+  {:pre [(valid-subject-or-predicate? subject)
+         (valid-subject-or-predicate? predicate)
+         (valid-object? object-or-nested-subject)]}
   (if (vector? object-or-nested-subject)
-    (if (seq object-or-nested-subject)
-      (let [bnode-resource (keyword (gensym "bnode"))
-                 nested-pairs object-or-nested-subject]
-             (-> (mapcat (partial make-triples bnode-resource)
-                         (map first nested-pairs)
-                         (map second nested-pairs))
-                 (conj (Triple. subject predicate bnode-resource))))
-      (throw (java.lang.IllegalArgumentException. "Blank node error")))
+    (let [bnode-resource (keyword (gensym "bnode"))
+          nested-pairs object-or-nested-subject]
+      (-> (mapcat (partial make-triples bnode-resource)
+                  (map first nested-pairs)
+                  (map second nested-pairs))
+          (conj (Triple. subject predicate bnode-resource))))
+
     (let [object object-or-nested-subject]
       [(Triple. subject predicate object)])))
 
