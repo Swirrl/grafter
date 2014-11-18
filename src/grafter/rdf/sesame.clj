@@ -759,8 +759,8 @@
         EOQ (Object.)
         NIL (Object.)
         pull (fn pull [] (lazy-seq (let [x (.take q)]
-                               (when-not (= EOQ x)
-                                 (cons (when-not (= NIL x) x) (pull))))))]
+                                    (when-not (= EOQ x)
+                                      (cons (when-not (= NIL x) x) (pull))))))]
     [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
@@ -816,10 +816,10 @@
   ;; handle, unless you consume the whole sequence.
   ;;
   ;; TODO: consider how to support proper resource cleanup.
-  (pr/to-statements [reader { :keys [format] :as options}]
+  (pr/to-statements [reader {:keys [format buffer-size] :or {buffer-size 32} :as options}]
     (if-not format
       (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:type :no-format-supplied}))
-      (let [[statements put!] (pipe 1)]
+      (let [[statements put!] (pipe buffer-size)]
         (future
           (let [parser (doto (format->parser format)
                          (.setRDFHandler (reify RDFHandler

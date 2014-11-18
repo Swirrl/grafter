@@ -200,5 +200,5 @@
   nil, or act as an indicator about the format of the triples to read.
   Implementers can choose whether or not to ignore or require the
   format parameter."
-  [this & {:keys [format] :as options}]
+  [this & {:keys [format buffer-size] :as options}]
   (pr/to-statements this options))
