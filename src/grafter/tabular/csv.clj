@@ -6,10 +6,7 @@
 
 (defmethod tab/open-tabular-file :csv
   [f & {:as opts}]
-  (let [csv-opts (dissoc opts :ext)]
-    (if-not (empty? csv-opts)
-      (csv/parse-csv (io/reader f) csv-opts)
-      (csv/parse-csv (io/reader f)))))
+  (tab/mapply csv/parse-csv (io/reader f) opts))
 
 (comment
 
