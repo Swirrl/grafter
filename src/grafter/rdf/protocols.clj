@@ -73,14 +73,6 @@
   (nth [this ^int i default]
     (destructure-quad this i default)))
 
-(defrecord Bar [s p o c]
-  clojure.lang.Indexed
-  (nth [this ^int i]
-    )
-
-  (nth [this ^int i default]
-    ))
-
 (extend-type clojure.lang.IPersistentVector
   IStatement
   (subject [this]
