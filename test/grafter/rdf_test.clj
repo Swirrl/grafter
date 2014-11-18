@@ -98,7 +98,13 @@
     (testing "with multiple templates"
       (let [triples (triplify first-turtle-template second-turtle-template)]
         (is (= 6
-               (count triples)))))))
+               (count triples)))))
+    (testing "with an empty vector blank node"
+      (is (thrown? java.lang.IllegalArgumentException
+                   (triplify invalid-blank-nodes-template))))
+    (testing "with multiple templates, one of which has an invalid blank node"
+      (is (thrown? java.lang.IllegalArgumentException
+                   (triplify first-turtle-template invalid-blank-nodes-template))))))
 
 (deftest graph-test
   (testing "graph function"
@@ -126,7 +132,10 @@
           (is (keyword? o))
           (is (= "http://example.com/graphs/1" c))
           (is (= o
-               (first (keep (fn [[k v]] (if (= o k) k)) g)))))))))
+                 (first (keep (fn [[k v]] (if (= o k) k)) g)))))))
+    (testing "with an incorrectly specified blank node"
+      (is (thrown? java.lang.IllegalArgumentException
+                   (graph "http://example.com/graphs/1" invalid-blank-nodes-template))))))
 
 (deftest quads-and-triples-test
   (testing "Triples"

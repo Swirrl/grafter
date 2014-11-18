@@ -28,12 +28,14 @@
 
 (defn- make-triples [subject predicate object-or-nested-subject]
   (if (vector? object-or-nested-subject)
-    (let [bnode-resource (keyword (gensym "bnode"))
-          nested-pairs object-or-nested-subject]
-      (-> (mapcat (partial make-triples bnode-resource)
-                  (map first nested-pairs)
-                  (map second nested-pairs))
-          (conj (Triple. subject predicate bnode-resource))))
+    (if (seq object-or-nested-subject)
+      (let [bnode-resource (keyword (gensym "bnode"))
+                 nested-pairs object-or-nested-subject]
+             (-> (mapcat (partial make-triples bnode-resource)
+                         (map first nested-pairs)
+                         (map second nested-pairs))
+                 (conj (Triple. subject predicate bnode-resource))))
+      (throw (java.lang.IllegalArgumentException. "Blank node error")))
     (let [object object-or-nested-subject]
       [(Triple. subject predicate object)])))
 
