@@ -52,10 +52,16 @@
                    ["1" "2" "3"]
                    ["4" "5" "6"]])
 
+(def raw-txt-data [["a" "b" "c"]
+                   ["1" "2" "3"]
+                   ["4" "5" "6"]])
+
 (def raw-excel-data [["one" "two" "three"]
                      [1.0 2.0 3.0]])
 
 (def csv-sheet (make-dataset raw-csv-data move-first-row-to-header))
+
+(def txt-sheet (make-dataset raw-txt-data move-first-row-to-header))
 
 (def excel-sheet (make-dataset raw-excel-data move-first-row-to-header))
 
@@ -65,6 +71,11 @@
       (let [loaded-csv (open-tabular-file "./test/grafter/test.csv")]
         (testing "are a seq of seqs"
           (is (= raw-csv-data loaded-csv)))))
+
+    (testing "Opens CSV files with txt extensions"
+      (let [loaded-txt (open-tabular-file "./test/grafter/test.txt" :ext :csv)]
+        (testing "are a seq of seqs"
+          (is (= raw-txt-data loaded-txt)))))
 
     (testing "Opens Excel files"
       (let [loaded-excel (open-tabular-file "./test/grafter/test.xlsx")]
@@ -78,15 +89,16 @@
       (is (seq? sheets) "should yield a seq")
       (is (= 2 (count sheets)) "should be 2 datasets")
 
-      (let [[loaded-csv-sheet loaded-excel-sheet] sheets]
-        (is (= loaded-csv-sheet csv-sheet))
-        (is (= loaded-excel-sheet excel-sheet))))
+      (let [read-data     (set sheets)
+            expected-data (set [csv-sheet excel-sheet])]
+        (is (= read-data expected-data))))
+
     (testing "with-metadata-columns"
-      (let [[csv-dataset excel-dataset] (open-all-datasets "./test/grafter" :metadata-fn with-metadata-columns)]
+      (let [[csv-dataset] (open-all-datasets "./test/grafter/test.csv" :metadata-fn with-metadata-columns)]
         (is (= (inc/$ 0 :file csv-dataset) "test.csv")
             "Should contain file name")
 
-        (is (re-find #"/test/grafter" (inc/$ 0 :path excel-dataset))
+        (is (re-find #"/test/grafter" (inc/$ 0 :path csv-dataset))
             "Should contain file path")))))
 
 (deftest make-dataset-tests
