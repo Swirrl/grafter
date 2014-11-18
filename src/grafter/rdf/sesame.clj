@@ -70,7 +70,7 @@
        (->sesame-rdf-type [this]
          (if (instance? URI lang-or-uri)
            (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
-           (let [^String t (name lang-or-uri)]
+           (let [^String t (and lang-or-uri (name lang-or-uri))]
              (LiteralImpl. str t)))))))
 
 (defmulti literal-datatype->type
