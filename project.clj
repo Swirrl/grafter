@@ -5,7 +5,7 @@
             :url "https://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.openrdf.sesame/sesame-runtime "2.7.12"
+                 [org.openrdf.sesame/sesame-runtime "2.7.14"
 
                   ;; For some reason there appears to be a weird
                   ;; version conflict with this sesame library.  So
