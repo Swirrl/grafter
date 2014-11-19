@@ -11,19 +11,6 @@
 
 (def second-quad (->Quad "http://a2" "http://b2" "http://c2" "http://graph2"))
 
-(comment
-  [foo [bar *]]
-  [foo [bar [1]]]
-  [foo [bar [[]]]]
-
-  [foo [bar [[foo bar]]]]
-  [foo [bar [[foo [[foo bar]]]]]]
-  [foo bar baz bleh]
-  [foo
-   [bar baz]]
-  
-  )
-
 (deftest graph-fn-test
   (testing "graph-fn"
     (testing "destructuring"
@@ -90,8 +77,36 @@
                       ["http://example.com/p2" "http://example.com/o2"]
                       ["http://example.com/p3" "http://example.com/o3"]])
 
+(def turtle-template-nested-blank-nodes ["http://example.com/subjects/1"
+                      ["http://example.com/p1" [["http://example.com/blank/p1"
+                                                 [["http://example.com/blank/p2" "http://example.com/blank/o2"]]]]]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def turtle-template-blank-nodes-with-literal ["http://example.com/subjects/1"
+                      ["http://example.com/p1" [["http://example.com/blank/p1" 1]]]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+
 (def invalid-blank-nodes-template ["http://example.com/subjects/1"
                       ["http://example.com/p1" []]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def invalid-blank-nodes-two ["http://example.com/subjects/1"
+                      ["http://example.com/p1" [["http://www.example.com/blank/p1" [[1]]]]]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def invalid-blank-nodes-three ["http://example.com/subjects/1"
+                      ["http://example.com/p1" [["http://www.example.com/blank/p1" []]]]
+                      ["http://example.com/p2" "http://example.com/o2"]
+                      ["http://example.com/p3" "http://example.com/o3"]])
+
+(def invalid-blank-nodes-four ["http://example.com/subjects/1"
+                      ["http://example.com/p1" [["http://www.example.com/blank/p1"
+                                                 [[1 "http://example.com/blank/o1"]]]]]
                       ["http://example.com/p2" "http://example.com/o2"]
                       ["http://example.com/p3" "http://example.com/o3"]])
 
@@ -112,7 +127,7 @@
       (let [triples (triplify first-turtle-template second-turtle-template)]
         (is (= 6
                (count triples)))))
-    (testing "with valid blank nodes"
+    (testing "with valid blank node"
       (let [triples (triplify turtle-template-blank-nodes)]
         (let [[s p o] (first triples)]
           (is (= "http://example.com/subjects/1" s))
@@ -123,9 +138,40 @@
                (count triples)))
         (is (filter (fn [n] (and (= "http://example.com/blank/p1" (predicate n))
                                 (= "http://example.com/blank/o1" (object n)))) triples))))
+    (testing "with valid nested blank nodes"
+      (let [triples (triplify turtle-template-nested-blank-nodes)]
+        (let [[s p o] (first triples)]
+          (is (= "http://example.com/subjects/1" s))
+          (is (= "http://example.com/p1" p))
+          (is (keyword? o))
+          (is (some (fn [[k v]] (= k o)) triples)))
+        (is (= 5
+               (count triples)))
+        (is (filter (fn [n] (and (= "http://example.com/blank/p2" (predicate n))
+                                (= "http://example.com/blank/o2" (object n)))) triples))))
+    (testing "with valid blank node and literal"
+      (let [triples (triplify turtle-template-blank-nodes-with-literal)]
+        (let [[s p o] (first triples)]
+          (is (= "http://example.com/subjects/1" s))
+          (is (= "http://example.com/p1" p))
+          (is (keyword? o))
+          (is (some (fn [[k v]] (= k o)) triples)))
+        (is (= 4
+               (count triples)))
+        (is (filter (fn [n] (and (= "http://example.com/blank/p1" (predicate n))
+                                (= 1 (object n)))) triples))))
     (testing "with an empty vector blank node"
       (is (thrown? java.lang.AssertionError
                    (triplify invalid-blank-nodes-template))))
+    (testing "with an invalid second nested blank node"
+      (is (thrown? java.lang.AssertionError
+                   (triplify invalid-blank-nodes-two))))
+    (testing "with a nested empty vector blank node"
+      (is (thrown? java.lang.AssertionError
+                   (triplify invalid-blank-nodes-three))))
+    (testing "with a nested blank node with backwards arguments"
+      (is (thrown? java.lang.AssertionError
+                   (triplify invalid-blank-nodes-four))))
     (testing "with multiple templates, one of which has an invalid blank node"
       (is (thrown? java.lang.AssertionError
                    (triplify first-turtle-template invalid-blank-nodes-template))))))
