@@ -41,13 +41,16 @@
     (some #{node-type} types)))
 
 (defn- valid-subject-or-predicate? [node]
-  (is-uri-or-string-type? node))
+  (or (is-uri-or-string-type? node)
+      (= clojure.lang.Keyword
+         (type node))))
 
 (defn- valid-object? [object]
   (if (vector? object)
-    (let [[p o] object]
-      (and (valid-subject-or-predicate? p)
-           (valid-object? o)))
+    (if (seq object)
+      (let [[[p o]] object]
+        (and (valid-subject-or-predicate? p)
+             (valid-object? o))))
     (or (is-uri-or-string-type? object)
         (is-literal-type? object))))
 
