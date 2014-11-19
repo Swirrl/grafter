@@ -2,19 +2,26 @@
   "Grafter protocols and types for RDF processing")
 
 (defprotocol IStatement
-  "An RDF triple"
+  "An RDF triple or quad"
   (subject [statement])
   (predicate [statement])
   (object [statement])
   (context [statement]))
 
 (defprotocol ITripleWriteable
+  "This protocol is implemented by anything which you can put
+  statements into."
   (add-statement
     [this statement]
     [this graph statement])
 
-  (add [this triples]
-    [this graph triples]))
+  (add
+    [this triples]
+    [this graph triples]
+    ;; A more efficient way to add an InputStream/Reader of RDF data to the destination.
+    [this graph format triple-stream]
+    [this graph base-uri format triple-stream]
+    "Add a seq of triples or quads to a destination.  Works with a sequence of IStatements an InputStream, File or Reader"))
 
 (defprotocol ITripleReadable
   "Use the higher level wrapper function statements if you just wish to read in some RDF.

@@ -325,35 +325,6 @@
          (sesame-rdf-type->type (.getObject st))
          (.getContext st)))
 
-(extend-type Repository
-  pr/ITripleWriteable
-
-  (pr/add-statement
-    ([this statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement connection statement)
-         (log/debug "Closing connection" connection "on repo" this)))
-
-    ([this graph statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement (.getConnection this) graph statement)
-         (log/debug "Closing connection" connection "on repo" this))))
-
-  (pr/add
-    ([this triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection triples)
-         (log/debug "Closing connection" connection "on repo" this)))
-
-    ([this graph triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection graph triples)
-         (log/debug "Closing connection" connection "on repo" this)))))
-
 (defn resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
 
@@ -387,7 +358,50 @@
        (if (seq triples)
          (let [^Iterable stmts (map IStatement->sesame-statement triples)]
            (.add this stmts (resource-array (URIImpl. graph))))
-         (pr/add-statement this graph triples)))))
+         (pr/add-statement this graph triples)))
+
+    ([this graph format triple-stream]
+       (.add this triple-stream nil format (resource-array (URIImpl. graph))))
+
+    ([this graph base-uri format triple-stream]
+       (.add this triple-stream base-uri format (resource-array (URIImpl. graph))))))
+
+(extend-type Repository
+  pr/ITripleWriteable
+
+  (pr/add-statement
+    ([this statement]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add-statement connection statement)
+         (log/debug "Closing connection" connection "on repo" this)))
+
+    ([this graph statement]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add-statement (.getConnection this) graph statement)
+         (log/debug "Closing connection" connection "on repo" this))))
+
+  (pr/add
+    ([this triples]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add connection triples)
+         (log/debug "Closing connection" connection "on repo" this)))
+
+    ([this graph triples]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add connection graph triples)
+         (log/debug "Closing connection" connection "on repo" this)))
+
+    ([this graph format triple-stream]
+       (with-open [^RepositoryConnection connection (.getConnection this)]
+         (pr/add connection graph format triple-stream)))
+
+    ([this graph base-uri format triple-stream]
+       (with-open [^RepositoryConnection connection (.getConnection this)]
+         (pr/add connection graph base-uri format triple-stream)))))
 
 
 (defn rdf-serializer

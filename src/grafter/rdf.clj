@@ -184,7 +184,13 @@
   ([target triples]
      (pr/add target triples))
   ([target graph triples]
-     (pr/add target graph triples)))
+     (pr/add target graph triples))
+
+  ([target graph format triple-stream]
+     (pr/add target graph format triple-stream))
+
+  ([target graph base-uri format triple-stream]
+     (pr/add target graph base-uri format triple-stream)))
 
 (defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a
