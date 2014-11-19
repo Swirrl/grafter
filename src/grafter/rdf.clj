@@ -52,7 +52,7 @@
   (if (and (vector? object)
            (seq object))
     (let [[[p o]] object]
-      (and (valid-subject-or-predicate? p)
+      (and (valid-predicate? p)
            (valid-object? o)))
     (or (valid-uri? object)
         (is-literal? object))))
