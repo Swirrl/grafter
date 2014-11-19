@@ -8,7 +8,7 @@
             [grafter.tabular])
   (:import (grafter.rdf.protocols Quad Triple)
            (org.openrdf.rio RDFFormat)
-           (org.openrdf.model.impl URIImpl)))
+           (org.openrdf.model URI)))
 
 (import-vars
  [grafter.rdf.sesame
@@ -27,12 +27,12 @@
 (def format-rdf-trix RDFFormat/TRIX)
 (def format-rdf-trig RDFFormat/TRIG)
 
-(defn- is-uri-or-string-type? [node]
-  (let [types [java.lang.String java.net.URL java.net.URI URIImpl]
+(defn- valid-uri? [node]
+  (let [types [java.lang.String java.net.URL java.net.URI URI]
         node-type (type node)]
     (some #{node-type} types)))
 
-(defn- is-literal-type? [node]
+(defn- is-literal? [node]
   (let [types [java.lang.String java.lang.Byte java.lang.Short
                java.math.BigDecimal java.lang.Double java.lang.Float
                java.math.BigInteger java.lang.Integer java.lang.Long
@@ -40,23 +40,26 @@
         node-type (type node)]
     (some #{node-type} types)))
 
-(defn- valid-subject-or-predicate? [node]
-  (or (is-uri-or-string-type? node)
+(defn- valid-subject? [node]
+  (or (valid-uri? node)
       (= clojure.lang.Keyword
          (type node))))
 
+(defn- valid-predicate? [node]
+  (valid-uri? node))
+
 (defn- valid-object? [object]
-  (if (vector? object)
-    (if (seq object)
-      (let [[[p o]] object]
-        (and (valid-subject-or-predicate? p)
-             (valid-object? o))))
-    (or (is-uri-or-string-type? object)
-        (is-literal-type? object))))
+  (if (and (vector? object)
+           (seq object))
+    (let [[[p o]] object]
+      (and (valid-subject-or-predicate? p)
+           (valid-object? o)))
+    (or (valid-uri? object)
+        (is-literal? object))))
 
 (defn- make-triples [subject predicate object-or-nested-subject]
-  {:pre [(valid-subject-or-predicate? subject)
-         (valid-subject-or-predicate? predicate)
+  {:pre [(valid-subject? subject)
+         (valid-predicate? predicate)
          (valid-object? object-or-nested-subject)]}
   (if (vector? object-or-nested-subject)
     (let [bnode-resource (keyword (gensym "bnode"))
