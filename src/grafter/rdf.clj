@@ -28,17 +28,15 @@
 (def format-rdf-trig RDFFormat/TRIG)
 
 (defn- valid-uri? [node]
-  (let [types [java.lang.String java.net.URL java.net.URI URI]
-        node-type (type node)]
-    (some #{node-type} types)))
+  (let [types [java.lang.String java.net.URL java.net.URI URI]]
+    (some (fn [n] (instance? n node)) types)))
 
 (defn- is-literal? [node]
   (let [types [java.lang.String java.lang.Byte java.lang.Short
                java.math.BigDecimal java.lang.Double java.lang.Float
                java.math.BigInteger java.lang.Integer java.lang.Long
-               java.lang.Boolean java.util.Date]
-        node-type (type node)]
-    (some #{node-type} types)))
+               java.lang.Boolean java.util.Date]]
+    (some (fn [n] (instance? n node)) types)))
 
 (defn- valid-subject? [node]
   (or (valid-uri? node)
