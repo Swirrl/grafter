@@ -3,6 +3,7 @@
   the Sesame API (http://www.openrdf.org/)."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
+            [clojure.tools.logging :as log]
             [pantomime.media :as mime])
   (:import (grafter.rdf.protocols IStatement Quad Triple)
            (java.io File)
@@ -69,7 +70,7 @@
        (->sesame-rdf-type [this]
          (if (instance? URI lang-or-uri)
            (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
-           (let [^String t (name lang-or-uri)]
+           (let [^String t (and lang-or-uri (name lang-or-uri))]
              (LiteralImpl. str t)))))))
 
 (defmulti literal-datatype->type
@@ -324,23 +325,6 @@
          (sesame-rdf-type->type (.getObject st))
          (.getContext st)))
 
-(extend-type Repository
-  pr/ITripleWriteable
-
-  (pr/add-statement
-    ([this statement]
-       (pr/add-statement (.getConnection this) statement))
-
-    ([this graph statement]
-       (pr/add-statement (.getConnection this) graph statement)))
-
-  (pr/add
-    ([this triples]
-       (pr/add (.getConnection this) triples))
-
-    ([this graph triples]
-       (pr/add (.getConnection this) graph triples))))
-
 (defn resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
 
@@ -374,7 +358,50 @@
        (if (seq triples)
          (let [^Iterable stmts (map IStatement->sesame-statement triples)]
            (.add this stmts (resource-array (URIImpl. graph))))
-         (pr/add-statement this graph triples)))))
+         (pr/add-statement this graph triples)))
+
+    ([this graph format triple-stream]
+       (.add this triple-stream nil format (resource-array (URIImpl. graph))))
+
+    ([this graph base-uri format triple-stream]
+       (.add this triple-stream base-uri format (resource-array (URIImpl. graph))))))
+
+(extend-type Repository
+  pr/ITripleWriteable
+
+  (pr/add-statement
+    ([this statement]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add-statement connection statement)
+         (log/debug "Closing connection" connection "on repo" this)))
+
+    ([this graph statement]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add-statement (.getConnection this) graph statement)
+         (log/debug "Closing connection" connection "on repo" this))))
+
+  (pr/add
+    ([this triples]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add connection triples)
+         (log/debug "Closing connection" connection "on repo" this)))
+
+    ([this graph triples]
+       (with-open [connection (.getConnection this)]
+         (log/debug "Opening connection" connection "on repo" this)
+         (pr/add connection graph triples)
+         (log/debug "Closing connection" connection "on repo" this)))
+
+    ([this graph format triple-stream]
+       (with-open [^RepositoryConnection connection (.getConnection this)]
+         (pr/add connection graph format triple-stream)))
+
+    ([this graph base-uri format triple-stream]
+       (with-open [^RepositoryConnection connection (.getConnection this)]
+         (pr/add connection graph base-uri format triple-stream)))))
 
 
 (defn rdf-serializer
@@ -511,12 +538,26 @@
       (throw e#))))
 
 (defprotocol ISPARQLable
-  "Quick and dirty sparql SELECT results.  Takes a connection and query
-string and returns a lazy sequence of results.
+  "NOTE this protocol is intended for low-level access.  End users
+  should use query instead.
 
-It doesn't clear up properly in all cases, for example if the sequence
-isn't fully consumed you may cause a resource leak."
+  Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
+  and SELECT queries.
 
+  You can call this on a Repository however if you do you may in some
+  cases cause a resource leak, for example if the sequence of results
+  isn't fully consumed.
+
+  To use this without leaking resources it is recommended that you
+  call ->connection on your repository, inside a with-open; and then
+  consume all your results inside of a nested doseq/dorun/etc...
+
+  e.g.
+
+  (with-open [conn (->connection repo)]
+     (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
+        (println res)))
+  "
   ;; TODO: reimplement interfaces with proper resource handling.
   (query-dataset [this sparql-string model])
 
@@ -528,7 +569,8 @@ isn't fully consumed you may cause a resource leak."
     (query-dataset (.getConnection this) query-str model))
 
   (update! [this query-str]
-    (update! (.getConnection this) query-str))
+    (with-open [connection (.getConnection this)]
+      (update! connection query-str)))
 
   pr/ITripleReadable
   (pr/to-statements [this options]
@@ -652,7 +694,25 @@ isn't fully consumed you may cause a resource leak."
   (apply f (apply concat (butlast args) (last args))))
 
 (defn query
-  "Takes a repo and sparql string and an optional set of k/v argument
+  "Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
+  and SELECT queries.
+
+  You can call this on a Repository however if you do you may in some
+  cases cause a resource leak, for example if the sequence of results
+  isn't fully consumed.
+
+  To use this without leaking resources it is recommended that you
+  call ->connection on your repository, inside a with-open; and then
+  consume all your results inside of a nested doseq/dorun/etc...
+
+  e.g.
+
+  (with-open [conn (->connection repo)]
+     (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
+        (println res)))
+
+
+  Takes a repo and sparql string and an optional set of k/v argument
   pairs, and executes the sparql query on the repository.
 
   Options are:
@@ -713,8 +773,8 @@ isn't fully consumed you may cause a resource leak."
         EOQ (Object.)
         NIL (Object.)
         pull (fn pull [] (lazy-seq (let [x (.take q)]
-                               (when-not (= EOQ x)
-                                 (cons (when-not (= NIL x) x) (pull))))))]
+                                    (when-not (= EOQ x)
+                                      (cons (when-not (= NIL x) x) (pull))))))]
     [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
@@ -762,7 +822,7 @@ isn't fully consumed you may cause a resource leak."
   ;; back into a lazy sequence on the calling thread.  The queue has a
   ;; bounded size of 1 forcing it be in lockstep with the consumer.
   ;;
-  ;; NOTE also none of these functions don't really allow for proper
+  ;; NOTE also none of these functions really allow for proper
   ;; resource clean-up unless the whole sequence is consumed.
   ;;
   ;; So, the good news is that this means you should be able to read
@@ -770,10 +830,10 @@ isn't fully consumed you may cause a resource leak."
   ;; handle, unless you consume the whole sequence.
   ;;
   ;; TODO: consider how to support proper resource cleanup.
-  (pr/to-statements [reader { :keys [format] :as options}]
+  (pr/to-statements [reader {:keys [format buffer-size] :or {buffer-size 32} :as options}]
     (if-not format
       (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:type :no-format-supplied}))
-      (let [[statements put!] (pipe 1)]
+      (let [[statements put!] (pipe buffer-size)]
         (future
           (let [parser (doto (format->parser format)
                          (.setRDFHandler (reify RDFHandler

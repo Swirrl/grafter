@@ -7,6 +7,15 @@
   (:import (org.apache.poi.ss.usermodel Sheet)
            (java.io File)))
 
+
+(defn mapply
+  "Like apply, but f takes keyword arguments and the last argument is
+  not a seq but a map with the arguments for f"
+  [f & args]
+  {:pre [(let [kwargs (last args)] (or (map? kwargs) (nil? kwargs)))]}
+  (apply f (apply concat
+                  (butlast args) (last args))))
+
 (defn move-first-row-to-header
   "For use with make-dataset.  Moves the first row of data into the
   header, removing it from the source data."
