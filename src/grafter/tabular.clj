@@ -218,7 +218,6 @@ Returns a lazy sequence of matched rows."
   (let [args-from-cols (select-row-values src-col-ids row)
         new-col-val (apply f args-from-cols)
         new-column-hash (resolve-keys new-header new-col-val)]
-    (println new-column-hash)
     (merge row new-column-hash)))
 
 (defn- resolve-all-col-ids [dataset source-cols]
