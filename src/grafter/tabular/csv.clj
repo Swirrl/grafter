@@ -6,9 +6,7 @@
 
 (defmethod tab/open-tabular-file :csv
   [f & {:as opts}]
-  (if opts
-    (csv/parse-csv (io/reader f) opts)
-    (csv/parse-csv (io/reader f))))
+  (tab/mapply csv/parse-csv (io/reader f) opts))
 
 (comment
 

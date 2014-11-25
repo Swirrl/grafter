@@ -5,6 +5,7 @@
             [grafter.tabular.common :as tabc]
             [grafter.tabular.csv]
             [grafter.tabular.excel]
+            [clojure.tools.logging :refer [spy]]
             [incanter.core :as inc]
             [potemkin.namespaces :refer [import-vars]]))
 
@@ -207,19 +208,6 @@ Returns a lazy sequence of matched rows."
 (defn lift->vector [x]
   (if (sequential? x) x [x]))
 
-(defn derive-column
-  "Adds a new column to the end of the row which is derived from
-column with position col-n.  f should just return the cells value.
-
-If no f is supplied the identity function is used, which results in
-the specified column being cloned."
-
-  ([dataset new-column-name from-cols]
-   (derive-column dataset new-column-name from-cols identity))
-  ;; todo support multiple columns/arguments to f.
-  ([dataset new-column-name from-cols f]
-     (inc/add-derived-column new-column-name (lift->vector from-cols) f dataset)))
-
 (defn- resolve-keys [headers hash]
   (map-keys #(resolve-col-id % headers nil) hash))
 
@@ -228,11 +216,40 @@ the specified column being cloned."
 
 (defn- apply-f-to-row-hash [src-col-ids new-header f row]
   (let [args-from-cols (select-row-values src-col-ids row)
-        new-cols-and-values (resolve-keys new-header (apply f args-from-cols))]
-    (merge row new-cols-and-values)))
+        new-col-val (apply f args-from-cols)
+        new-column-hash (resolve-keys new-header new-col-val)]
+    (merge row new-column-hash)))
 
 (defn- resolve-all-col-ids [dataset source-cols]
   (map (partial resolve-column-id dataset) source-cols))
+
+(defn derive-column
+  "Adds a new column to the end of the row which is derived from
+column with position col-n.  f should just return the cells value.
+
+If no f is supplied the identity function is used, which results in
+the specified column being cloned."
+
+  ([dataset new-column-name from-cols]
+     (derive-column dataset new-column-name from-cols identity))
+  ;; todo support multiple columns/arguments to f.
+  ([dataset new-column-name from-cols f]
+     (let [resolved-from-cols (resolve-all-col-ids dataset from-cols)]
+       (make-dataset (->> dataset
+                          :rows
+                          (map (fn [row]
+                                 (let [args-from-cols (select-row-values resolved-from-cols row)
+                                       new-col-val (apply f args-from-cols)]
+                                   (merge row {new-column-name new-col-val })))))
+                     (concat (column-names dataset) [new-column-name])))))
+
+(defn add-column
+  "Add a new column to a dataset with the supplied value lazily copied
+  into every row within it."
+
+  [dataset new-column value]
+
+  (derive-column dataset new-column nil (constantly value)))
 
 (defn- infer-new-columns-from-first-row [dataset source-cols f]
   (let [source-cols (resolve-all-col-ids dataset source-cols)
@@ -246,10 +263,49 @@ the specified column being cloned."
     new-col-ids))
 
 (defn add-columns
+  "Add several new columns to a dataset at once.  There are a number of different parameterisations:
+
+  (add-columns ds {:foo 10 :bar 20})
+
+  Calling with two arguments where the second argument is a hash map
+  creates new columns in the dataset for each of the hashmaps keys and
+  copies the hashes values lazily down all the rows.  This
+  parameterisation is designed to work well build-lookup-table.
+
+  When given either a single column id or many along with a function
+  which returns a hashmap, add-columns will pass each cell from the
+  specified columns into the given function, and then associate its
+  returned map back into the dataset.  e.g.
+
+  (add-columns ds \"a\" (fn [a] {:b (inc a) :c (inc a)} ))
+
+  ; =>
+
+  | a | :b | :c |
+  |---+----+----|
+  | 0 |  1 |  1 |
+  | 1 |  2 |  2 |
+
+  As a dataset needs to know its columns in this case it will infer
+  them from the return value of the first row.  If you don't want to
+  infer them from the first row then you can also supply them like so:
+
+  (add-columns ds [:b :c] \"a\" (fn [a] {:b (inc a) :c (inc a)} ))
+
+  ; =>
+
+  | a | :b | :c |
+  |---+----+----|
+  | 0 |  1 |  1 |
+  | 1 |  2 |  2 |
+
+"
   ([dataset hash]
      (let [merge-cols (fn [ds k]
-                        (inc/add-column k (repeat (hash k)) ds))
+                        (add-column ds k (hash k)))
            keys (-> hash keys sort)]
+       ;; Yes, this is actually lazy with respect to rows, as we're
+       ;; just reducing new lazy columns onto our dataset.
        (reduce merge-cols dataset keys)))
 
   ([dataset source-cols f]

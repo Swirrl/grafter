@@ -217,7 +217,13 @@
   ([target triples]
      (pr/add target triples))
   ([target graph triples]
-     (pr/add target graph triples)))
+     (pr/add target graph triples))
+
+  ([target graph format triple-stream]
+     (pr/add target graph format triple-stream))
+
+  ([target graph base-uri format triple-stream]
+     (pr/add target graph base-uri format triple-stream)))
 
 (defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a
@@ -232,6 +238,11 @@
   The :format option is supplied by the wrapping function and may be
   nil, or act as an indicator about the format of the triples to read.
   Implementers can choose whether or not to ignore or require the
-  format parameter."
-  [this & {:keys [format] :as options}]
+  format parameter.
+
+  The :buffer-size option can be used to configure the buffer size at
+  which statements are parsed from an RDF stream.  Its default value
+  of 32 was found to work well in practice, and also aligns with chunk
+  size of Clojure's lazy sequences."
+  [this & {:keys [format buffer-size] :as options}]
   (pr/to-statements this options))

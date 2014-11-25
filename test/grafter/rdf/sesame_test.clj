@@ -14,28 +14,17 @@
             NumericLiteralImpl StatementImpl
             URIImpl]))
 
-(def test-db-path "MyDatabases/test-db")
-
-(def ^:dynamic *test-db* nil)
-
-(defn wrap-with-clean-test-db [f]
-  (try
-    (binding [*test-db* (repo (native-store test-db-path))]
-      (f))
-    (finally
-        (fs/delete-dir test-db-path))))
-
 (deftest with-transaction-test
-  (testing "Transactions return last result of form if there's no error."
-    (is (= :return-value (with-transaction *test-db*
-                           :return-value))))
-  (testing "Adding values in a transaction are visible after the transaction commits."
-    (do
-      (with-transaction *test-db*
-        (pr/add *test-db* (graph "http://example.org/test/graph"
-                                 ["http://test/1" [rdf:a "http://test/Test"]])))
+  (let [test-db (repo)]
+    (testing "Transactions return last result of form if there's no error."
+      (is (= :return-value (with-transaction test-db
+                             :return-value))))
+    (testing "Adding values in a transaction are visible after the transaction commits."
+      (with-transaction test-db
+        (pr/add test-db (graph "http://example.org/test/graph"
+                               ["http://test/1" [rdf:a "http://test/Test"]])))
 
-      (is (query *test-db* "ASK WHERE { <http://test/1> ?p ?o }")))))
+      (is (query test-db "ASK WHERE { <http://test/1> ?p ?o }")))))
 
 (deftest mimetype->rdf-format-test
   (testing "mimetype->rdf-format"
@@ -56,8 +45,6 @@
                ["http://www.w3.org/2001/XMLSchema#float" Float "10.6"]
                ["http://www.w3.org/2001/XMLSchema#integer" BigInteger "10"]
                ["http://www.w3.org/2001/XMLSchema#int" Integer "10"]]]
-    (doseq [[^String xsd type ^String number] types]
-      (let [^Value value (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd))))]
-        (is (= number (.stringValue value)))))))
 
-(use-fixtures :each wrap-with-clean-test-db)
+    (doseq [[xsd type number] types]
+      (is (= number (.stringValue (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd))))))))))
