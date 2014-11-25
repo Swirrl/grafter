@@ -51,8 +51,8 @@
   ([dataset column-key] (resolve-column-id dataset column-key nil))
   ([dataset column-key not-found]
 
-     (let [headers (column-names dataset)]
-       (resolve-col-id column-key headers not-found))))
+   (let [headers (column-names dataset)]
+     (resolve-col-id column-key headers not-found))))
 
 (defn- invalid-column-keys
   "Takes a sequence of column key names and a dataset and returns a
@@ -232,9 +232,10 @@ the specified column being cloned."
 
   ([dataset new-column-name from-cols]
      (derive-column dataset new-column-name from-cols identity))
-  ;; todo support multiple columns/arguments to f.
+
   ([dataset new-column-name from-cols f]
-     (let [resolved-from-cols (resolve-all-col-ids dataset from-cols)]
+   (let [from-cols (lift->vector from-cols)
+         resolved-from-cols (resolve-all-col-ids dataset from-cols)]
        (make-dataset (->> dataset
                           :rows
                           (map (fn [row]
@@ -248,8 +249,14 @@ the specified column being cloned."
   into every row within it."
 
   [dataset new-column value]
-
-  (derive-column dataset new-column nil (constantly value)))
+  (let [ignored-column-id 0]
+    ;; all real datasets have a 0th column but grafter doesn't
+    ;; currently work with empty 0x0 datasets.  We should support this
+    ;; case.
+    ;;
+    ;; TODO when we support these: https://trello.com/c/cdmlw7Xv we
+    ;; should update this code to work with empty datasets too.
+    (derive-column dataset new-column ignored-column-id (constantly value))))
 
 (defn- infer-new-columns-from-first-row [dataset source-cols f]
   (let [source-cols (resolve-all-col-ids dataset source-cols)

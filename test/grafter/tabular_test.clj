@@ -291,7 +291,10 @@
            expected))
 
     (is (= (derive-column subject "c" [:a :b] +)
-           expected))))
+           expected))
+
+    (is (= (derive-column subject "c" :a str)
+           (make-dataset [[1 2 "1"] [3 4 "3"]])))))
 
 (deftest add-columns-test
   (let [subject (make-dataset [[1 2 3] [4 5 6]])]
