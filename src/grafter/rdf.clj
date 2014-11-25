@@ -7,7 +7,8 @@
             [grafter.rdf.ontologies.util]
             [grafter.tabular])
   (:import (grafter.rdf.protocols Quad Triple)
-           (org.openrdf.rio RDFFormat)))
+           (org.openrdf.rio RDFFormat)
+           (org.openrdf.model URI)))
 
 (import-vars
  [grafter.rdf.sesame
@@ -26,7 +27,38 @@
 (def format-rdf-trix RDFFormat/TRIX)
 (def format-rdf-trig RDFFormat/TRIG)
 
+(defn- valid-uri? [node]
+  (let [types [java.lang.String java.net.URL java.net.URI URI]]
+    (some (fn [n] (instance? n node)) types)))
+
+(defn- is-literal? [node]
+  (let [types [java.lang.String java.lang.Byte java.lang.Short
+               java.math.BigDecimal java.lang.Double java.lang.Float
+               java.math.BigInteger java.lang.Integer java.lang.Long
+               java.lang.Boolean java.util.Date]]
+    (some (fn [n] (instance? n node)) types)))
+
+(defn- valid-subject? [node]
+  (or (valid-uri? node)
+      (= clojure.lang.Keyword
+         (type node))))
+
+(defn- valid-predicate? [node]
+  (valid-uri? node))
+
+(defn- valid-object? [object]
+  (if (and (vector? object)
+           (seq object))
+    (let [[[p o]] object]
+      (and (valid-predicate? p)
+           (valid-object? o)))
+    (or (valid-uri? object)
+        (is-literal? object))))
+
 (defn- make-triples [subject predicate object-or-nested-subject]
+  {:pre [(valid-subject? subject)
+         (valid-predicate? predicate)
+         (valid-object? object-or-nested-subject)]}
   (if (vector? object-or-nested-subject)
     (let [bnode-resource (keyword (gensym "bnode"))
           nested-pairs object-or-nested-subject]
@@ -34,6 +66,7 @@
                   (map first nested-pairs)
                   (map second nested-pairs))
           (conj (Triple. subject predicate bnode-resource))))
+
     (let [object object-or-nested-subject]
       [(Triple. subject predicate object)])))
 
@@ -76,7 +109,7 @@
 (defn triplify
   "Takes many turtle like structures and converts them to a lazy-seq
   of grafter.rdf.protocols.IStatement's.  Users should generally tend
-  to prefer to using graph to triplify."
+  to prefer using graph to triplify."
   [& subjects]
   (mapcat expand-subj subjects))
 
