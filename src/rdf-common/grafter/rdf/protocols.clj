@@ -42,7 +42,7 @@
   (commit [repo] "Commit a transaction")
   (rollback [repo] "Rollback a transaction"))
 
-(defn destructure-quad [quad i default]
+(defn- destructure-quad [quad i default]
   (case i
     0 (:s quad)
     1 (:p quad)
