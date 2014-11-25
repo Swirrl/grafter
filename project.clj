@@ -26,7 +26,9 @@
 
 
   :codox {:defaults {:doc "FIXME: write docs"}
-          :output-dir "api-docs"}
+          :output-dir "api-docs"
+          :src-dir-uri "http://github.com/Swirrl/grafter/blob/master/"
+          :src-linenum-anchor-prefix "L"}
 
   :source-paths ["src"]
   :jvm-opts ["-Dapple.awt.UIElement=true"] ;; Prevent Java process
