@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [grafter.rdf :refer :all]
             [grafter.rdf.protocols :refer [->Quad ->Triple]]
-            [grafter.tabular :refer [make-dataset]]))
+            [grafter.tabular :refer [make-dataset graph-fn]]
+            [grafter.rdf.templater :refer [graph triplify]]))
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])

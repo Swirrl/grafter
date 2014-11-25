@@ -80,6 +80,14 @@
   (nth [this ^int i default]
     (destructure-quad this i default)))
 
+(defn quad
+  "Build a quad from a graph and a grafter.rdf.protocols/Triple."
+  [graph triple]
+  (->Quad (subject triple)
+          (predicate triple)
+          (object triple)
+          graph))
+
 (extend-type clojure.lang.IPersistentVector
   IStatement
   (subject [this]
@@ -87,4 +95,7 @@
   (predicate [this]
     (second this))
   (object [this]
-    (nth this 2)))
+    (nth this 2))
+
+  ;; TODO add context to this one
+  )

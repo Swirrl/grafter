@@ -1,8 +1,8 @@
 (ns grafter.rdf.sesame-test
   (:require [clojure.test :refer :all]
-            [grafter.rdf :refer [graph]]
             [grafter.rdf.ontologies.rdf :refer :all]
             [grafter.rdf.protocols :as pr]
+            [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.sesame :refer :all]
             [me.raynes.fs :as fs])
   (:import [org.openrdf.rio RDFFormat]

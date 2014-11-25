@@ -28,25 +28,42 @@
   :codox {:defaults {:doc "FIXME: write docs"}
           :output-dir "api-docs"}
 
-  :source-paths ["src"]
+  :source-paths ["src/rdf" "src/tabular" "src/templater" "src/rdf-common" "src/ontologies"]
   :jvm-opts ["-Dapple.awt.UIElement=true"] ; Prevent Java process
                                         ; from appearing as a GUI
                                         ; app in OSX when Swing
                                         ; classes are loaded.
 
-
   :pedantic? :abort
 
-  :repack [{:type :clojure
-            :path "src"
-            :levels 2}]
+  :repack [{:subpackage "rdf.common"
+            :dependents #{"templater"}
+            :path "src/rdf-common"
+            }
+           {:subpackage "templater"
+            :path "src/templater"
+            }
+           ;; {:subpackage "ontologies"
+           ;;  :path "src/rdf/grafter/rdf/ontologies"}
+           {:type :clojure
+            :path "src/ontologies"
+            :levels 2
+            }
+           {:type :clojure
+            :path "src/rdf"
+            :levels 1
+            }
+           {:type :clojure
+            :path "src/tabular"
+            :levels 2}
+           ]
 
   :profiles {:uberjar {:aot :all}
 
              :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
                              [codox "0.8.10"]
-                             [lein-repack "0.2.4"]
-                             ]
+                             [lein-repack "0.2.4" :exclusions [org.clojure/clojure
+                                                               org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.1"]]
 

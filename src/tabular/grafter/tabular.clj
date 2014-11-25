@@ -503,6 +503,59 @@ the specified column being cloned."
            table (zipmap keys val)]
        table)))
 
+(defn ^:no-doc get-column-by-number*
+  "This function is intended for use by the graph-fn macro only, and
+  should not be considered part of this namespaces public interface.
+  It is only public because it is used by a macro."
+  [ds row index]
+  (let [col-name (grafter.tabular/resolve-column-id ds index ::not-found)]
+    (if-not (= col-name ::not-found)
+      (get row col-name ::not-found))))
+
+(defn- generate-vector-bindings [ds-symbol row-symbol row-bindings]
+  (let [bindings (->> row-bindings
+                      (map-indexed (fn [index binding]
+                                     [binding `(get-column-by-number* ~ds-symbol ~row-symbol ~index)]))
+                      (apply concat)
+                      (apply vector))]
+    bindings))
+
+(defn- splice-supplied-bindings [row-sym row-bindings]
+  `[~row-bindings ~row-sym])
+
+(defmacro graph-fn
+  "A macro that defines an anonymous function to convert a tabular
+  dataset into a graph of RDF quads.  Ultimately it converts a
+  lazy-seq of rows inside a dataset, into a lazy-seq of RDF
+  Statements.
+
+  The function body should be composed of any number of forms, each of
+  which should return a sequence of RDF quads.  These will then be
+  concatenated together into a flattened lazy-seq of RDF statements.
+
+  Rows are passed to the function one at a time as hash-maps, which
+  can be destructured via Clojure's standard destructuring syntax.
+
+  Additionally destructuring can be done on row-indicies (when a
+  vector form is supplied) or column names (when a hash-map form is
+  supplied)."
+
+  [[row-bindings] & forms]
+  {:pre [(or (symbol? row-bindings) (map? row-bindings)
+             (vector? row-bindings))]}
+  (let [row-sym (gensym "row")
+        ds-sym (gensym "ds")]
+    `(fn graphify-dataset [~ds-sym]
+       (letfn [(graphify-row# [~row-sym]
+                 (let ~(if (vector? row-bindings)
+                         (generate-vector-bindings ds-sym row-sym row-bindings)
+                         (splice-supplied-bindings row-sym row-bindings))
+                   (->> (concat ~@forms)
+                        (map (fn with-row-meta [triple#]
+                               (with-meta triple# {::row ~row-sym}))))))]
+
+         (mapcat graphify-row# (:rows ~ds-sym))))))
+
 (defn melt
   "
 Melt an object into a form suitable for easy casting, like a melt function in R.
