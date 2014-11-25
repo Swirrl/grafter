@@ -18,6 +18,7 @@
 (def statistical-entity:lastinstancechange   (statistical-entity "lastinstancechange"))
 (def statistical-entity:code                 (statistical-entity "code"))
 (def statistical-entity:crossborderinstances (statistical-entity "crossborderinstances"))
+(def statistical-entity:theme                (statistical-entity "theme"))
 
 (def statistical-geography (prefixer "http://statistics.data.gov.uk/def/statistical-geography#"))
 (def statistical-geography:officialname      (statistical-entity "officialname"))
