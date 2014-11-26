@@ -579,6 +579,20 @@ See http://www.statmethods.net/management/reshape.html for more examples."
                      k
                      (nth (get in-m k) i)))))))
 
+(defmacro defpipeline
+  "Declares an entry point to a grafter pipeline, allowing it to be
+  exposed to the Grafter import service and executed via the leiningen
+  plugin.
+
+  It has the same form as \"defn\" but adds metadata to the defined
+  var that lets pipelines be discovered at runtime through both
+  syntactic and meta-data means."
+  ([& args]
+   (let [defppln (cons 'defn args)]
+     `(let [var# ~defppln
+            vmeta# (meta var#)]
+        (alter-meta! var# (fn [_#] (merge vmeta# {:pipeline true})))))))
+
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
   (defn join [csv f & others]
