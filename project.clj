@@ -22,13 +22,15 @@
                  [org.marianoguerra/clj-rhino "0.2.1"]
                  [potemkin "0.3.4"]
                  [incanter/incanter-core "1.5.5" :exclusions [net.sf.opencsv/opencsv commons-codec]]
+                 [net.sf.corn/corn-cps "1.1.7"]
                  [com.novemberain/pantomime "2.3.0"]]
 
 
   :codox {:defaults {:doc "FIXME: write docs"}
           :output-dir "api-docs"}
 
-  :source-paths ["src/rdf" "src/tabular" "src/templater" "src/rdf-common" "src/ontologies"]
+  :source-paths ["src/rdf" "src/tabular" "src/templater" "src/rdf-common" "src/ontologies"
+                 "src/pipeline"]
   :jvm-opts ["-Dapple.awt.UIElement=true"] ; Prevent Java process
                                         ; from appearing as a GUI
                                         ; app in OSX when Swing
