@@ -45,10 +45,12 @@
            {:subpackage "templater"
             :path "src/templater"
             }
-           ;; {:subpackage "ontologies"
-           ;;  :path "src/rdf/grafter/rdf/ontologies"}
            {:type :clojure
             :path "src/ontologies"
+            :levels 2
+            }
+           {:type :clojure
+            :path "src/pipeline"
             :levels 2
             }
            {:type :clojure
