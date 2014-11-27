@@ -2,6 +2,8 @@
 
     "For the hard graft of linked data processing."
 
+[![Clojars Project](http://clojars.org/grafter/latest-version.svg)](http://clojars.org/grafter)
+
 Grafter is a library, DSL and suite of tools for flexible, efficient,
 ETL, data transformation and processing.  Its primary use is for
 handling Linked Data conversions from tabular data formats into RDF
