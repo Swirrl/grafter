@@ -62,7 +62,7 @@
              :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
                              [codox "0.8.10"]
                              [org.clojars.rickmoynihan/lein-repack "0.2.5-SNAPSHOT" :exclusions [org.clojure/clojure
-                                                               org.codehaus.plexus/plexus-utils]]]
+                                                                                                 org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.1"]]
 
