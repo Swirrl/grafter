@@ -1,4 +1,4 @@
-(defproject grafter "0.3.0-SNAPSHOT"
+(defproject grafter/grafter "0.3.0-SNAPSHOT"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -40,23 +40,18 @@
 
   :repack [{:subpackage "rdf.common"
             :dependents #{"templater"}
-            :path "src/rdf-common"
-            }
+            :path "src/rdf-common"}
            {:subpackage "templater"
-            :path "src/templater"
-            }
+            :path "src/templater"}
            {:type :clojure
             :path "src/ontologies"
-            :levels 2
-            }
+            :levels 2}
            {:type :clojure
             :path "src/pipeline"
-            :levels 2
-            }
+            :levels 2}
            {:type :clojure
             :path "src/rdf"
-            :levels 1
-            }
+            :levels 1}
            {:type :clojure
             :path "src/tabular"
             :levels 2}
@@ -66,7 +61,7 @@
 
              :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
                              [codox "0.8.10"]
-                             [lein-repack "0.2.4" :exclusions [org.clojure/clojure
+                             [org.clojars.rickmoynihan/lein-repack "0.2.5-SNAPSHOT" :exclusions [org.clojure/clojure
                                                                org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.1"]]
