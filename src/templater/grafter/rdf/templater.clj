@@ -33,10 +33,6 @@
        (= 1 (count object)) (valid-object? (first object))))))
 
 (defn- make-triples [subject predicate object-or-nested-subject]
-  {:pre [(valid-subject? subject)
-         (valid-predicate? predicate)
-         (valid-object? object-or-nested-subject)]}
-
   (if (vector? object-or-nested-subject)
     (let [bnode-resource (keyword (gensym "bnode"))
           nested-pairs object-or-nested-subject]
