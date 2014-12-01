@@ -183,40 +183,14 @@
       (pr/rollback ~repo)
       (throw e#))))
 
-(defprotocol ISPARQLable
-  "NOTE this protocol is intended for low-level access.  End users
-  should use query instead.
-
-  Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
-  and SELECT queries.
-
-  You can call this on a Repository however if you do you may in some
-  cases cause a resource leak, for example if the sequence of results
-  isn't fully consumed.
-
-  To use this without leaking resources it is recommended that you
-  call ->connection on your repository, inside a with-open; and then
-  consume all your results inside of a nested doseq/dorun/etc...
-
-  e.g.
-
-  (with-open [conn (->connection repo)]
-     (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
-        (println res)))
-  "
-  ;; TODO: reimplement interfaces with proper resource handling.
-  (query-dataset [this sparql-string model])
-
-  (update! [this sparql-string]))
-
 (extend-type Repository
-  ISPARQLable
-  (query-dataset [this query-str model]
-    (query-dataset (.getConnection this) query-str model))
+  pr/ISPARQLable
+  (pr/query-dataset [this query-str model]
+    (pr/query-dataset (.getConnection this) query-str model))
 
-  (update! [this query-str]
+  (pr/update! [this query-str]
     (with-open [connection (.getConnection this)]
-      (update! connection query-str)))
+      (pr/update! connection query-str)))
 
   pr/ITripleReadable
   (pr/to-statements [this options]
@@ -297,18 +271,16 @@
          (.setDataset dataset)))))
 
 (extend-type RepositoryConnection
-  ISPARQLable
-  (query-dataset [this sparql-string dataset]
+  pr/ISPARQLable
+  (pr/query-dataset [this sparql-string dataset]
     (let [preped-query (prepare-query this sparql-string dataset)]
       (evaluate preped-query)))
 
-  (update! [this sparql-string]
+  (pr/update! [this sparql-string]
     (let [prepared-query (.prepareUpdate this
                                          QueryLanguage/SPARQL
                                          sparql-string)]
       (.execute prepared-query))))
-
-
 
 (defn- ->uri [graph]
   (if (instance? URI graph)
