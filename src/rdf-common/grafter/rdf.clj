@@ -4,26 +4,14 @@
   (:require [grafter.rdf.protocols :as pr]
             [grafter.rdf.protocols :refer [->Quad]]
             [potemkin.namespaces :refer [import-vars]]
-            [grafter.rdf.sesame]
-            [grafter.rdf.ontologies.util])
-  (:import [org.openrdf.rio RDFFormat]))
+            [grafter.rdf.io] ;; TODO remove this when we move s into this ns and rename literal
+            [grafter.rdf.ontologies.util]))
 
 (import-vars
- [grafter.rdf.sesame
+ [grafter.rdf.io
   s]
  [grafter.rdf.ontologies.util
   prefixer])
-
-;; TODO move these into their own grafter.rdf.formats namespace that
-;; can be reused from other namespaces.
-(def format-rdf-xml RDFFormat/RDFXML)
-(def format-rdf-n3 RDFFormat/N3)
-(def format-rdf-ntriples RDFFormat/NTRIPLES)
-(def format-rdf-nquads RDFFormat/NQUADS)
-(def format-rdf-turtle RDFFormat/TURTLE)
-(def format-rdf-jsonld RDFFormat/JSONLD)
-(def format-rdf-trix RDFFormat/TRIX)
-(def format-rdf-trig RDFFormat/TRIG)
 
 (defn subject
   "Return the RDF subject from a statement."

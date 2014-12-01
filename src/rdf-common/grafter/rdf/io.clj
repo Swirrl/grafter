@@ -1,10 +1,9 @@
-(ns grafter.rdf.sesame
-  "Grafter support and wrappers for RDF processing, built on top of
-  the Sesame API (http://www.openrdf.org/)."
+(ns grafter.rdf.io
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
             [clojure.tools.logging :as log]
-            [pantomime.media :as mime])
+            [pantomime.media :as mime]
+            )
   (:import (grafter.rdf.protocols IStatement Quad Triple)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -18,13 +17,11 @@
                                    IntegerLiteralImpl LiteralImpl
                                    NumericLiteralImpl StatementImpl
                                    URIImpl)
-           (org.openrdf.query BooleanQuery GraphQuery QueryLanguage
-                              Query TupleQuery Update BindingSet)
-           (org.openrdf.query.impl DatasetImpl)
+           ;(org.openrdf.query.impl DatasetImpl)
            (org.openrdf.repository Repository RepositoryConnection)
-           (org.openrdf.repository.http HTTPRepository)
-           (org.openrdf.repository.sail SailRepository)
-           (org.openrdf.repository.sparql SPARQLRepository)
+           ;(org.openrdf.repository.http HTTPRepository)
+           ;(org.openrdf.repository.sail SailRepository)
+           ;(org.openrdf.repository.sparql SPARQLRepository)
            (org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio RDFParserFactory RDFParser)
            (org.openrdf.rio.n3 N3ParserFactory)
            (org.openrdf.rio.nquads NQuadsParserFactory)
@@ -34,9 +31,11 @@
            (org.openrdf.rio.trig TriGParserFactory)
            (org.openrdf.rio.trix TriXParserFactory)
            (org.openrdf.rio.turtle TurtleParserFactory)
-           (org.openrdf.sail.memory MemoryStore)
-           (org.openrdf.sail.nativerdf NativeStore)
-           (info.aduna.iteration CloseableIteration)))
+           ;(org.openrdf.sail.memory MemoryStore)
+           ;(org.openrdf.sail.nativerdf NativeStore)
+           ;(info.aduna.iteration CloseableIteration)
+           ))
+
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -325,85 +324,6 @@
          (sesame-rdf-type->type (.getObject st))
          (.getContext st)))
 
-(defn resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
-  (into-array Resource rs))
-
-(extend-type RepositoryConnection
-  pr/ITripleWriteable
-
-  (pr/add-statement
-    ([this statement]
-       {:pre [(instance? IStatement statement)]}
-       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
-             resources (if-let [graph (pr/context statement)] (resource-array (URIImpl. graph)) (resource-array))]
-         (doto this (.add sesame-statement resources))))
-
-    ([this graph statement]
-       {:pre [(instance? IStatement statement)]}
-       (let [^Statement stm (IStatement->sesame-statement statement)
-             resources (resource-array (URIImpl. graph))]
-         (doto this
-           (.add stm resources)))))
-
-  (pr/add
-    ([this triples]
-       {:pre [(or (nil? triples)
-                  (sequential? triples))]}
-       (if (seq triples)
-         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-           (.add this stmts (resource-array)))
-         (pr/add-statement this triples)))
-
-    ([this graph triples]
-       (if (seq triples)
-         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-           (.add this stmts (resource-array (URIImpl. graph))))
-         (pr/add-statement this graph triples)))
-
-    ([this graph format triple-stream]
-       (.add this triple-stream nil format (resource-array (URIImpl. graph))))
-
-    ([this graph base-uri format triple-stream]
-       (.add this triple-stream base-uri format (resource-array (URIImpl. graph))))))
-
-(extend-type Repository
-  pr/ITripleWriteable
-
-  (pr/add-statement
-    ([this statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement connection statement)
-         (log/debug "Closing connection" connection "on repo" this)))
-
-    ([this graph statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement (.getConnection this) graph statement)
-         (log/debug "Closing connection" connection "on repo" this))))
-
-  (pr/add
-    ([this triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection triples)
-         (log/debug "Closing connection" connection "on repo" this)))
-
-    ([this graph triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection graph triples)
-         (log/debug "Closing connection" connection "on repo" this)))
-
-    ([this graph format triple-stream]
-       (with-open [^RepositoryConnection connection (.getConnection this)]
-         (pr/add connection graph format triple-stream)))
-
-    ([this graph base-uri format triple-stream]
-       (with-open [^RepositoryConnection connection (.getConnection this)]
-         (pr/add connection graph base-uri format triple-stream)))))
-
-
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
   clojure.java.io/writer and returns an RDFSerializer.
@@ -451,283 +371,6 @@
        ;; TODO if format allows graphs we should support
        ;; them... otherwise.. ignore the graph param
        (pr/add this triples))))
-
-(defn memory-store
-  "Instantiate a sesame RDF MemoryStore."
-  []
-  (MemoryStore.))
-
-(defn native-store
-  "Instantiate a sesame RDF NativeStore."
-  ([datadir]
-     (native-store datadir "spoc,posc,cosp"))
-  ([datadir indexes]
-     (NativeStore. (io/file datadir) indexes)))
-
-(defn http-repo
-  "Given a URL as a String return a Sesame HTTPRepository for e.g.
-  interacting with the OpenRDF Workbench."
-  [repo-url]
-  (doto (HTTPRepository. repo-url)
-    (.initialize)))
-
-(defn sparql-repo
-  "Given a query-url and an optional update-url String return a Sesame
-  SPARQLRepository for communicating with remote repositories."
-  ([query-url]
-     (doto (SPARQLRepository. query-url)
-       (.initialize)))
-  ([query-url update-url]
-     (doto (SPARQLRepository. query-url update-url)
-       (.initialize))))
-
-(defn repo
-  "Given a sesame Store of some type, return a sesame SailRepository."
-  ([] (repo (MemoryStore.)))
-  ([store]
-     (doto (SailRepository. store)
-       (.initialize))))
-
-(defn load-rdf
-  "Loads the specified RDF file into the supplied repository.
-
-  Takes a String or File (specifying a path to an RDF file) a base-uri
-  String and an RDFFormat."
-  [^RepositoryConnection connection file ^String base-uri-str ^RDFFormat format]
-  (.add connection (io/file file) base-uri-str format (resource-array)))
-
-(defn- query-bindings->map [^BindingSet qbs]
-  (let [boundvars (.getBindingNames qbs)]
-    (->> boundvars
-         (mapcat (fn [k]
-                   [k (-> qbs (.getBinding k) .getValue)]))
-         (apply hash-map))))
-
-(extend-protocol pr/ITransactable
-  Repository
-  (begin [repo]
-    (-> repo .getConnection .begin))
-
-  (commit [repo]
-    (-> repo .getConnection .commit))
-
-  (rollback [repo]
-    (-> repo .getConnection .rollback))
-
-  RepositoryConnection
-  (begin [repo]
-    (-> repo .begin))
-
-  (commit [repo]
-    (-> repo .commit))
-
-  (rollback [repo]
-    (-> repo .rollback)))
-
-(defmacro with-transaction
-  "Wraps the given forms in a transaction on the supplied repository.
-  Exceptions are rolled back on failure."
-  [repo & forms]
-  `(try
-    (pr/begin ~repo)
-    (let [return# (do ~@forms)]
-      (pr/commit ~repo)
-      return#)
-    (catch Exception e#
-      (pr/rollback ~repo)
-      (throw e#))))
-
-(defprotocol ISPARQLable
-  "NOTE this protocol is intended for low-level access.  End users
-  should use query instead.
-
-  Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
-  and SELECT queries.
-
-  You can call this on a Repository however if you do you may in some
-  cases cause a resource leak, for example if the sequence of results
-  isn't fully consumed.
-
-  To use this without leaking resources it is recommended that you
-  call ->connection on your repository, inside a with-open; and then
-  consume all your results inside of a nested doseq/dorun/etc...
-
-  e.g.
-
-  (with-open [conn (->connection repo)]
-     (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
-        (println res)))
-  "
-  ;; TODO: reimplement interfaces with proper resource handling.
-  (query-dataset [this sparql-string model])
-
-  (update! [this sparql-string]))
-
-(extend-type Repository
-  ISPARQLable
-  (query-dataset [this query-str model]
-    (query-dataset (.getConnection this) query-str model))
-
-  (update! [this query-str]
-    (with-open [connection (.getConnection this)]
-      (update! connection query-str)))
-
-  pr/ITripleReadable
-  (pr/to-statements [this options]
-    (pr/to-statements (.getConnection this) options)))
-
-(defn- sesame-results->seq
-  ([prepared-query] (sesame-results->seq prepared-query identity))
-  ([^Query prepared-query converter-f]
-     (let [^CloseableIteration results (.evaluate prepared-query)
-           run-query (fn pull-query []
-                       (if (.hasNext results)
-                         (let [current-result (try
-                                                (converter-f (.next results))
-                                                (catch Exception e
-                                                  (.close results)
-                                                  (throw e)))]
-                           (lazy-cat
-                            [current-result]
-                            (pull-query)))
-                         (.close results)))]
-       (run-query))))
-
-(defprotocol IQueryEvaluator
-  (evaluate [this] "Low level protocol to evaluate a sesame RDF Query
-  object, and convert the results into a grafter representation."))
-
-
-(extend-protocol IQueryEvaluator
-  BooleanQuery
-  (evaluate [this]
-    (.evaluate this))
-
-  TupleQuery
-  (evaluate [this]
-    (sesame-results->seq this query-bindings->map))
-
-  GraphQuery
-  (evaluate [this]
-    (sesame-results->seq this sesame-statement->IStatement))
-
-  Update
-  (evaluate [this]
-    (.execute this)))
-
-(defn ->connection
-  "Given a sesame repository return a connection to it."
-  ^RepositoryConnection
-  [^Repository repo]
-  (if (instance? RepositoryConnection repo)
-    repo
-    (.getConnection repo)))
-
-(defn prepare-query
-  "Low level function to prepare (parse, but not process) a sesame RDF
-  query.  Takes a repository a query string and an optional sesame
-  Dataset to act as a query restriction.
-
-  Prepared queries still need to be evaluated with evaluate."
-  ([repo sparql-string] (prepare-query repo sparql-string nil))
-  ([repo sparql-string dataset]
-     (let [conn (->connection repo)]
-       (doto (.prepareQuery conn
-                            QueryLanguage/SPARQL
-                            sparql-string)
-         (.setDataset dataset)))))
-
-(defn prepare-update
-  "Prepare (parse but don't process) a SPARQL update request.
-
-  Prepared updates still need to be evaluated with evaluate."
-  ([repo sparql-update-str] (prepare-update repo sparql-update-str nil))
-  ([repo sparql-update-str dataset]
-     (let [conn (->connection repo)]
-       (doto
-           (.prepareUpdate conn
-                           QueryLanguage/SPARQL
-                           sparql-update-str)
-         (.setDataset dataset)))))
-
-(extend-type RepositoryConnection
-  ISPARQLable
-  (query-dataset [this sparql-string dataset]
-    (let [preped-query (prepare-query this sparql-string dataset)]
-      (evaluate preped-query)))
-
-  (update! [this sparql-string]
-    (let [prepared-query (.prepareUpdate this
-                                         QueryLanguage/SPARQL
-                                         sparql-string)]
-      (.execute prepared-query))))
-
-
-
-(defn- ->uri [graph]
-  (if (instance? URI graph)
-    graph
-    (URIImpl. graph)))
-
-(defn make-restricted-dataset
-  "Build a dataset to act as a graph restriction.  You can specify for
-  both :default-graph and :named-graphs.  Both of which take sequences
-  of URI strings."
-  [& {:as options}]
-  (when options
-    (let [{:keys [default-graph named-graphs]
-           :or {default-graph [] named-graphs []}} options
-           private-graph "urn:private-drafter-graph-to-force-restrictions-when-no-graphs-are-listed"
-           dataset (DatasetImpl.)]
-      (if (string? default-graph)
-        (.addDefaultGraph dataset (->uri default-graph))
-
-        (doseq [graph (conj default-graph private-graph)]
-          (.addDefaultGraph dataset (->uri graph))))
-      (if (string? named-graphs)
-        (.addNamedGraph dataset (->uri named-graphs))
-        (doseq [graph named-graphs]
-          (.addNamedGraph dataset (->uri graph))))
-      dataset)))
-
-(defn- mapply [f & args]
-  (apply f (apply concat (butlast args) (last args))))
-
-(defn query
-  "Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
-  and SELECT queries.
-
-  You can call this on a Repository however if you do you may in some
-  cases cause a resource leak, for example if the sequence of results
-  isn't fully consumed.
-
-  To use this without leaking resources it is recommended that you
-  call ->connection on your repository, inside a with-open; and then
-  consume all your results inside of a nested doseq/dorun/etc...
-
-  e.g.
-
-  (with-open [conn (->connection repo)]
-     (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
-        (println res)))
-
-
-  Takes a repo and sparql string and an optional set of k/v argument
-  pairs, and executes the sparql query on the repository.
-
-  Options are:
-
-  :default-graph a seq of URI strings representing named graphs to be set
-                 as the default union graph for the query.
-
-  :named-graphs a seq of URI strings representing the named graphs in
-  to be used in the query.
-
-  If no options are passed then we use the default of no graph
-  restrictions whilst the union graph is the union of all graphs."
-  [repo sparql & {:as options}]
-  (let [dataset (mapply make-restricted-dataset (or options {}))]
-    (query-dataset repo sparql dataset)))
 
 (defn ^:no-doc format->parser
   "Convert a format into a sesame parser for that format."
@@ -778,17 +421,6 @@
     [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
-  RepositoryConnection
-  (pr/to-statements [this _]
-    (map
-     (fn [{:strs [s p o c]}]
-       (Quad. s p o c))
-
-     (query this "SELECT ?s ?p ?o ?c WHERE {
-               GRAPH ?c {
-                 ?s ?p ?o .
-               }
-            }")))
 
   String
   (pr/to-statements [this options]
@@ -857,8 +489,3 @@
                                            {:type :reading-aborted} msg))
                            (sesame-statement->IStatement msg)))]
           (map read-rdf statements))))))
-
-(defn shutdown
-  "Cleanly shutsdown the repository."
-  [^Repository repo]
-  (.shutDown repo))
