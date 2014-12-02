@@ -345,7 +345,7 @@
   restrictions whilst the union graph is the union of all graphs."
   [repo sparql & {:as options}]
   (let [dataset (mapply make-restricted-dataset (or options {}))]
-    (query-dataset repo sparql dataset)))
+    (pr/query-dataset repo sparql dataset)))
 
 (extend-type RepositoryConnection
 
