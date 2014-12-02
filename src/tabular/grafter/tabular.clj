@@ -598,7 +598,8 @@ See http://www.statmethods.net/management/reshape.html for more examples."
    (let [defppln (cons 'defn args)]
      `(let [var# ~defppln
             vmeta# (meta var#)]
-        (alter-meta! var# (fn [_#] (merge vmeta# {:pipeline true})))))))
+        (alter-meta! var# (fn [_#] (merge vmeta# {:pipeline true})))
+        var#))))
 
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
