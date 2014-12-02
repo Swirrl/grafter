@@ -209,13 +209,6 @@
   (sesame-rdf-type->type [this]
     this)
 
-  URI
-  (->sesame-rdf-type [this]
-    this)
-
-  (sesame-rdf-type->type [this]
-    (str this))
-
   LiteralImpl
   (->sesame-rdf-type [this]
     this)
