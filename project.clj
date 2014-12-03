@@ -17,7 +17,7 @@
                  [org.clojure/tools.logging "0.2.6"]
                  [clj-time "0.7.0"]
                  [clojure-csv/clojure-csv "2.0.1"]
-                 [clj-excel "0.0.1" :exclusions [commons-codec]]
+                 [com.outpace/clj-excel "0.0.6" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.4"]
                  [org.marianoguerra/clj-rhino "0.2.1"]
                  [potemkin "0.3.4"]
