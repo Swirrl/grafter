@@ -50,17 +50,26 @@
   (pr/add
     ([this triples]
        {:pre [(or (nil? triples)
-                  (sequential? triples))]}
-       (if (seq triples)
-         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-           (.add this stmts (resource-array)))
+                (sequential? triples)
+                (instance? IStatement triples))]}
+       (if (not (instance? IStatement triples))
+         (when (seq triples)
+               ( let [^Iterable stmts (map IStatement->sesame-statement triples)]
+               (.add this stmts (resource-array)))
+             )
          (pr/add-statement this triples)))
 
+
     ([this graph triples]
-       (if (seq triples)
-         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-           (.add this stmts (resource-array (URIImpl. graph))))
-         (pr/add-statement this graph triples)))
+       {:pre [(or (nil? triples)
+                (sequential? triples)
+                (instance? IStatement triples))]}
+       (if (not (instance? IStatement triples))
+         (when (seq triples)
+             ( let [^Iterable stmts (map IStatement->sesame-statement triples)]
+                   (.add this stmts (resource-array (URIImpl. graph))))
+             )
+         (pr/add-statement this triples)))
 
     ([this graph format triple-stream]
        (.add this triple-stream nil format (resource-array (URIImpl. graph))))
