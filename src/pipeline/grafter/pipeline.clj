@@ -119,5 +119,4 @@
 
 (defn find-resource-pipelines [url]
   (with-open [reader (inputstream->pushback-reader url)]
-    (println url)
     (find-pipelines (forms reader))))
