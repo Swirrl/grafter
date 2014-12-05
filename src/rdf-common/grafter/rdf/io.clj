@@ -315,7 +315,8 @@
   (Quad. (str (.getSubject st))
          (str (.getPredicate st))
          (sesame-rdf-type->type (.getObject st))
-         (sesame-rdf-type->type (.getContext st))))
+         (when-let [graph (.getContext st)]
+           (sesame-rdf-type->type graph))))
 
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using

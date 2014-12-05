@@ -37,7 +37,15 @@
                      "http://example.org/test/object"
                      "http://example.org/test/graph")]
     (is (= quad
-           (sesame-statement->IStatement (IStatement->sesame-statement quad))))))
+           (sesame-statement->IStatement (IStatement->sesame-statement quad)))))
+
+  (testing "with nil graph"
+    (let [quad (->Quad "http://example.org/test/subject"
+                       "http://example.org/test/predicate"
+                       "http://example.org/test/object"
+                       nil)]
+      (is (= quad
+             (sesame-statement->IStatement (IStatement->sesame-statement quad)))))))
 
 (deftest round-trip-quad-serialize-deserialize-test
   (let [quad (graph "http://example.org/test/graph"
