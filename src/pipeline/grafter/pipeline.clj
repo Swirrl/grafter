@@ -102,16 +102,16 @@
   ([[form & forms] ns]
    (when form
      (cond
-      (ns? form) (find-pipelines forms (ns-name form))
+      (ns? form) (lazy-seq (find-pipelines forms (ns-name form)))
       (pipeline? form) (try
                          (let [pipe (form->Pipeline ns form)]
                            (lazy-seq (cons pipe
                                            (find-pipelines forms ns))))
                          (catch Exception e
-                           (cons e (find-pipelines forms ns))))
-      (instance? Exception form) (cons form (find-pipelines forms ns))
+                           (lazy-seq (cons e (find-pipelines forms ns)))))
+      (instance? Exception form) (lazy-seq (cons form (find-pipelines forms ns)))
 
-      :else (find-pipelines forms ns)))))
+      :else (lazy-seq (find-pipelines forms ns))))))
 
 (defn inputstream->pushback-reader [is]
   (let [rs (io/input-stream is)]
