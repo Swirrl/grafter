@@ -21,8 +21,9 @@
 (def statistical-entity:theme                (statistical-entity "theme"))
 
 (def statistical-geography (prefixer "http://statistics.data.gov.uk/def/statistical-geography#"))
-(def statistical-geography:officialname      (statistical-entity "officialname"))
-(def statistical-geography:status            (statistical-entity "status"))
+(def statistical-geography:officialname      (statistical-geography "officialname"))
+(def statistical-geography:status            (statistical-geography "status"))
+(def statistical-geography:parentcode        (statistical-geography "parentcode"))
 
 (def boundary-change (prefixer "http://statistics.data.gov.uk/def/boundary-change/"))
 (def boundary-change:operativedate           (boundary-change "operativedate"))
