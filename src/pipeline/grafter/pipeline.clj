@@ -117,6 +117,8 @@
   (let [rs (io/input-stream is)]
     (PushbackReader. (InputStreamReader. rs))))
 
-(defn find-resource-pipelines [url]
+(defn find-resource-pipelines
+  "Reads a sequence of pipeline forms from a resource with the given URL."
+  [url]
   (with-open [reader (inputstream->pushback-reader url)]
-    (find-pipelines (forms reader))))
+    (vec (find-pipelines (forms reader)))))
