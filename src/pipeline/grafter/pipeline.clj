@@ -45,7 +45,8 @@
 (defrecord Pipeline [namespace name args doc meta body])
 
 (defn fully-qualified-name [pipeline]
-  (symbol (str (:namespace pipeline)) (str (:name pipeline))))
+  (when pipeline
+    (symbol (str (:namespace pipeline)) (str (:name pipeline)))))
 
 (defn- valid-decl? [decl msg]
   (if (seq decl)
@@ -117,8 +118,15 @@
   (let [rs (io/input-stream is)]
     (PushbackReader. (InputStreamReader. rs))))
 
-(defn find-resource-pipelines
-  "Reads a sequence of pipeline forms from a resource with the given URL."
-  [url]
-  (with-open [reader (inputstream->pushback-reader url)]
-    (vec (find-pipelines (forms reader)))))
+(defn find-resource-pipelines [url]
+  (try
+    (with-open [reader (inputstream->pushback-reader url)]
+      (doall (find-pipelines (forms reader))))
+    (catch java.io.FileNotFoundException e
+      nil)))
+
+(comment
+  (->> (find-clj-classpath-resources)
+       (mapcat find-resource-pipelines)
+       flatten
+       (filter #(instance? grafter.pipeline.Pipeline %))))
