@@ -2,8 +2,6 @@
 
     "For the hard graft of linked data processing."
 
-[![Clojars Project](http://clojars.org/grafter/latest-version.svg)](http://clojars.org/grafter)
-
 Grafter is a library, DSL and suite of tools for flexible, efficient,
 ETL, data transformation and processing.  Its primary use is for
 handling Linked Data conversions from tabular data formats into RDF
@@ -18,8 +16,8 @@ For the Grafter rationale see our blog post:
 
 ## What plans are there for Grafter?
 
-Grafter is currently in the early stages of development, however we
-[Swirrl](http://swirrl.com/) have been using it to transform
+Grafter is currently in the early stages of development, however
+[Swirrl](http://swirrl.com/) has been using it to transform
 significant amounts of data for our clients within the government.
 
 Grafter is currently an API and a small DSL for converting tabular
@@ -41,22 +39,21 @@ To use the Grafter API please add the following to your Clojure
 projects `project.clj` file.  For more details on how to do this see
 the [leiningen](http://leiningen.org/) build tool:
 
-     [grafter/grafter "0.2-SNAPSHOT"]
+[![Clojars Project](http://clojars.org/grafter/latest-version.svg)](http://clojars.org/grafter)
 
 Release candidates are released as `SNAPSHOT` builds and our first
-official release will be `0.2`, this will hopefully be released in the
-coming weeks.
+official release will be `0.2.0`, this will hopefully be released in
+the coming weeks.
 
 **NOTE:** We are currently following a `MAJOR.MINOR.PATCH` versioning
 scheme, but are anticipating significant breaking API changes between
 minor versions at least until we reach `1.0.0`.
 
-`PATCH` versions should be *close* to being backwardly compatible with
-previous `MINOR` versions.
+`PATCH` versions should be backwardly compatible with previous `MINOR`
+versions.
 
 Releases will be tagged with an appropriate tag indicating their
 `MAJOR.MINOR.PATCH` version.
-
 
 ## License
 
