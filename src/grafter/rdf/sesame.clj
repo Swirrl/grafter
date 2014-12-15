@@ -323,7 +323,7 @@
   (Quad. (str (.getSubject st))
          (str (.getPredicate st))
          (sesame-rdf-type->type (.getObject st))
-         (.getContext st)))
+         (sesame-rdf-type->type (.getContext st))))
 
 (defn resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
