@@ -439,6 +439,10 @@
                     opts)]
       (pr/to-statements (io/reader this) options)))
 
+  java.io.InputStream
+  (pr/to-statements [this opts]
+    (pr/to-statements (io/reader this) opts))
+
   java.io.Reader
   ;; WARNING: This implementation is necessarily a little convoluted
   ;; as we hack around Sesame to generate a lazy sequence of results.
