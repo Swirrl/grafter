@@ -145,6 +145,9 @@ Options are:
       (throw (IllegalArgumentException. "open-datasets cannot open a single sheet.  Use open-dataset* to do this.")))
     (format-or-type multidatasetable format)))
 
+(defmethod open-datasets* clojure.lang.Sequential [datasets opts]
+  datasets)
+
 (defn open-datasets
   "Opens a lazy sequence of datasets from a something that returns multiple
   datasetables - i.e. all the worksheets in an Excel workbook."

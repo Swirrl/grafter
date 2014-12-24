@@ -134,6 +134,15 @@
         (is (every? is-a-dataset? (mapcat vals datasets)))
         (is (= '("Sheet1" "Sheet2") (mapcat keys datasets))))))
 
+  (testing "Open CSV file"
+    (let [datasets (open-datasets "./test/grafter/test.csv")]
+      (testing "returns a hashmap of sheet-names to datasets"
+        (is (every? is-a-dataset? (mapcat vals datasets)))
+        ;; CSV's only have one sheet so we set the sheet name to
+        ;; be the constant "csv".  We can't really use the filename as
+        ;; in some contexts there isn't a file name
+        (is (= '("csv") (mapcat keys datasets))))))
+
   (testing "Open XLSX file"
     (let [datasets (open-datasets "./test/grafter/test.xlsx")]
       (testing "returns a hashmap of sheet-names to datasets"
@@ -145,6 +154,12 @@
       (testing "returns a hashmap of sheet-names to datasets"
         (is (every? is-a-dataset? (mapcat vals datasets)))
         (is (= '("Sheet1" "Sheet2") (mapcat keys datasets))))))
+
+  (testing "Opening a sequential thing"
+    (let [ds (grafter.tabular/make-dataset [[1 2 3]])
+          datasets (open-datasets [{"foo" ds}])]
+      (is (every? is-a-dataset? (mapcat vals datasets)))
+      (is ((first datasets) "foo") ds)))
 
   (testing "raises Exception if called with :sheet option"
     (is (thrown? IllegalArgumentException

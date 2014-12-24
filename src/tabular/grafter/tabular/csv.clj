@@ -14,5 +14,5 @@
 
 (defmethod tab/open-datasets* :csv
   [f opts]
-  (when-let [ds (tab/open-dataset f opts)]
+  (when-let [ds (tab/open-dataset* f opts)]
     [{"csv" ds}]))
