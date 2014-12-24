@@ -2,10 +2,12 @@
   {:no-doc true}
   (:require [clj-excel.core :as xls]
             [grafter.sequences :as seqs]
+            [clojure.java.io :as io]
             [incanter.core :as inc]
             [me.raynes.fs :as fs])
-  (:import (org.apache.poi.ss.usermodel Sheet)
-           (java.io File)))
+  (:import [org.apache.poi.ss.usermodel Sheet]
+           [incanter.core Dataset]
+           [java.io File InputStream]))
 
 
 (defn mapply
@@ -85,49 +87,69 @@
         (.substring 1)
         keyword)))
 
-(defmulti open-tabular-file
-  "Takes a File or String as an argument and coerces it based upon its
-file extension into its concrete low-level representation, provided by
-the file adapter.
-
-This is intended to be used by adapter developers, and developers who
-need access to low level details.  Specific to the adapter.  Normal
-users should prefer open-all-datasets.
-
-Supported files are currently csv or Excel's xls or xlsx files.
-
-Additionally open-as-table takes an optional set of key/value
-parameters which will be passed to the concrete function opening the
-file.
+(defmulti open-dataset*
+  "Opens a dataset from a datasetable thing i.e. a filename or an existing Dataset.
+The multi-method dispatches based upon a :format option. If this isn't provided then
+the type is used. If this isn't provided then we fallback to file extension.
 
 Supported options are currently:
 
 :ext - An overriding file extension (as keyword) to force a particular
        file type to be opened instead of looking at the files extension."
 
-  (fn [file & {:keys [ext]}]
-    (or ext (extension file))))
+  (fn [file {:keys [format]}]
+    (if (#{File String} (class file))
+      (or format (extension file))
+      (class file))))
 
-(def datasetable? #{:csv})
+(defmethod open-dataset* Dataset [dataset opts]
+  dataset)
 
-(def dataset-holder-extensions
-  "File types that are virtual folders which contain datasets."
-  #{:csv :xls :xlsx})
+(defn- open-dataset-with-inferred-extension [dataset {:keys [format] :as opts}]
+  (let [format (or format (extension dataset))]
+    (open-dataset* (io/input-stream dataset) {:format (extension dataset)})))
 
-(defn multiple-dataset-holder? [f]
-  (-> (extension f)
-      #{:xls :xlsx :ods}))
+(defmethod open-dataset* String [dataset opts]
+  (open-dataset-with-inferred-extension dataset opts))
 
-(defn dataset-holder? [f]
-  (-> (extension f)
-      dataset-holder-extensions))
+(defmethod open-dataset* File [dataset opts]
+  (open-dataset-with-inferred-extension dataset opts))
 
-(defn dataset-files
-  "Given a directory, return a seq of files that can contain
-  datasets."
-  [dir]
-  (->> (file-seq (fs/file dir))
-       (filter dataset-holder?)))
+(defmethod open-dataset* InputStream [dataset {:keys [format]}]
+  (open-dataset* dataset {:format format}))
+
+(defmethod open-dataset* ::default
+  [dataset {:keys [format] :as opts}]
+  (if (nil? format)
+    (throw (IllegalArgumentException. (str "Please specify a format, it could not be infered when opening a dataset of type: " (class dataset))))
+    (-> (io/input-stream dataset)
+        (open-dataset* opts))))
+
+(defn open-dataset
+  "Opens a dataset from a datasetable thing i.e. a filename or an existing Dataset.
+The multi-method dispatches based upon a :format option. If this isn't provided then
+the type is used. If this isn't provided then we fallback to file extension.
+
+Options are:
+
+  :format - to force the datasetable to be opened with a particular method."
+  [datasetable & {:keys [format] :as opts}]
+
+  (open-dataset* datasetable opts))
+
+(defmulti open-datasets*
+  (fn [multidatasetable {:keys [format] :as opts}]
+    (when (:sheet opts)
+      (throw (IllegalArgumentException. "open-datasets cannot open a single sheet.  Use open-dataset* to do this.")))
+    (or format
+        (extension multidatasetable))))
+
+(defn open-datasets
+  "Opens a lazy sequence of datasets from a something that returns multiple
+  datasetables - i.e. all the worksheets in an Excel workbook."
+
+  [dataset & {:keys [format] :as opts}]
+  (open-datasets* dataset opts))
 
 (defn without-metadata-columns
   "Ignores any possible metadata and leaves the dataset as is."
@@ -143,61 +165,3 @@ Supported options are currently:
                             (repeat v)
                             dataset-acc))]
     (reduce merge-metadata-column data context)))
-
-(defn- pair-with-context [make-dataset-f ^File file sheet-or-data]
-  "Takes a function make-dataset-f a file representing the file
-containing the dataset and the raw sheet object, which should either
-be an apache poi Sheet or a seq-of-seqs row representation.
-
-make-dataset-f should be a a function that converts a raw dataset type
-into an incanter dataset.
-
-Returns a vector pair containing a metadata map and the incanter
-dataset."
-
-  ;; ensure metadata is in a consistent sorted order
-  (let [common-context (sorted-map :path (-> file .getCanonicalFile .getParent)
-                                   :file (.getName file))]
-
-    (if (instance? Sheet sheet-or-data)
-      (let [^Sheet sheet sheet-or-data]
-        [(assoc common-context :sheet-name (.getSheetName sheet))
-         (make-dataset-f (xls/lazy-sheet sheet-or-data))])
-      [common-context (make-dataset-f sheet-or-data)])))
-
-(defn open-all-datasets
-  "Returns a sequence of incanter.core.Dataset's, recursively found beneath
-  a given directory.
-
-  Files may contain one or more datasets.
-
-  By default it returns the sheets un-altered by using
-  without-metadata-columns as its metadata function.
-
-  You can provide it with other metadata functions which will splice
-  the context into the sheet as new columms."
-
-  [dir & {:keys [metadata-fn make-dataset-fn] :or {metadata-fn without-metadata-columns
-                                                   make-dataset-fn make-dataset}}]
-  (let [file->sheets (fn [dataset-file]
-                       (let [dataset (->> dataset-file
-                                          open-tabular-file)
-
-                             ;; as native sheet types, either POI sheets or the raw clojure data representation
-                             raw-sheets   (if (multiple-dataset-holder? dataset-file)
-                                            (->> dataset xls/sheets)
-                                            [dataset])
-
-                             combine-metadata-fn (comp metadata-fn
-                                                      (partial pair-with-context make-dataset-fn dataset-file))]
-
-                         (map combine-metadata-fn raw-sheets)))]
-    (mapcat file->sheets
-            (dataset-files dir))))
-
-
-(comment
-
-  (nth  (open-all-sheets (fs/file "./examples/data")) 4)
-
-  )

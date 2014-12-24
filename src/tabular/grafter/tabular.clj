@@ -14,8 +14,8 @@
   column-names
   make-dataset
   move-first-row-to-header
-  open-tabular-file
-  open-all-datasets
+  open-dataset
+  open-datasets
   with-metadata-columns
   without-metadata-columns])
 
