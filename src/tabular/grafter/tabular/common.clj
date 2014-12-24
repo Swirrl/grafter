@@ -87,6 +87,11 @@
         (.substring 1)
         keyword)))
 
+(defn format-or-type [file {:keys [format]}]
+  (if (#{File String} (class file))
+    (or format (extension file))
+    (class file)))
+
 (defmulti open-dataset*
   "Opens a dataset from a datasetable thing i.e. a filename or an existing Dataset.
 The multi-method dispatches based upon a :format option. If this isn't provided then
@@ -97,10 +102,7 @@ Supported options are currently:
 :ext - An overriding file extension (as keyword) to force a particular
        file type to be opened instead of looking at the files extension."
 
-  (fn [file {:keys [format]}]
-    (if (#{File String} (class file))
-      (or format (extension file))
-      (class file))))
+  format-or-type)
 
 (defmethod open-dataset* Dataset [dataset opts]
   dataset)
@@ -141,8 +143,7 @@ Options are:
   (fn [multidatasetable {:keys [format] :as opts}]
     (when (:sheet opts)
       (throw (IllegalArgumentException. "open-datasets cannot open a single sheet.  Use open-dataset* to do this.")))
-    (or format
-        (extension multidatasetable))))
+    (format-or-type multidatasetable format)))
 
 (defn open-datasets
   "Opens a lazy sequence of datasets from a something that returns multiple
