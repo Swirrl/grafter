@@ -28,6 +28,8 @@
 
   :codox {:defaults {:doc "FIXME: write docs"}
           :output-dir "api-docs"
+          :source ["src/rdf-repository" "src/tabular" "src/templater"
+                   "src/rdf-common" "src/ontologies" "src/pipeline"]
           :src-dir-uri "http://github.com/Swirrl/grafter/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
