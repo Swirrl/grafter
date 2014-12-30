@@ -125,6 +125,26 @@
     (catch java.io.FileNotFoundException e
       nil)))
 
+(defmulti apply-pipeline
+  "Takes a string representing a fully qualified function and reloads
+  and requires its namespace before applying it to the supplied arguments.
+
+  If given a function directly it will just apply it to the arguments
+  as normal."
+  (fn [pipeline inputs] (class pipeline)))
+
+(defmethod apply-pipeline String [pipeline inputs]
+  (let [fsym (symbol pipeline)
+        ns (symbol (namespace fsym))]
+    (require ns :reload-all)
+    (let [f (ns-resolve ns fsym)]
+      (if f
+        (apply-pipeline f inputs)
+        (throw (ex-info (str "Could not find pipeline " pipeline) {:error :could-not-find-pipeline :pipeline pipeline}))))))
+
+(defmethod apply-pipeline clojure.lang.IFn [pipeline inputs]
+  (apply pipeline inputs))
+
 (comment
   (->> (find-clj-classpath-resources)
        (mapcat find-resource-pipelines)
