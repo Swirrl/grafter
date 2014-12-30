@@ -2,8 +2,7 @@
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
             [clojure.tools.logging :as log]
-            [pantomime.media :as mime]
-            )
+            [pantomime.media :as mime])
   (:import (grafter.rdf.protocols IStatement Quad Triple)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -17,11 +16,7 @@
                                    IntegerLiteralImpl LiteralImpl
                                    NumericLiteralImpl StatementImpl
                                    URIImpl)
-           ;(org.openrdf.query.impl DatasetImpl)
            (org.openrdf.repository Repository RepositoryConnection)
-           ;(org.openrdf.repository.http HTTPRepository)
-           ;(org.openrdf.repository.sail SailRepository)
-           ;(org.openrdf.repository.sparql SPARQLRepository)
            (org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio RDFParserFactory RDFParser)
            (org.openrdf.rio.n3 N3ParserFactory)
            (org.openrdf.rio.nquads NQuadsParserFactory)
@@ -30,12 +25,7 @@
            (org.openrdf.rio.rdfxml RDFXMLParserFactory)
            (org.openrdf.rio.trig TriGParserFactory)
            (org.openrdf.rio.trix TriXParserFactory)
-           (org.openrdf.rio.turtle TurtleParserFactory)
-           ;(org.openrdf.sail.memory MemoryStore)
-           ;(org.openrdf.sail.nativerdf NativeStore)
-           ;(info.aduna.iteration CloseableIteration)
-           ))
-
+           (org.openrdf.rio.turtle TurtleParserFactory)))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
