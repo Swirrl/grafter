@@ -2,6 +2,8 @@
   (:require [clojure.test :refer :all]
             [grafter.sequences :as seqs]
             [grafter.tabular :refer :all]
+            [grafter.tabular.csv]
+            [grafter.tabular.excel]
             [incanter.core :as inc]
             [clojure.java.io :as io])
   (:import [java.io File]))
@@ -452,7 +454,7 @@
           (add-columns "id" (build-lookup-table accounts ["customer-id"]))))))
 
 (defmacro with-tempfile [file-var & forms]
-  `(let [~file-var (doto (File/createTempFile "test" "csv")
+  `(let [~file-var (doto (File/createTempFile "unit-test-tempfile" "tmp")
                      (.deleteOnExit))]
      (try
        ~@forms
@@ -460,8 +462,24 @@
          (.delete ~file-var)))))
 
 (deftest write-dataset-test
-  (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
-    (with-tempfile csv-file
-      (testing "write-dataset"
-        (write-dataset csv-file sample-dataset :format :csv)
-        (is (= sample-dataset (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header)))))))
+  (testing "write-dataset"
+
+    (testing "in csv format"
+      (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
+        (with-tempfile csv-file
+          (write-dataset csv-file sample-dataset :format :csv)
+          (is (= sample-dataset (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header))))))
+
+    (testing "in xlsx format"
+      (let [sample-dataset (make-dataset raw-excel-data move-first-row-to-header)]
+
+        (with-tempfile xlsx-file
+          (write-dataset xlsx-file sample-dataset :format :xlsx)
+          (is (= sample-dataset (make-dataset (read-dataset xlsx-file :format :xlsx) move-first-row-to-header))))))
+
+    (testing "in xls format"
+      (let [sample-dataset (make-dataset raw-excel-data move-first-row-to-header)]
+
+        (with-tempfile xls-file
+          (write-dataset xls-file sample-dataset :format :xls)
+          (is (= sample-dataset (make-dataset (read-dataset xls-file :format :xls) move-first-row-to-header))))))))

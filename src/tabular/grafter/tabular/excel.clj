@@ -55,3 +55,19 @@
   (-> filename
       xls/workbook-xssf
       (read-datasets** opts)))
+
+(defn write-dataset** [destination wb dataset-map]
+  (with-open [output (io/writer destination)]
+    (xls/save (xls/build-workbook wb dataset-map)
+              destination)))
+
+(defmethod tab/write-dataset* :xlsx
+  [destination dataset {:keys [format sheet-name] :or {sheet-name "Sheet1" } :as opts}]
+  (write-dataset** destination (xls/workbook-xssf)
+                   {sheet-name (tab/dataset->seq-of-seqs dataset) }))
+
+(defmethod tab/write-dataset* :xls
+  [destination dataset {:keys [format sheet-name] :or {sheet-name "Sheet1" } :as opts}]
+
+  (write-dataset** destination (xls/workbook-hssf)
+                   {sheet-name (tab/dataset->seq-of-seqs dataset) }))
