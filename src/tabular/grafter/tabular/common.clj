@@ -92,15 +92,12 @@
     (or format (extension file))
     (class file)))
 
-(defmulti read-dataset*
-  "Opens a dataset from a datasetable thing i.e. a filename or an existing Dataset.
-The multi-method dispatches based upon a :format option. If this isn't provided then
-the type is used. If this isn't provided then we fallback to file extension.
+(defmulti ^:no-doc read-dataset*
+  "Multimethod for adapter implementers to hook custom dataset readers
+  into grafter.
 
-Supported options are currently:
-
-:ext - An overriding file extension (as keyword) to force a particular
-       file type to be opened instead of looking at the files extension."
+  API users should use the front end function read-dataset instead of
+  calling this."
 
   format-or-type)
 
@@ -155,6 +152,21 @@ Options are:
   [dataset & {:keys [format] :as opts}]
   (read-datasets* dataset opts))
 
+(defmulti ^:no-doc write-dataset*
+  "Multi-method for adapter implementers to extend to allow
+  serialising datasets into various different formats."
+  (fn [dataset destination opts] (format-or-type destination opts)))
+
+(defmethod write-dataset* ::default [dataset destination {:keys [format] :as opts}]
+  (if (nil? format)
+    (throw (IllegalArgumentException. (str "Please specify a format, it could not be infered when opening a dataset of type: " (class dataset))))
+    (-> (io/output-stream destination)
+        (write-dataset* dataset destination opts))))
+
+(defn write-dataset
+  [dataset destination & {:keys [format] :as opts}]
+  (write-dataset* dataset destination opts))
+
 (defn without-metadata-columns
   "Ignores any possible metadata and leaves the dataset as is."
   [[context data]]
@@ -169,3 +181,15 @@ Options are:
                             (repeat v)
                             dataset-acc))]
     (reduce merge-metadata-column data context)))
+
+(defn ^:no-doc dataset->seq-of-seqs
+  "Converts a dataset into a seq-of-seqs representation"
+  [dataset]
+  (let [col-order (:column-names dataset)
+        data (:rows dataset)
+        stringified-rows (map (fn [row]
+                                (map (fn [item]
+                                       (str (get row item))) col-order))
+                              data)
+        output-data (concat [(map name col-order)] stringified-rows)]
+    output-data))

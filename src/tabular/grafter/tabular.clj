@@ -16,6 +16,7 @@
   move-first-row-to-header
   read-dataset
   read-datasets
+  write-dataset
   with-metadata-columns
   without-metadata-columns])
 

@@ -3,7 +3,8 @@
             [grafter.sequences :as seqs]
             [grafter.tabular :refer :all]
             [incanter.core :as inc]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io])
+  (:import [java.io File]))
 
 (deftest header-functions-tests
   (let [raw-data [[:a :b :c] [1 2 3] [4 5 6]]]
@@ -449,3 +450,18 @@
 
       (-> customer
           (add-columns "id" (build-lookup-table accounts ["customer-id"]))))))
+
+(defmacro with-tempfile [file-var & forms]
+  `(let [~file-var (doto (File/createTempFile "test" "csv")
+                     (.deleteOnExit))]
+     (try
+       ~@forms
+       (finally
+         (.delete ~file-var)))))
+
+(deftest write-dataset-test
+  (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
+    (with-tempfile csv-file
+      (testing "write-dataset"
+        (write-dataset sample-dataset csv-file :format :csv)
+        (is (= sample-dataset (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header)))))))
