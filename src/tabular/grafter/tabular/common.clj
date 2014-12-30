@@ -92,7 +92,7 @@
     (or format (extension file))
     (class file)))
 
-(defmulti open-dataset*
+(defmulti read-dataset*
   "Opens a dataset from a datasetable thing i.e. a filename or an existing Dataset.
 The multi-method dispatches based upon a :format option. If this isn't provided then
 the type is used. If this isn't provided then we fallback to file extension.
@@ -104,30 +104,30 @@ Supported options are currently:
 
   format-or-type)
 
-(defmethod open-dataset* Dataset [dataset opts]
+(defmethod read-dataset* Dataset [dataset opts]
   dataset)
 
-(defn- open-dataset-with-inferred-extension [dataset {:keys [format] :as opts}]
+(defn- read-dataset-with-inferred-extension [dataset {:keys [format] :as opts}]
   (let [format (or format (extension dataset))]
-    (open-dataset* (io/input-stream dataset) {:format (extension dataset)})))
+    (read-dataset* (io/input-stream dataset) {:format (extension dataset)})))
 
-(defmethod open-dataset* String [dataset opts]
-  (open-dataset-with-inferred-extension dataset opts))
+(defmethod read-dataset* String [dataset opts]
+  (read-dataset-with-inferred-extension dataset opts))
 
-(defmethod open-dataset* File [dataset opts]
-  (open-dataset-with-inferred-extension dataset opts))
+(defmethod read-dataset* File [dataset opts]
+  (read-dataset-with-inferred-extension dataset opts))
 
-(defmethod open-dataset* InputStream [dataset {:keys [format]}]
-  (open-dataset* dataset {:format format}))
+(defmethod read-dataset* InputStream [dataset {:keys [format]}]
+  (read-dataset* dataset {:format format}))
 
-(defmethod open-dataset* ::default
+(defmethod read-dataset* ::default
   [dataset {:keys [format] :as opts}]
   (if (nil? format)
     (throw (IllegalArgumentException. (str "Please specify a format, it could not be infered when opening a dataset of type: " (class dataset))))
     (-> (io/input-stream dataset)
-        (open-dataset* opts))))
+        (read-dataset* opts))))
 
-(defn open-dataset
+(defn read-dataset
   "Opens a dataset from a datasetable thing i.e. a filename or an existing Dataset.
 The multi-method dispatches based upon a :format option. If this isn't provided then
 the type is used. If this isn't provided then we fallback to file extension.
@@ -137,23 +137,23 @@ Options are:
   :format - to force the datasetable to be opened with a particular method."
   [datasetable & {:keys [format] :as opts}]
 
-  (open-dataset* datasetable opts))
+  (read-dataset* datasetable opts))
 
-(defmulti open-datasets*
+(defmulti read-datasets*
   (fn [multidatasetable {:keys [format] :as opts}]
     (when (:sheet opts)
-      (throw (IllegalArgumentException. "open-datasets cannot open a single sheet.  Use open-dataset* to do this.")))
+      (throw (IllegalArgumentException. "read-datasets cannot open a single sheet.  Use read-dataset* to do this.")))
     (format-or-type multidatasetable format)))
 
-(defmethod open-datasets* clojure.lang.Sequential [datasets opts]
+(defmethod read-datasets* clojure.lang.Sequential [datasets opts]
   datasets)
 
-(defn open-datasets
+(defn read-datasets
   "Opens a lazy sequence of datasets from a something that returns multiple
   datasetables - i.e. all the worksheets in an Excel workbook."
 
   [dataset & {:keys [format] :as opts}]
-  (open-datasets* dataset opts))
+  (read-datasets* dataset opts))
 
 (defn without-metadata-columns
   "Ignores any possible metadata and leaves the dataset as is."

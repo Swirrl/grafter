@@ -22,36 +22,36 @@
     (get sheet-map sheet)
     (first (vals sheet-map))))
 
-(defn- open-dataset** [wb {:keys [sheet] :as opts}]
+(defn- read-dataset** [wb {:keys [sheet] :as opts}]
   (-> wb
       sheets
       (get-sheet-map sheet)
       (get-sheet sheet)))
 
-(defmethod tab/open-dataset* :xls
+(defmethod tab/read-dataset* :xls
   [filename opts]
   (-> filename
       xls/workbook-hssf
-      (open-dataset** opts)))
+      (read-dataset** opts)))
 
-(defmethod tab/open-dataset* :xlsx
+(defmethod tab/read-dataset* :xlsx
   [filename opts]
   (-> filename
       xls/workbook-xssf
-      (open-dataset** opts)))
+      (read-dataset** opts)))
 
-(defn- open-datasets** [wb opts]
+(defn- read-datasets** [wb opts]
   (->> wb
        sheets))
 
-(defmethod tab/open-datasets* :xls
+(defmethod tab/read-datasets* :xls
   [filename opts]
   (-> filename
       xls/workbook-hssf
-      (open-datasets** opts)))
+      (read-datasets** opts)))
 
-(defmethod tab/open-datasets* :xlsx
+(defmethod tab/read-datasets* :xlsx
   [filename opts]
   (-> filename
       xls/workbook-xssf
-      (open-datasets** opts)))
+      (read-datasets** opts)))

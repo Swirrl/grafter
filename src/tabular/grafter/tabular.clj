@@ -14,8 +14,8 @@
   column-names
   make-dataset
   move-first-row-to-header
-  open-dataset
-  open-datasets
+  read-dataset
+  read-datasets
   with-metadata-columns
   without-metadata-columns])
 
@@ -564,8 +564,7 @@ the specified column being cloned."
          (mapcat graphify-row# (:rows ~ds-sym))))))
 
 (defn melt
-  "
-Melt an object into a form suitable for easy casting, like a melt function in R.
+  "Melt an object into a form suitable for easy casting, like a melt function in R.
 It accepts multiple pivot keys (identifier variables that are reproduced for each
 row in the output).
 (use '(incanter core charts datasets))

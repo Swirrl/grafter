@@ -75,67 +75,67 @@
 (defn ->file-url-string [file-path]
   (str "file://" (.getCanonicalPath (io/file file-path))))
 
-(deftest open-dataset-tests
+(deftest read-dataset-tests
   (testing "Open an existing Dataset"
-    (let [dataset (open-dataset (make-dataset raw-csv-data))]
+    (let [dataset (read-dataset (make-dataset raw-csv-data))]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open CSV file"
-    (let [dataset (open-dataset "./test/grafter/test.csv")]
+    (let [dataset (read-dataset "./test/grafter/test.csv")]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open text file"
-    (let [dataset (open-dataset "./test/grafter/test.txt" :format :csv)]
+    (let [dataset (read-dataset "./test/grafter/test.txt" :format :csv)]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open XLS file"
-    (let [dataset (open-dataset "./test/grafter/test.xls")]
+    (let [dataset (read-dataset "./test/grafter/test.xls")]
       (testing "returns a dataset"
         (is-a-dataset? dataset)
         (is-first-sheet dataset))))
 
   (testing "Open XLSX file"
-    (let [dataset (open-dataset "./test/grafter/test.xlsx")]
+    (let [dataset (read-dataset "./test/grafter/test.xlsx")]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open the second sheet of an XLS file"
-    (let [dataset (open-dataset "./test/grafter/test.xls" :sheet "Sheet2")]
+    (let [dataset (read-dataset "./test/grafter/test.xls" :sheet "Sheet2")]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open the second sheet of an XLSX file"
-    (let [dataset (open-dataset "./test/grafter/test.xlsx" :sheet "Sheet2")]
+    (let [dataset (read-dataset "./test/grafter/test.xlsx" :sheet "Sheet2")]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open java.io.File"
-    (let [dataset (open-dataset (io/file "./test/grafter/test.xls"))]
+    (let [dataset (read-dataset (io/file "./test/grafter/test.xls"))]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open a CSV via a URL string"
-    (let [dataset (open-dataset (->file-url-string "./test/grafter/test.csv") :format :csv)]
+    (let [dataset (read-dataset (->file-url-string "./test/grafter/test.csv") :format :csv)]
       (testing "returns a dataset"
         (is-a-dataset? dataset))))
 
   (testing "Open an Excel file via a URL string"
-    (let [dataset (open-dataset (->file-url-string "./test/grafter/test.xls") :format :csv)]
+    (let [dataset (read-dataset (->file-url-string "./test/grafter/test.xls") :format :csv)]
       (testing "returns a dataset"
         (is-a-dataset? dataset)))))
 
-(deftest open-datasets-tests
+(deftest read-datasets-tests
   (testing "Open XLS file"
-    (let [datasets (open-datasets "./test/grafter/test.xls")]
+    (let [datasets (read-datasets "./test/grafter/test.xls")]
       (testing "returns a hashmap of sheet-names to datasets"
         (is (every? is-a-dataset? (mapcat vals datasets)))
         (is (= '("Sheet1" "Sheet2") (mapcat keys datasets))))))
 
   (testing "Open CSV file"
-    (let [datasets (open-datasets "./test/grafter/test.csv")]
+    (let [datasets (read-datasets "./test/grafter/test.csv")]
       (testing "returns a hashmap of sheet-names to datasets"
         (is (every? is-a-dataset? (mapcat vals datasets)))
         ;; CSV's only have one sheet so we set the sheet name to
@@ -144,26 +144,26 @@
         (is (= '("csv") (mapcat keys datasets))))))
 
   (testing "Open XLSX file"
-    (let [datasets (open-datasets "./test/grafter/test.xlsx")]
+    (let [datasets (read-datasets "./test/grafter/test.xlsx")]
       (testing "returns a hashmap of sheet-names to datasets"
         (is (every? is-a-dataset? (mapcat vals datasets)))
         (is (= '("Sheet1" "Sheet2") (mapcat keys datasets))))))
 
   (testing "Open java.io.File"
-    (let [datasets (open-datasets (io/file "./test/grafter/test.xls"))]
+    (let [datasets (read-datasets (io/file "./test/grafter/test.xls"))]
       (testing "returns a hashmap of sheet-names to datasets"
         (is (every? is-a-dataset? (mapcat vals datasets)))
         (is (= '("Sheet1" "Sheet2") (mapcat keys datasets))))))
 
   (testing "Opening a sequential thing"
     (let [ds (grafter.tabular/make-dataset [[1 2 3]])
-          datasets (open-datasets [{"foo" ds}])]
+          datasets (read-datasets [{"foo" ds}])]
       (is (every? is-a-dataset? (mapcat vals datasets)))
       (is ((first datasets) "foo") ds)))
 
   (testing "raises Exception if called with :sheet option"
     (is (thrown? IllegalArgumentException
-                 (open-datasets "./test/grafter/test.xls" :sheet "Sheet1")))))
+                 (read-datasets "./test/grafter/test.xls" :sheet "Sheet1")))))
 
 (deftest make-dataset-tests
   (let [dataset (make-dataset csv-sheet)]
