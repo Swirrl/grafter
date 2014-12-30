@@ -17,7 +17,7 @@
   (when-let [ds (tab/read-dataset* f opts)]
     [{"csv" ds}]))
 
-(defmethod tab/write-dataset* :csv [dataset destination {:keys [format] :as opts}]
+(defmethod tab/write-dataset* :csv [destination dataset {:keys [format] :as opts}]
   (with-open [output (io/writer destination)]
     (let [col-names (:column-names dataset)]
       (tab/mapply csv/write-csv output (tab/dataset->seq-of-seqs dataset) opts))))

@@ -155,17 +155,17 @@ Options are:
 (defmulti ^:no-doc write-dataset*
   "Multi-method for adapter implementers to extend to allow
   serialising datasets into various different formats."
-  (fn [dataset destination opts] (format-or-type destination opts)))
+  (fn [destination dataset opts] (format-or-type destination opts)))
 
-(defmethod write-dataset* ::default [dataset destination {:keys [format] :as opts}]
+(defmethod write-dataset* ::default [destination dataset {:keys [format] :as opts}]
   (if (nil? format)
     (throw (IllegalArgumentException. (str "Please specify a format, it could not be infered when opening a dataset of type: " (class dataset))))
     (-> (io/output-stream destination)
         (write-dataset* dataset destination opts))))
 
 (defn write-dataset
-  [dataset destination & {:keys [format] :as opts}]
-  (write-dataset* dataset destination opts))
+  [destination dataset & {:keys [format] :as opts}]
+  (write-dataset* destination dataset opts))
 
 (defn without-metadata-columns
   "Ignores any possible metadata and leaves the dataset as is."

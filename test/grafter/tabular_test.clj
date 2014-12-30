@@ -463,5 +463,5 @@
   (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
     (with-tempfile csv-file
       (testing "write-dataset"
-        (write-dataset sample-dataset csv-file :format :csv)
+        (write-dataset csv-file sample-dataset :format :csv)
         (is (= sample-dataset (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header)))))))
