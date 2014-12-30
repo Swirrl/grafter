@@ -205,7 +205,7 @@ Returns a lazy sequence of matched rows."
   [dataset n]
   (tabc/pass-rows dataset (partial take n)))
 
-(defn lift->vector [x]
+(defn ^:no-doc lift->vector [x]
   (if (sequential? x) x [x]))
 
 (defn- resolve-keys [headers hash]
