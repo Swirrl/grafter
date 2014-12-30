@@ -19,5 +19,8 @@
 
 (defmethod tab/write-dataset* :csv [destination dataset {:keys [format] :as opts}]
   (with-open [output (io/writer destination)]
-    (let [col-names (:column-names dataset)]
-      (tab/mapply csv/write-csv output (tab/dataset->seq-of-seqs dataset) opts))))
+    (let [rows (tab/dataset->seq-of-seqs dataset)
+          stringified-rows (map (partial map str) rows)]
+      (apply csv/write-csv output
+             stringified-rows
+             (mapcat identity opts)))))

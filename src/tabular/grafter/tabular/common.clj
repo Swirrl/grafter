@@ -187,9 +187,9 @@ Options are:
   [dataset]
   (let [col-order (:column-names dataset)
         data (:rows dataset)
-        stringified-rows (map (fn [row]
-                                (map (fn [item]
-                                       (str (get row item))) col-order))
-                              data)
-        output-data (concat [(map name col-order)] stringified-rows)]
+        rows (map (fn [row]
+                    (map (fn [item]
+                           (get row item)) col-order))
+                  data)
+        output-data (concat [(map name col-order)] rows)]
     output-data))
