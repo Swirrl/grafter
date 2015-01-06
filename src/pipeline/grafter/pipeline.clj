@@ -50,9 +50,12 @@
 ;; type can be :pipe or :graft
 (defrecord Pipeline [namespace name args doc meta body type])
 
+(defn fully-qualify-symbol [ns sym]
+  (symbol (str ns) (str sym)))
+
 (defn fully-qualified-name [pipeline]
   (when pipeline
-    (symbol (str (:namespace pipeline)) (str (:name pipeline)))))
+    (fully-qualify-symbol (:namespace pipeline) (:name pipeline))))
 
 (defn- valid-decl? [decl msg]
   (if (seq decl)
@@ -104,49 +107,60 @@
                 :pipe)))
 
 (defn graft-form->Pipeline
-  ([ns form] (graft-form->Pipeline ns form nil))
-  ([ns form prevpipe]
+  ([ns form] (graft-form->Pipeline ns form {}))
+  ([ns form pipe-definitions]
    (cond
      (= 4 (count form)) (let [[_ name pipe graphfn] form]
                           (->Pipeline ns name
-                                      (:args prevpipe)
+                                      (:args (pipe-definitions (fully-qualify-symbol ns pipe)))
                                       (build-defgraft-docstring pipe graphfn)
                                       nil
                                       `(comp ~graphfn ~pipe)
                                       :graft))
      (= 5 (count form)) (let [[_ name docstring pipe graphfn] form]
                           (->Pipeline ns name
-                                      (:args prevpipe)
+                                      (:args (pipe-definitions (fully-qualify-symbol ns pipe)))
                                       docstring
                                       nil
                                       `(comp ~graphfn ~pipe)
                                       :graft))
      :else (throw (IllegalArgumentException. "Invalid graft form")))))
 
+;; NOTE that defgrafts metadata is only properly resolved when
+;; the defgraft is specified after a pipeline and when it's in the
+;; same namespace as it.
+;;
+;; TODO: Change this to traverse namespaces by resolving them in the
+;; same order as clojure, to ensure that we can
+;; correctly unambiguously resolve args.  Should probably use clojure
+;; tools.namespace.
 (defn find-pipelines
   ([forms]
-   (find-pipelines forms nil))
+   (find-pipelines forms nil {}))
 
-  ([[form & forms] ns]
+
+  ([[form & forms] ns prevpipes] ; prevpipes is type {sym -> Pipeline}
    (when form
      (cond
-      (ns? form) (lazy-seq (find-pipelines forms (ns-name form)))
-      (pipe? form) (try
-                     (let [pipe (pipe-form->Pipeline ns form)]
-                       (lazy-seq (cons pipe
-                                       (find-pipelines forms ns))))
-                     (catch Exception e
-                       (lazy-seq (cons e (find-pipelines forms ns)))))
-      (graft? form) (try
-                      (let [graft (graft-form->Pipeline ns form)]
-                        (lazy-seq (cons graft
-                                        (find-pipelines forms ns))))
+       (ns? form) (lazy-seq (find-pipelines forms (ns-name form) prevpipes))
+       (pipe? form) (try
+                      (let [pipe (pipe-form->Pipeline ns form)]
+                        (lazy-seq (cons pipe
+                                        (find-pipelines forms ns (assoc prevpipes
+                                                                       (fully-qualified-name pipe)
+                                                                       pipe)))))
                       (catch Exception e
-                        (lazy-seq (cons e (find-pipelines forms ns)))))
+                        (lazy-seq (cons e (find-pipelines forms ns prevpipes)))))
+       (graft? form) (try
+                       (let [graft (graft-form->Pipeline ns form prevpipes)]
+                         (lazy-seq (cons graft
+                                         (find-pipelines forms ns prevpipes))))
+                       (catch Exception e
+                         (lazy-seq (cons e (find-pipelines forms ns prevpipes)))))
 
-      (instance? Exception form) (lazy-seq (cons form (find-pipelines forms ns)))
+       (instance? Exception form) (lazy-seq (cons form (find-pipelines forms ns prevpipes)))
 
-      :else (lazy-seq (find-pipelines forms ns))))))
+       :else (lazy-seq (find-pipelines forms ns prevpipes))))))
 
 (defn inputstream->pushback-reader [is]
   (let [rs (io/input-stream is)]

@@ -76,7 +76,6 @@
                  (println "hello world"))))
           "Parses when no metadata or docstring are supplied"))
 
-
     (testing "with defgraft"
       (is (= (->Pipeline 'my-graft
                          nil ; args
@@ -99,7 +98,9 @@
     (is (instance? Exception another-error))
     (is (instance? grafter.pipeline.Pipeline pipeline))
     (is (= 'test-graft (:name graft)))
-    (is (= "test graft" (:doc graft)))))
+    (is (= "test graft" (:doc graft)))
+    (is (= (:args pipeline) (:args graft))
+        "Should inherit args from earlier pipeline definition")))
 
 (defn write-forms-to [forms dest]
   (with-open [writer (io/writer dest)]
