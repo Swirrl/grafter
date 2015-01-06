@@ -601,6 +601,35 @@ See http://www.statmethods.net/management/reshape.html for more examples."
         (alter-meta! var# (fn [_#] (merge vmeta# {:pipeline true})))
         var#))))
 
+(defmacro defgraft
+  "Declares an entry point to a grafter pipeline allowing it to be
+  exposed to the Grafter import service and executed via the leiningen
+  plugin.
+
+  It is effectively equivalent to the following call with additional
+  metadata benefits:
+
+  (def my-graft (comp make-graph my-pipeline))
+
+  It is used with defpipeline to indicate that a transformation also
+  supports conversion into graph data.
+
+  It takes an optional docstring, if no docstring is specified then a
+  default docstring will be generated."
+
+  ([name pipeline graphfn]
+   (let [default-docstring (str "Calls " pipeline " and transforms data into graph data by calling " graphfn)
+         docstring (or (:doc (meta name)) default-docstring)]
+
+     `(defgraft ~name ~docstring ~pipeline ~graphfn)))
+
+  ([name docstring pipeline graphfn]
+   (let [name-with-meta (vary-meta name assoc
+                                   :doc docstring
+                                   :arglists (:arglists (meta pipeline)))]
+
+     `(def ~name-with-meta (comp ~graphfn ~pipeline)))))
+
 (comment
   ;; TODO implement inner join, maybe l/r outer joins too
   (defn join [csv f & others]
