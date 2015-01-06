@@ -30,11 +30,12 @@
   :codox {:defaults {:doc "FIXME: write docs"}
           :output-dir "api-docs"
           :source ["src/rdf-repository" "src/tabular" "src/templater"
-                   "src/rdf-common" "src/ontologies" "src/pipeline"]
+                   "src/rdf-common" "src/ontologies" "src/pipeline"
+                   "src/common"]
           :src-dir-uri "http://github.com/Swirrl/grafter/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
-  :source-paths ["src/rdf-repository" "src/tabular" "src/templater" "src/rdf-common" "src/ontologies"
+  :source-paths ["src/common" "src/rdf-repository" "src/tabular" "src/templater" "src/rdf-common" "src/ontologies"
                  "src/pipeline"]
   :jvm-opts ["-Dapple.awt.UIElement=true"] ; Prevent Java process
                                         ; from appearing as a GUI
@@ -54,6 +55,9 @@
            {:type :clojure
             :path "src/pipeline"
             :levels 2}
+           {:type :clojure
+            :path "src/common"
+            :levels 1}
            {:type :clojure
             :path "src/rdf-repository"
             :levels 1}

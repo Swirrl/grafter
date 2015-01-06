@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [ns-name])
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [grafter.common :refer [build-defgraft-docstring]])
   (:import [net.sf.corn.cps CPScanner ResourceFilter]
            [java.io InputStreamReader PushbackReader]))
 
@@ -32,9 +33,13 @@
   (when (seq? form)
     (= 'ns (first form))))
 
-(defn pipeline? [form]
+(defn pipe? [form]
   (when (seq? form)
-    (= 'defpipeline (first form))))
+    (= 'defpipe (first form))))
+
+(defn graft? [form]
+  (when (seq? form)
+    (= 'defgraft (first form))))
 
 (defn ns-name [nsform]
   (second nsform))
@@ -42,7 +47,8 @@
 (defn pipeline-name [pipeform]
   (second pipeform))
 
-(defrecord Pipeline [namespace name args doc meta body])
+;; type can be :pipe or :graft
+(defrecord Pipeline [namespace name args doc meta body type])
 
 (defn fully-qualified-name [pipeline]
   (when pipeline
@@ -53,7 +59,7 @@
     true
     (throw (IllegalArgumentException. msg))))
 
-(defn form->Pipeline [ns form]
+(defn pipe-form->Pipeline [ns form]
   (let [msg (str "Invalid grafter pipeline definition: " form)
         name (pipeline-name form)
         ;; NOTE as defpipeline mirrors defn this code uses the same
@@ -94,7 +100,28 @@
                 args
                 (:doc m)
                 m
-                body)))
+                body
+                :pipe)))
+
+(defn graft-form->Pipeline
+  ([ns form] (graft-form->Pipeline ns form nil))
+  ([ns form prevpipe]
+   (cond
+     (= 4 (count form)) (let [[_ name pipe graphfn] form]
+                          (->Pipeline ns name
+                                      (:args prevpipe)
+                                      (build-defgraft-docstring pipe graphfn)
+                                      nil
+                                      `(comp ~graphfn ~pipe)
+                                      :graft))
+     (= 5 (count form)) (let [[_ name docstring pipe graphfn] form]
+                          (->Pipeline ns name
+                                      (:args prevpipe)
+                                      docstring
+                                      nil
+                                      `(comp ~graphfn ~pipe)
+                                      :graft))
+     :else (throw (IllegalArgumentException. "Invalid graft form")))))
 
 (defn find-pipelines
   ([forms]
@@ -104,12 +131,19 @@
    (when form
      (cond
       (ns? form) (lazy-seq (find-pipelines forms (ns-name form)))
-      (pipeline? form) (try
-                         (let [pipe (form->Pipeline ns form)]
-                           (lazy-seq (cons pipe
-                                           (find-pipelines forms ns))))
-                         (catch Exception e
-                           (lazy-seq (cons e (find-pipelines forms ns)))))
+      (pipe? form) (try
+                     (let [pipe (pipe-form->Pipeline ns form)]
+                       (lazy-seq (cons pipe
+                                       (find-pipelines forms ns))))
+                     (catch Exception e
+                       (lazy-seq (cons e (find-pipelines forms ns)))))
+      (graft? form) (try
+                      (let [graft (graft-form->Pipeline ns form)]
+                        (lazy-seq (cons graft
+                                        (find-pipelines forms ns))))
+                      (catch Exception e
+                        (lazy-seq (cons e (find-pipelines forms ns)))))
+
       (instance? Exception form) (lazy-seq (cons form (find-pipelines forms ns)))
 
       :else (lazy-seq (find-pipelines forms ns))))))

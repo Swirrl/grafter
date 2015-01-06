@@ -7,7 +7,8 @@
             [grafter.tabular.excel]
             [clojure.tools.logging :refer [spy]]
             [incanter.core :as inc]
-            [potemkin.namespaces :refer [import-vars]]))
+            [potemkin.namespaces :refer [import-vars]]
+            [grafter.common :refer [build-defgraft-docstring]]))
 
 (import-vars
  [grafter.tabular.common
@@ -586,7 +587,7 @@ See http://www.statmethods.net/management/reshape.html for more examples."
                      k
                      (nth (get in-m k) i)))))))
 
-(defmacro defpipeline
+(defmacro defpipe
   "Declares an entry point to a grafter pipeline, allowing it to be
   exposed to the Grafter import service and executed via the leiningen
   plugin.
@@ -618,8 +619,7 @@ See http://www.statmethods.net/management/reshape.html for more examples."
   default docstring will be generated."
 
   ([name pipeline graphfn]
-   (let [default-docstring (str "Calls " pipeline " and transforms data into graph data by calling " graphfn)
-         docstring (or (:doc (meta name)) default-docstring)]
+   (let [docstring (or (:doc (meta name)) (build-defgraft-docstring pipeline graphfn))]
 
      `(defgraft ~name ~docstring ~pipeline ~graphfn)))
 
