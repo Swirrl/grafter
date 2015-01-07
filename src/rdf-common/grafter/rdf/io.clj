@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
             [clojure.tools.logging :as log]
+            [me.raynes.fs :as fs]
             [pantomime.media :as mime])
   (:import (grafter.rdf.protocols IStatement Quad Triple)
            (java.io File)
@@ -308,6 +309,21 @@
          (when-let [graph (.getContext st)]
            (sesame-rdf-type->type graph))))
 
+(defn filename->rdf-format
+  "Given a filename we attempt to return an appropriate RDFFormat
+  object based on the files extension."
+  [fname]
+  (Rio/getParserFormatForFileName fname))
+
+(defn mimetype->rdf-format
+  "Given a mimetype string we attempt to return an appropriate
+  RDFFormat object based on the files extension."
+  [mime-type]
+  (let [base-type (str (mime/base-type mime-type))]
+    (condp = base-type
+      "application/n-triples" RDFFormat/NTRIPLES ;; Sesame doesn't yet support application/n-triples
+      (Rio/getParserFormatForMIMEType mime-type))))
+
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
   clojure.java.io/writer and returns an RDFSerializer.
@@ -326,15 +342,15 @@
 
   ([destination & {:keys [append format encoding] :or {append false
                                                        encoding "UTF-8"}}]
-     (let [^RDFFormat format (or format
-                      (condp = (class destination)
-                        String (Rio/getWriterFormatForFileName destination)
-                        File   (Rio/getWriterFormatForFileName (str destination))
-                        (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object destination}))))]
-       (Rio/createWriter format
-                         (io/writer destination
-                                    :append append
-                                    :encoding encoding)))))
+   (let [^RDFFormat format (or format
+                               (condp = (class destination)
+                                 String (filename->rdf-format destination)
+                                 File   (filename->rdf-format destination))
+                               (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object destination})))]
+     (Rio/createWriter format
+                       (io/writer destination
+                                  :append append
+                                  :encoding encoding)))))
 
 (extend-protocol pr/ITripleWriteable
   RDFWriter
@@ -374,21 +390,6 @@
       (throw (ex-info (str "Unsupported format: " (pr-str format)) {:type :unsupported-format})))
     (let [^RDFParserFactory factory (.newInstance parser-class)]
       (.getParser factory))))
-
-(defn filename->rdf-format
-  "Given a filename we attempt to return an appropriate RDFFormat
-  object based on the files extension."
-  [fname]
-  (Rio/getParserFormatForFileName fname))
-
-(defn mimetype->rdf-format
-  "Given a mimetype string we attempt to return an appropriate
-  RDFFormat object based on the files extension."
-  [mime-type]
-  (let [base-type (str (mime/base-type mime-type))]
-    (condp = base-type
-      "application/n-triples" RDFFormat/NTRIPLES ;; Sesame doesn't yet support application/n-triples
-      (Rio/getParserFormatForMIMEType mime-type))))
 
 ;; http://clj-me.cgrand.net/2010/04/02/pipe-dreams-are-not-necessarily-made-of-promises/
 (defn- pipe
