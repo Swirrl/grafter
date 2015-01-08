@@ -60,7 +60,7 @@
             :levels 1}
            {:type :clojure
             :path "src/rdf-repository"
-            :levels 1}
+            :levels 2}
            {:type :clojure
             :path "src/tabular"
             :levels 2}
