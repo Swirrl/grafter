@@ -15,10 +15,15 @@
 (defn collapse-whitespace [s]
   (string/replace s #"(\n| )+" " "))
 
+(def format-str "%-60s %-9s %-20s %s")
+
+(def header-row (String/format format-str (into-array Object ["Pipeline" "Type" "Arguments" "Description"])))
+
 (defn- format-pipeline [pipeline]
-  (let [pattern "%1$-60s %2$-30s %3$s"
+  (let [pattern format-str
         data (into-array Object
                          [(fully-qualified-name pipeline)
+                          (name (:type pipeline))
                           (if-let [args (:args pipeline)]
                             (string/join ", " args)
                             "???")
@@ -28,10 +33,10 @@
     (String/format pattern data)))
 
 (defn list-pipelines []
-  (map format-pipeline (all-pipelines-on-classpath)))
+  (cons header-row (map format-pipeline (all-pipelines-on-classpath))))
 
 (defn list-pipes []
-  (map format-pipeline (all-pipes-on-classpath)))
+  (cons header-row (map format-pipeline (all-pipes-on-classpath))))
 
 (defn list-grafts []
-  (map format-pipeline (all-grafts-on-classpath)))
+  (cons header-row (map format-pipeline (all-grafts-on-classpath))))
