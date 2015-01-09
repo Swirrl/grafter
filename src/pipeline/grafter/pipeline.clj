@@ -106,10 +106,19 @@
                 body
                 :pipe)))
 
+
 (defn graft-form->Pipeline
   ([ns form] (graft-form->Pipeline ns form {}))
   ([ns form pipe-definitions]
    (cond
+     (= 3 (count form)) (let [[_ name pipe] form]
+                          (->Pipeline ns
+                                      name
+                                      (:args (pipe-definitions (fully-qualify-symbol ns pipe)))
+                                      (build-defgraft-docstring pipe)
+                                      nil
+                                      pipe
+                                      :graft))
      (= 4 (count form)) (let [[_ name pipe graphfn] form]
                           (->Pipeline ns name
                                       (:args (pipe-definitions (fully-qualify-symbol ns pipe)))
@@ -117,13 +126,25 @@
                                       nil
                                       `(comp ~graphfn ~pipe)
                                       :graft))
-     (= 5 (count form)) (let [[_ name docstring pipe graphfn] form]
-                          (->Pipeline ns name
-                                      (:args (pipe-definitions (fully-qualify-symbol ns pipe)))
-                                      docstring
-                                      nil
-                                      `(comp ~graphfn ~pipe)
-                                      :graft))
+     (<= 5 (count form)) (let [[_ name docstring-or-pipe pipe-or-graphfn graphfn-or-quadfn & quadfns] form
+                               docstring (if (string? docstring-or-pipe)
+                                           docstring-or-pipe
+                                           (build-defgraft-docstring docstring-or-pipe pipe-or-graphfn))
+
+                               [pipe form] (if (string? docstring-or-pipe)
+                                             [pipe-or-graphfn
+                                              (apply list pipe-or-graphfn graphfn-or-quadfn quadfns)]
+                                             [docstring-or-pipe
+                                              (apply list docstring-or-pipe pipe-or-graphfn graphfn-or-quadfn quadfns)])
+
+                               comp-form (cons 'clojure.core/comp (reverse form))]
+
+                           (->Pipeline ns name
+                                       (:args (pipe-definitions (fully-qualify-symbol ns pipe)))
+                                       docstring
+                                       (:arglists (meta pipe))
+                                       comp-form
+                                       :graft))
      :else (throw (IllegalArgumentException. "Invalid graft form")))))
 
 ;; NOTE that defgrafts metadata is only properly resolved when
@@ -192,6 +213,23 @@
 
 (defmethod apply-pipeline clojure.lang.IFn [pipeline inputs]
   (apply pipeline inputs))
+
+(defn all-pipelines-on-classpath []
+  "Returns all the pipelines found on the classpath."
+  (for [url (find-clj-classpath-resources)
+        pipeline (->> (find-resource-pipelines url)
+                      (remove #(instance? Exception %)))]
+    pipeline))
+
+(defn- type? [type]
+  (fn [pipeline]
+    (= type (:type pipeline))))
+
+(defn all-pipes-on-classpath []
+  (filter (type? :pipe) (all-pipelines-on-classpath)))
+
+(defn all-grafts-on-classpath []
+  (filter (type? :graft) (all-pipelines-on-classpath)))
 
 (comment
   (->> (find-clj-classpath-resources)

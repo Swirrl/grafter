@@ -11,6 +11,13 @@
   (is (= 'my.grafter.pipeline (ns-name '(ns my.grafter.pipeline
                                           (:require [foo.bar :as foo]))))))
 
+(def test-graft-form (->Pipeline 'foo.bar
+                                 'my-graft
+                                 nil ; args
+                                 "My docstring"
+                                 nil ; meta
+                                 `(comp foo.bar/make-graph foo.bar/pipe)
+                                 :graft))
 
 (deftest form->Pipeline-test
   (let [namespace 'foo.bar
@@ -77,14 +84,32 @@
           "Parses when no metadata or docstring are supplied"))
 
     (testing "with defgraft"
-      (is (= (->Pipeline 'my-graft
-                         nil ; args
-                         "My docstring"
-                         nil ; meta
-                         `(comp foo.bar/make-graph foo.bar/pipe)
-                         :graft)
+      (is (= test-graft-form
+             (graft-form->Pipeline namespace '(defgraft my-graft "My docstring" foo.bar/pipe foo.bar/make-graph)))
+          "with docstring")
 
-             (graft-form->Pipeline namespace '(defgraft my-graft "My docstring" foo.bar/pipe foo.bar/make-graph)))))))
+      (is (= (assoc test-graft-form
+                    :doc
+                    "Calls foo.bar/pipe and transforms data into graph data by calling foo.bar/make-graph")
+             (graft-form->Pipeline namespace '(defgraft my-graft foo.bar/pipe foo.bar/make-graph)))
+          "without docstring")
+
+      (testing "with docstring and many graphfns"
+        (is (= (assoc test-graft-form
+                      :body '(clojure.core/comp another/filter-function a/filter-function foo.bar/make-graph foo.bar/pipe))
+               (graft-form->Pipeline namespace '(defgraft my-graft "My docstring" foo.bar/pipe foo.bar/make-graph a/filter-function another/filter-function)))))
+
+      (testing "with no docstring and a graphfn"
+        (is (= (assoc test-graft-form
+                      :body '(clojure.core/comp a/filter-function foo.bar/make-graph foo.bar/pipe)
+                      :doc "Calls foo.bar/pipe and transforms data into graph data by calling foo.bar/make-graph")
+               (graft-form->Pipeline namespace '(defgraft my-graft foo.bar/pipe foo.bar/make-graph a/filter-function)))))
+
+      (is (= (assoc  test-graft-form
+                     :body 'foo.bar/pipe
+                     :doc "Calls foo.bar/pipe on data and transforms it into to graph data.")
+             (graft-form->Pipeline namespace '(defgraft my-graft foo.bar/pipe)))
+          "with just 2 macro args"))))
 
 (deftest find-pipelines-test
   (let [forms-seq '((if true "true" "false")
