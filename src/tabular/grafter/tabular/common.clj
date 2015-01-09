@@ -61,6 +61,15 @@
 
        (inc/dataset column-names data))))
 
+(defn dataset?
+  "Predicate function to test whether the supplied argument is a
+  dataset or not."
+  [ds]
+  (or (instance? incanter.core.Dataset ds)
+      (and (map? ds)
+           (:rows ds)
+           (:column-names ds))))
+
 (def column-names
   "If given a dataset, it returns its column names. If given a dataset and a sequence
   of column names, it returns a dataset with the given column names."
@@ -155,7 +164,10 @@ Options are:
 (defmulti ^:no-doc write-dataset*
   "Multi-method for adapter implementers to extend to allow
   serialising datasets into various different formats."
-  (fn [destination dataset opts] (format-or-type destination opts)))
+  (fn [destination dataset opts]
+    (when-not (dataset? dataset)
+      (throw (IllegalArgumentException. (str "Could not write dataset to" destination " as " (class dataset) " is not a valid Dataset.  This error usually occurs if you try and generate tabular data from a graft"))))
+    (format-or-type destination opts)))
 
 (defmethod write-dataset* ::default [destination dataset {:keys [format] :as opts}]
   (if (nil? format)

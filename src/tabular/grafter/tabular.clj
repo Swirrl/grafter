@@ -13,6 +13,7 @@
 
 (import-vars
  [grafter.tabular.common
+  dataset?
   column-names
   make-dataset
   move-first-row-to-header
