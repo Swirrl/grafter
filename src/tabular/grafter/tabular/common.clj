@@ -166,7 +166,9 @@ Options are:
   serialising datasets into various different formats."
   (fn [destination dataset opts]
     (when-not (dataset? dataset)
-      (throw (IllegalArgumentException. (str "Could not write dataset to" destination " as " (class dataset) " is not a valid Dataset.  This error usually occurs if you try and generate tabular data from a graft"))))
+      (throw (IllegalArgumentException.
+              (str "Could not write dataset to" destination " as " (class dataset)
+                   " is not a valid Dataset.  This error usually occurs if you try and generate tabular data from a graft"))))
     (format-or-type destination opts)))
 
 (defmethod write-dataset* ::default [destination dataset {:keys [format] :as opts}]
