@@ -42,7 +42,7 @@
   (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
   (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
-(defn ^:no-doc s
+(defn s
   "Cast a string to an RDF literal.  The second optional argument can
   either be a keyword corresponding to an RDF language tag
   e.g. :en, :en-gb, or :fr or a string or URI in which case it is
