@@ -1,4 +1,5 @@
 (ns grafter.pipeline
+  {:no-doc true}
   (:refer-clojure :exclude [ns-name])
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
