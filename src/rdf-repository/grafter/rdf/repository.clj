@@ -1,4 +1,5 @@
 (ns grafter.rdf.repository
+  "Functions for constructing and working with various Sesame repositories."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.io :refer :all]

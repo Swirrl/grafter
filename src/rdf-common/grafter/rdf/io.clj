@@ -1,4 +1,6 @@
 (ns grafter.rdf.io
+  "Functions & Protocols for serializing Grafter Statements into
+  any Linked Data format supported by Sesame."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
             [clojure.tools.logging :as log]
@@ -40,7 +42,7 @@
   (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
   (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
-(defn s
+(defn ^:no-doc s
   "Cast a string to an RDF literal.  The second optional argument can
   either be a keyword corresponding to an RDF language tag
   e.g. :en, :en-gb, or :fr or a string or URI in which case it is

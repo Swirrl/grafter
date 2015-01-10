@@ -1,4 +1,6 @@
 (ns grafter.rdf.templater
+  "Functions for converting tree's of turtle-like data into Linked
+  Data statements (triples/quads)."
   (:require [grafter.rdf :as rdf])
   (:require [grafter.rdf.protocols :refer [->Triple ->Quad]])
   (:import [org.openrdf.rio RDFFormat]
