@@ -1,4 +1,5 @@
 (ns grafter.rdf.formats
+  "Symbols used to specify different Linked Data Serializations."
   (:import [org.openrdf.rio RDFFormat]))
 
 (def rdf-xml RDFFormat/RDFXML)
