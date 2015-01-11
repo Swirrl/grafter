@@ -371,10 +371,13 @@ the specified column being cloned."
                    (column-names dataset))))
 
 (defmethod grep java.lang.String [dataset s & cols]
-  (apply grep dataset (fn [^String cell] (.contains cell s)) cols))
+  (apply grep dataset (fn [^String cell] (.contains (str cell) s)) cols))
 
 (defmethod grep java.util.regex.Pattern [dataset p & cols]
-  (apply grep dataset #(re-find p %) cols))
+  (apply grep dataset #(re-find p (str %)) cols))
+
+(defmethod grep :default [dataset v & cols]
+  (apply grep dataset (partial = v) cols))
 
 (defn- remove-indices [col & idxs]
   "Removes the values at the supplied indexes from the given vector."

@@ -265,6 +265,16 @@
         expected-dataset (make-dataset [["foo" "bar" "b2az"]
                                         ["foo" "blee" "bl3ah"]])]
 
+    (testing "works with non string cell values"
+      (let [ds (make-dataset [["foo" 1]
+                              ["foo" 2]
+                              ["bar" 3]])]
+        (is (= (make-dataset [["foo" 1] ["foo" 2]])
+               (grep ds "foo")))
+
+        (is (= (make-dataset [["foo" 1]])
+               (grep ds 1)))))
+
     (testing "grep"
       (testing "with a function"
         (testing "receives a single cell as its argument"
