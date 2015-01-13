@@ -25,6 +25,12 @@
 
   [first-row other-rows])
 
+(defn- fill-empty-cells-with-nil [rows column-count]
+  (let [nil-where-empty (fn [row] (if (empty? row)
+                                    (repeat column-count nil)
+                                    row))]
+    (map nil-where-empty rows)))
+
 (defn make-dataset
   "Like incanter's dataset function except it can take a lazy-sequence
   of column names which will get mapped to the source data.
@@ -57,9 +63,10 @@
                                                  data)))
            data (if (sequential? data)
                   data
-                  (inc/to-list data))]
+                  (inc/to-list data))
+           non-empty-data (fill-empty-cells-with-nil data (count column-names))]
 
-       (inc/dataset column-names data))))
+       (inc/dataset column-names non-empty-data))))
 
 (defn dataset?
   "Predicate function to test whether the supplied argument is a

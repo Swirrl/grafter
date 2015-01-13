@@ -43,7 +43,13 @@
                (make-dataset ds1))
             "Preserves data and column-names")
         (is (= ds2
-               (make-dataset ds1 ["c" "d"])))))))
+               (make-dataset ds1 ["c" "d"]))))
+
+      (testing "making a dataset with empty rows"
+        (let [dataset (make-dataset '((1 2) () ()) ["a" "b"])
+              expected (make-dataset '((1 2) (nil nil) (nil nil)) ["a" "b"])]
+          (is (= dataset expected)))))))
+
 
 ;;; These two vars define what the content of the files
 ;;; test/grafter/test.csv and test/grafter/test.xlsx should look like
