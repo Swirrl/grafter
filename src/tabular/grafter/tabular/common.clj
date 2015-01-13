@@ -90,7 +90,9 @@
   (make-dataset (->> dataset :rows f)
                 (column-names dataset)))
 
-(defn- extension [f]
+(defn ^:no-doc extension
+  "Gets the extension for the given file name as a keyword, or nil if the file has no extension"
+  [f]
   (when-let [^String ext (-> f fs/extension)]
     (-> ext
         (.substring 1)
