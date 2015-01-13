@@ -229,8 +229,11 @@
                      (all-columns test-data (range 100))))))
 
     (testing "still returns a dataset even with only one row"
-      (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])]
-        (is (inc/dataset? (all-columns test-data ["Owner" "Dog"])))))))
+      (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])
+            result (all-columns test-data ["Owner" "Dog"])]
+        (is (is-a-dataset? result))
+
+        (is (= test-data result))))))
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
@@ -426,6 +429,10 @@
       (is (= {"age" 25 "debt" 33}
              ((build-lookup-table debts "name") "rick")
              ((build-lookup-table debts ["name"]) "rick"))))
+
+    (testing "with no specified return column and one row only"
+      (is (= {"age" 25 "debt" 33}
+             ((build-lookup-table (take-rows debts 1) "name") "rick"))))
 
     (testing "1 key column"
       (is (= {"debt" 20}

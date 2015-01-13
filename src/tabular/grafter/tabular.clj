@@ -89,7 +89,7 @@
       (let [inc-ds (inc/$ cols dataset)]
         (if (inc/dataset? inc-ds)
           inc-ds
-          (make-dataset inc-ds cols)))
+          (make-dataset [inc-ds] cols)))
       (throw (IndexOutOfBoundsException. (str "The columns: " (str/join ", " not-found-items) " are not currently defined."))))))
 
 (defn- indexed [col]
