@@ -226,7 +226,11 @@
                    (all-columns test-data (range 100))))
       (testing "is the default"
         (is (thrown? IndexOutOfBoundsException
-                     (all-columns test-data (range 100))))))))
+                     (all-columns test-data (range 100))))))
+
+    (testing "still returns a dataset even with only one row"
+      (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])]
+        (is (inc/dataset? (all-columns test-data ["Owner" "Dog"])))))))
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
@@ -443,7 +447,6 @@
              ((build-lookup-table debts ["name" "age"] "debt") ["rick" 25])))
       (is (= nil
              ((build-lookup-table debts ["name" "age"] "debt") ["foo" 99]))))
-
 
     ;; TODO when we find a better error handling approach we should
     ;; support it here too.
