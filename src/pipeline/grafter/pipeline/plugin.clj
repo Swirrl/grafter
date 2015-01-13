@@ -13,7 +13,8 @@
 ;; form the better!
 
 (defn collapse-whitespace [s]
-  (string/replace s #"(\n| )+" " "))
+  (when s
+    (string/replace s #"(\n| )+" " ")))
 
 (def format-str "%-60s %-9s %-20s %s")
 
