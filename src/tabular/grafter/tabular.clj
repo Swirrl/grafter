@@ -86,7 +86,10 @@
   (let [not-found-items (invalid-column-keys dataset cols)]
     (if (and (empty? not-found-items)
             (some identity cols))
-      (inc/$ cols dataset)
+      (let [inc-ds (inc/$ cols dataset)]
+        (if (inc/dataset? inc-ds)
+          inc-ds
+          (make-dataset [inc-ds] cols)))
       (throw (IndexOutOfBoundsException. (str "The columns: " (str/join ", " not-found-items) " are not currently defined."))))))
 
 (defn- indexed [col]
@@ -499,7 +502,7 @@ the specified column being cloned."
      (build-lookup-table dataset key-cols nil))
 
   ([dataset key-cols return-keys]
-     (let [key-cols (resolve-key-cols dataset( lift->vector key-cols))
+     (let [key-cols (resolve-key-cols dataset (lift->vector key-cols))
            return-keys (resolve-all-col-ids dataset
                                             (if (nil? return-keys)
                                               (remaining-keys dataset key-cols)
