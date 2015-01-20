@@ -3,7 +3,8 @@
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [grafter.tabular.common :as tab])
-  (:import [java.io IOException]))
+  (:import [java.io File IOException]
+           [java.net URI URL]))
 
 (defmethod tab/read-dataset* :csv
   [f opts]
@@ -14,7 +15,8 @@
 
 (defmethod tab/read-datasets* :csv
   [f opts]
-  (when-let [ds (tab/read-dataset* f opts)]
+  (when-let [ds (-> (tab/read-dataset* f opts)
+                    (tab/assoc-data-source-meta f))]
     [{"csv" ds}]))
 
 (defmethod tab/write-dataset* :csv [destination dataset {:keys [format] :as opts}]

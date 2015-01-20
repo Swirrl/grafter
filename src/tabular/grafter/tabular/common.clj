@@ -7,7 +7,8 @@
             [me.raynes.fs :as fs])
   (:import [org.apache.poi.ss.usermodel Sheet]
            [incanter.core Dataset]
-           [java.io File InputStream]))
+           [java.io File InputStream]
+           [java.net URI URL]))
 
 
 (defn mapply
@@ -107,10 +108,16 @@
         (.substring 1)
         keyword)))
 
-(defn format-or-type [file {:keys [format]}]
-  (if (#{File String} (class file))
-    (or format (extension file))
-    (class file)))
+(defn format-or-type [ds {:keys [format]}]
+  (if (#{File String} (class ds))
+    (or format (extension ds))
+    (class ds)))
+
+(defn assoc-data-source-meta [output-ds data-source]
+  "Adds metadata about where the dataset was loaded from to the object."
+  (cond
+    (#{String File URI URL} (class data-source)) (with-meta output-ds {:grafter.tabular/data-source data-source})
+    :else (with-meta output-ds {:grafter.tabular/data-source :datasource-unknown})))
 
 (defmulti ^:no-doc read-dataset*
   "Multimethod for adapter implementers to hook custom dataset readers
@@ -126,7 +133,7 @@
 
 (defn- read-dataset-with-inferred-extension [dataset {:keys [format] :as opts}]
   (let [format (or format (extension dataset))]
-    (read-dataset* (io/input-stream dataset) {:format (extension dataset)})))
+    (-> (read-dataset* (io/input-stream dataset) {:format (extension dataset)}))))
 
 (defmethod read-dataset* String [dataset opts]
   (read-dataset-with-inferred-extension dataset opts))
@@ -154,7 +161,8 @@ Options are:
   :format - to force the datasetable to be opened with a particular method."
   [datasetable & {:keys [format] :as opts}]
 
-  (read-dataset* datasetable opts))
+  (-> (read-dataset* datasetable opts)
+      (assoc-data-source-meta datasetable)))
 
 (defmulti read-datasets*
   (fn [multidatasetable {:keys [format] :as opts}]

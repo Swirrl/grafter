@@ -17,9 +17,12 @@
 (defn- sheets
   "Returns a seq of maps from sheet-name => sheet-data in the order
   they are in the workbook."
-  [wb]
+  [wb & [fname]]
   (map (fn [name sheet]
-         {name (tab/make-dataset (xls/lazy-sheet sheet))})
+         {name (let [ds (tab/make-dataset (xls/lazy-sheet sheet))]
+                 (if fname
+                   (tab/assoc-data-source-meta ds fname)
+                   ds))})
        (xls/sheet-names wb) (xls/sheets wb)))
 
 (defn- get-sheet-map [sheet-seq sheet]
@@ -42,29 +45,27 @@
   [filename opts]
   (-> filename
       xls/workbook-hssf
-      (read-dataset** opts)))
+      (read-dataset** opts)
+      (tab/assoc-data-source-meta filename)))
 
 (defmethod tab/read-dataset* :xlsx
   [filename opts]
   (-> filename
       xls/workbook-xssf
-      (read-dataset** opts)))
-
-(defn- read-datasets** [wb opts]
-  (->> wb
-       sheets))
+      (read-dataset** opts)
+      (tab/assoc-data-source-meta filename)))
 
 (defmethod tab/read-datasets* :xls
   [filename opts]
   (-> filename
       xls/workbook-hssf
-      (read-datasets** opts)))
+      (sheets filename)))
 
 (defmethod tab/read-datasets* :xlsx
   [filename opts]
   (-> filename
       xls/workbook-xssf
-      (read-datasets** opts)))
+      (sheets filename)))
 
 (defn write-dataset** [destination wb dataset-map]
   (with-open [output (io/writer destination)]
