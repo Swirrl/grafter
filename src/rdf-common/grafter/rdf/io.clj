@@ -178,6 +178,22 @@
   (sesame-rdf-type->type [this]
     this))
 
+(defn IStatement->sesame-statement
+  "Convert a grafter IStatement into a Sesame statement."
+  [^IStatement is]
+  (try
+    (if (pr/context is)
+      (ContextStatementImpl. (->sesame-rdf-type (pr/subject is))
+                             (->sesame-rdf-type (pr/predicate is))
+                             (->sesame-rdf-type (pr/object is))
+                             (->sesame-rdf-type (pr/context is)))
+      (StatementImpl. (->sesame-rdf-type (pr/subject is))
+                      (->sesame-rdf-type (pr/predicate is))
+                      (->sesame-rdf-type (pr/object is))))
+    (catch Exception ex
+      (throw (ex-info "Error outputing Quad" {:error :statement-conversion-error
+                                              :quad-meta (meta is)} ex)))))
+
 (extend-protocol ISesameRDFConverter
 
   java.lang.Boolean
@@ -218,17 +234,11 @@
 
   Triple
   (->sesame-rdf-type [this]
-    (StatementImpl. (->sesame-rdf-type (pr/subject this))
-                    (->sesame-rdf-type (pr/predicate this))
-                    (->sesame-rdf-type (pr/object this))))
+    (IStatement->sesame-statement this))
 
   Quad
   (->sesame-rdf-type [this]
-    (ContextStatementImpl. (->sesame-rdf-type (pr/subject this))
-                           (->sesame-rdf-type (pr/predicate this))
-                           (->sesame-rdf-type (pr/object this))
-                           (when-let [context (pr/context this)]
-                             (->sesame-rdf-type context))))
+    (IStatement->sesame-statement this))
 
   Value
   (->sesame-rdf-type [this]
@@ -285,19 +295,6 @@
   clojure.lang.Keyword
   (->sesame-rdf-type [this]
     (BNodeImpl. (name this))))
-
-(defn IStatement->sesame-statement
-  "Convert a grafter IStatement into a Sesame statement."
-  [^IStatement is]
-  (if (pr/context is)
-    (do
-      (ContextStatementImpl. (->sesame-rdf-type (pr/subject is))
-                             (URIImpl. (pr/predicate is))
-                             (->sesame-rdf-type (pr/object is))
-                             (URIImpl. (pr/context is))))
-    (StatementImpl. (->sesame-rdf-type (pr/subject is))
-                    (URIImpl. (pr/predicate is))
-                    (->sesame-rdf-type (pr/object is)))))
 
 (defn sesame-statement->IStatement
   "Convert a sesame Statement into a grafter Quad."
