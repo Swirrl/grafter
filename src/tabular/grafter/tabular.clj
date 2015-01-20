@@ -88,8 +88,8 @@
             (some identity cols))
       (let [inc-ds (inc/$ cols dataset)]
         (if (inc/dataset? inc-ds)
-          inc-ds
-          (make-dataset [inc-ds] cols)))
+          (with-meta inc-ds (meta dataset))
+          (with-meta (make-dataset [inc-ds] cols) (meta dataset))))
       (throw (IndexOutOfBoundsException. (str "The columns: " (str/join ", " not-found-items) " are not currently defined."))))))
 
 (defn- indexed [col]
@@ -144,8 +144,10 @@ Returns a lazy sequence of matched rows."
   [dataset row-numbers & {:as opts}]
   (let [rows (indexed (inc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
-    (make-dataset filtered-rows
-                  (column-names dataset))))
+
+    (-> (make-dataset filtered-rows
+                      (column-names dataset))
+        (with-meta (meta dataset)))))
 
 ;; This type hint is actually correct as APersistentVector implements .indexOf
 ;; from java.util.List.
@@ -199,8 +201,9 @@ Returns a lazy sequence of matched rows."
           new-columns (map col-map-or-fn
                            (column-names dataset))]
 
-      (make-dataset new-columns
-                    (inc/to-list dataset)))))
+      (-> (make-dataset new-columns
+                        (inc/to-list dataset))
+          (with-meta (meta dataset))))))
 
 (defn drop-rows
   "Drops the first n rows from the dataset."
@@ -243,13 +246,15 @@ the specified column being cloned."
   ([dataset new-column-name from-cols f]
    (let [from-cols (lift->vector from-cols)
          resolved-from-cols (resolve-all-col-ids dataset from-cols)]
-       (make-dataset (->> dataset
-                          :rows
-                          (map (fn [row]
-                                 (let [args-from-cols (select-row-values resolved-from-cols row)
-                                       new-col-val (apply f args-from-cols)]
-                                   (merge row {new-column-name new-col-val })))))
-                     (concat (column-names dataset) [new-column-name])))))
+
+     (-> (make-dataset (->> dataset
+                            :rows
+                            (map (fn [row]
+                                   (let [args-from-cols (select-row-values resolved-from-cols row)
+                                         new-col-val (apply f args-from-cols)]
+                                     (merge row {new-column-name new-col-val })))))
+                       (concat (column-names dataset) [new-column-name]))
+         (with-meta (meta dataset))))))
 
 (defn add-column
   "Add a new column to a dataset with the supplied value lazily copied
@@ -333,13 +338,15 @@ the specified column being cloned."
            col-ids (resolve-all-col-ids dataset source-cols)
            apply-f-to-row (partial apply-f-to-row-hash col-ids new-header f)]
 
-       (make-dataset (map apply-f-to-row (:rows dataset))
-                     new-header))))
+       (-> (make-dataset (map apply-f-to-row (:rows dataset))
+                         new-header)
+           (with-meta (meta dataset))))))
 
 (defn- grep-row [dataset f]
   (let [filtered-data (filter f (:rows dataset))]
-    (make-dataset filtered-data
-                  (column-names dataset))))
+    (-> (make-dataset filtered-data
+                      (column-names dataset))
+        (with-meta (meta dataset)))))
 
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
@@ -367,11 +374,12 @@ the specified column being cloned."
                  (first cols))
         col-set (into #{} cols)]
 
-     (make-dataset (->> data
-                       (filter (fn [row]
-                                 (some f
-                                       (cells-from-columns col-set row)))))
-                   (column-names dataset))))
+    (-> (make-dataset (->> data
+                           (filter (fn [row]
+                                     (some f
+                                           (cells-from-columns col-set row)))))
+                      (column-names dataset))
+        (with-meta (meta dataset)))))
 
 (defmethod grep java.lang.String [dataset s & cols]
   (apply grep dataset (fn [^String cell] (.contains (str cell) s)) cols))
@@ -464,10 +472,13 @@ the specified column being cloned."
                    (-> v
                        (assoc i (v j))
                        (assoc j (v i))))]
-     (make-dataset data
-                   (-> header
-                       (swapper (col-position header first-col)
-                                (col-position header second-col))))))
+
+     (-> (make-dataset data
+                       (-> header
+                           (swapper (col-position header first-col)
+                                    (col-position header second-col))))
+         (with-meta (meta dataset)))))
+
   ([dataset first-col second-col & more]
    (if (even? (count more))
      (if (seq more)
@@ -569,7 +580,12 @@ the specified column being cloned."
                          (splice-supplied-bindings row-sym row-bindings))
                    (->> (concat ~@forms)
                         (map (fn with-row-meta [triple#]
-                               (with-meta triple# {::row ~row-sym}))))))]
+                               (let [meta# {::row ~row-sym}
+                                     meta# (if-let [ds-meta# (meta ~ds-sym)]
+                                             (assoc meta# ::dataset (meta ~ds-sym))
+                                             meta#)]
+
+                                 (with-meta triple# meta#)))))))]
 
          (mapcat graphify-row# (:rows ~ds-sym))))))
 
@@ -588,12 +604,13 @@ See http://www.statmethods.net/management/reshape.html for more examples."
         nrows (inc/nrow dataset)
         ks (keys in-m)]
 
-    (inc/to-dataset
-     (for [k ks i (range nrows) :when (not-any? #(= k %) pivot-keys)]
-       (zipmap (conj pivot-keys :variable :value)
-               (conj (map #(nth (get in-m %) i) pivot-keys)
-                     k
-                     (nth (get in-m k) i)))))))
+    (-> (inc/to-dataset
+         (for [k ks i (range nrows) :when (not-any? #(= k %) pivot-keys)]
+           (zipmap (conj pivot-keys :variable :value)
+                   (conj (map #(nth (get in-m %) i) pivot-keys)
+                         k
+                         (nth (get in-m k) i)))))
+        (with-meta (meta dataset)))))
 
 (defmacro defpipe
   "Declares an entry point to a grafter pipeline, allowing it to be

@@ -66,7 +66,8 @@
                   (inc/to-list data))
            non-empty-data (fill-empty-cells-with-nil data (count column-names))]
 
-       (inc/dataset column-names non-empty-data))))
+       (-> (inc/dataset column-names non-empty-data)
+           (with-meta (meta data))))))
 
 (defn dataset?
   "Predicate function to test whether the supplied argument is a
@@ -94,8 +95,9 @@
   because users of this function need to be aware of Dataset
   implementation details."
   [dataset f]
-  (make-dataset (->> dataset :rows f)
-                (column-names dataset)))
+  (-> (make-dataset (->> dataset :rows f)
+                    (column-names dataset))
+      (with-meta (meta dataset))))
 
 (defn ^:no-doc extension
   "Gets the extension for the given file name as a keyword, or nil if the file has no extension"

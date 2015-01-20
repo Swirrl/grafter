@@ -50,7 +50,15 @@
       (testing "making a dataset with empty rows"
         (let [dataset (make-dataset '((1 2) () ()) ["a" "b"])
               expected (make-dataset '((1 2) (nil nil) (nil nil)) ["a" "b"])]
-          (is (= dataset expected)))))))
+          (is (= dataset expected))))
+
+      (testing "metadata"
+        (let [md {:foo :bar}
+              ds (with-meta (make-dataset [[1 2 3]]) md)]
+
+          (is (= (meta (make-dataset ds))
+                 md)
+              "Copy metadata when making a new dataset"))))))
 
 
 ;;; These two vars define what the content of the files
@@ -219,7 +227,13 @@
             "Takes as much as it can from the supplied sequence and returns those columns.")
 
         (is (thrown? IndexOutOfBoundsException (columns test-data (range 10 100)))
-            "Raises an exception if columns when paired with data are not actually column headings.")))))
+            "Raises an exception if columns when paired with data are not actually column headings."))
+
+      (testing "preserves metadata"
+        (let [md {:foo :bar}
+              ds (with-meta (make-dataset [[1 2 3]]) md)]
+          (is (= md
+                 (meta (columns ds [0])))))))))
 
 (deftest all-columns-test
   (testing "all-columns"
@@ -235,7 +249,13 @@
             result (all-columns test-data ["Owner" "Dog"])]
         (is (is-a-dataset? result))
 
-        (is (= test-data result))))))
+        (is (= test-data result))))
+
+    (testing "preserves metadata"
+      (let [md {:foo :bar}
+            ds (with-meta (make-dataset [[1 2 3]]) md)]
+        (is (= md
+               (meta (all-columns ds [0]))))))))
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
@@ -263,14 +283,26 @@
                                               [2 2]
                                               [2 2]])]
 
-          (is (= expected-dataset (rows test-data [0 1 2 2]))))))))
+          (is (= expected-dataset (rows test-data [0 1 2 2])))))
+
+      (testing "preserves metadata"
+        (let [md {:foo :bar}
+              ds (with-meta (make-dataset [[1 2 3]]) md)]
+          (is (= md
+                 (meta (all-columns ds [0])))))))))
 
 (deftest drop-rows-test
   (testing "drop-rows"
     (let [dataset (test-dataset 3 1)]
       (is (= (make-dataset [[1] [2]]) (drop-rows dataset 1)))
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
-      (is (= (make-dataset []) (drop-rows dataset 1000))))))
+      (is (= (make-dataset []) (drop-rows dataset 1000)))))
+
+  (testing "preserves metadata"
+      (let [md {:foo :bar}
+            ds (with-meta (make-dataset [[1 2 3]]) md)]
+        (is (= md
+               (meta (drop-rows ds 1)))))))
 
 (deftest grep-test
   (let [dataset (make-dataset [["one" "two" "bar"]
@@ -320,7 +352,13 @@
       (testing "on an empty dataset"
         (let [empty-ds (make-dataset)]
           (is (= empty-ds
-                 (grep empty-ds #"foo"))))))))
+                 (grep empty-ds #"foo")))))
+
+      (testing "preserves metadata"
+        (let [md {:foo :bar}
+              ds (with-meta (make-dataset [[1 2 3]]) md)]
+          (is (= md
+                 (meta (grep ds 1)))))))))
 
 (deftest mapc-test
   (let [dataset (make-dataset [[1 2 "foo" 4]
@@ -349,7 +387,13 @@
       (let [dataset (make-dataset [[1 2 "foo" 4]])
             expected (make-dataset [["1" 2 "foo" 4]])]
         (is (= expected
-               (mapc dataset  [str])))))))
+               (mapc dataset  [str])))))
+
+    (testing "preserves metadata"
+      (let [md {:foo :bar}
+            ds (with-meta (make-dataset [[1 2 3]]) md)]
+        (is (= md
+               (meta (mapc ds {"a" str}))))))))
 
 
 (deftest swap-test
@@ -373,7 +417,13 @@
              (swap ordered-ds "a" "b" "a" "c"))))
     (testing "swaping odd number of columns"
       (is (thrown? java.lang.Exception
-             (swap ordered-ds "a" "b" "c"))))))
+                   (swap ordered-ds "a" "b" "c"))))
+
+    (testing "preserves metadata"
+      (let [md {:foo :bar}
+            ds (with-meta (make-dataset [[1 2 3]]) md)]
+        (is (= md
+               (meta (swap ds "a" "b"))))))))
 
 (deftest derive-column-test
   (let [subject (make-dataset [[1 2] [3 4]])
@@ -386,7 +436,13 @@
            expected))
 
     (is (= (derive-column subject "c" :a str)
-           (make-dataset [[1 2 "1"] [3 4 "3"]])))))
+           (make-dataset [[1 2 "1"] [3 4 "3"]])))
+
+    (testing "preserves metadata"
+      (let [md {:foo :bar}
+            ds (with-meta (make-dataset [[1 2 3]]) md)]
+        (is (= md
+               (meta (derive-column ds "c" ["a"] str))))))))
 
 (deftest add-columns-test
   (let [subject (make-dataset [[1 2 3] [4 5 6]])]
@@ -418,7 +474,13 @@
                                         [4 5 6 9 3]]
                                        ["a" "b" "c" :d :e])]
             (is (= expected (add-columns subject [:a "b"]
-                                         (fn [a b] {:d (+ a b) :e (dec a)}))))))))))
+                                         (fn [a b] {:d (+ a b) :e (dec a)}))))))
+
+        (testing "preserves metadata"
+          (let [md {:foo :bar}
+                ds (with-meta (make-dataset [[1 2 3]]) md)]
+            (is (= md
+                   (meta (add-columns ds {"foo" 1}))))))))))
 
 (deftest build-lookup-table-test
   (let [debts (make-dataset [["rick"  25     33]
@@ -564,15 +626,14 @@
                                    (graph "http://test.com/"
                                           [a
                                            [b c]]))
-              ds (make-dataset [["http://one/" "http://two/" "http://three/"]])]
+              ds (make-dataset [["http://one/" "http://two/" "http://three/"]])
+              quad-meta (meta (first (my-graphfn ds)))]
 
 
           (is (= {:grafter.tabular/row {"a" "http://one/" "b" "http://two/" "c" "http://three/"}}
-                 (meta (first (my-graphfn ds))))
+                 quad-meta)
               "Adds the row that yielded each Quad as metadata")
 
           (is (= {"a" "http://one/" "b" "http://two/" "c" "http://three/"}
-                 (:grafter.tabular/row (meta (first (my-graphfn ds)))))
-              "Adds the row that yielded each Quad as metadata"))
-
-        ))))
+                 (:grafter.tabular/row quad-meta))
+              "Adds the row that yielded each Quad as metadata"))))))
