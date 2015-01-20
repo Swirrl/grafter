@@ -557,4 +557,22 @@
                                  [one [two three]]))]
 
           (is (= [first-quad second-quad]
-                 (f ds))))))))
+                 (f ds)))))
+
+      (testing "metadata"
+        (let [my-graphfn (graph-fn [[a b c]]
+                                   (graph "http://test.com/"
+                                          [a
+                                           [b c]]))
+              ds (make-dataset [["http://one/" "http://two/" "http://three/"]])]
+
+
+          (is (= {:grafter.tabular/row {"a" "http://one/" "b" "http://two/" "c" "http://three/"}}
+                 (meta (first (my-graphfn ds))))
+              "Adds the row that yielded each Quad as metadata")
+
+          (is (= {"a" "http://one/" "b" "http://two/" "c" "http://three/"}
+                 (:grafter.tabular/row (meta (first (my-graphfn ds)))))
+              "Adds the row that yielded each Quad as metadata"))
+
+        ))))

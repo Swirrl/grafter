@@ -192,6 +192,7 @@
                       (->sesame-rdf-type (pr/object is))))
     (catch Exception ex
       (throw (ex-info "Error outputing Quad" {:error :statement-conversion-error
+                                              :quad is
                                               :quad-meta (meta is)} ex)))))
 
 (extend-protocol ISesameRDFConverter

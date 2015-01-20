@@ -6,7 +6,7 @@
             [grafter.rdf.io :refer :all]
             [grafter.rdf.ontologies.rdf :refer :all]
             [grafter.rdf.formats :refer :all])
-  (:import [org.openrdf.model.impl LiteralImpl URIImpl]))
+  (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]))
 
 (deftest mimetype->rdf-format-test
   (testing "mimetype->rdf-format"
@@ -55,3 +55,24 @@
     (add serializer quad)
     (is (= quad
            (statements (java.io.StringReader. (.toString string-wtr)) :format rdf-nquads)))))
+
+
+(deftest IStatement->sesame-statement-test
+  (testing "IStatement->sesame-statement"
+    (is (= (IStatement->sesame-statement (->Quad "http://foo.com/" "http://bar.com/" "http://baz.com/" "http://blah.com/"))
+           (ContextStatementImpl. (URIImpl. "http://foo.com/") (URIImpl. "http://bar.com/") (URIImpl. "http://baz.com/") (URIImpl. "http://blah.com/"))))
+
+    (testing "Raising Exceptions"
+      (let [broken-quad (with-meta (->Quad nil "http://bar.com/" "http://baz.com/" "http://blah.com/") {:foo :bar})
+            ex (ex-data (is (thrown? clojure.lang.ExceptionInfo
+                                     (IStatement->sesame-statement broken-quad))))]
+
+        (is (= (->Quad
+                nil
+                "http://bar.com/"
+                "http://baz.com/"
+                "http://blah.com/") (:quad ex))
+            "Adds the statement itself to the exception data")
+
+        (is (= {:foo :bar} (:quad-meta ex))
+            "Metadata from quads is reported in exception data")))))
