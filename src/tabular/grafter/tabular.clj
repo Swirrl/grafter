@@ -206,12 +206,12 @@ Returns a lazy sequence of matched rows."
           (with-meta (meta dataset))))))
 
 (defn drop-rows
-  "Drops the first n rows from the dataset."
+  "Drops the first n rows from the dataset, retaining the rest."
   [dataset n]
   (tabc/pass-rows dataset (partial drop n)))
 
 (defn take-rows
-  "Drops the first n rows from the dataset."
+  "Takes only the first n rows from the dataset, discarding the rest."
   [dataset n]
   (tabc/pass-rows dataset (partial take n)))
 
