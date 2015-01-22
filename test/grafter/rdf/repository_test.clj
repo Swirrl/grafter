@@ -13,6 +13,13 @@
             NumericLiteralImpl StatementImpl
             URIImpl]))
 
+(deftest reading-writing-to-Graph
+  (let [g (org.openrdf.model.impl.GraphImpl.)]
+    (grafter.rdf/add-statement g (pr/->Quad "http://s" "http://p" "http://o" nil))
+
+    (is (= (pr/->Quad "http://s" "http://p" "http://o" nil)
+           (first (grafter.rdf/statements g))))))
+
 (deftest with-transaction-test
   (let [test-db (repo)]
     (testing "Transactions return last result of form if there's no error."

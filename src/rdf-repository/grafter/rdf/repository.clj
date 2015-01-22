@@ -10,7 +10,7 @@
            (java.util GregorianCalendar)
            (javax.xml.datatype DatatypeFactory)
            (org.openrdf.model BNode Literal Resource Statement URI
-                              Value)
+                              Value Graph)
            (org.openrdf.query BooleanQuery GraphQuery QueryLanguage
                               Query TupleQuery Update BindingSet)
            (org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
@@ -205,6 +205,38 @@
   pr/ITripleReadable
   (pr/to-statements [this options]
     (pr/to-statements (.getConnection this) options)))
+
+(extend-type Graph
+  pr/ITripleReadable
+  (pr/to-statements [this options]
+    (map sesame-statement->IStatement (iterator-seq (.match this nil nil nil (resource-array)))))
+
+  pr/ITripleWriteable
+
+  (pr/add-statement
+    ([this statement]
+     (pr/add-statement this nil statement))
+
+    ([this graph statement]
+     (.add this
+           (->sesame-rdf-type (pr/subject statement))
+           (->sesame-rdf-type (pr/predicate statement))
+           (->sesame-rdf-type (pr/object statement))
+           (resource-array graph))))
+
+  (pr/add
+    ([this triples]
+     (pr/add this nil triples))
+
+    ([this graph triples]
+     (doseq [triple triples]
+       (pr/add-statement this graph triple)))
+
+    ([this graph format triple-stream]
+     (pr/add this graph triple-stream))
+
+    ([this graph base-uri format triple-stream]
+     (pr/add this graph triple-stream))))
 
 (defn- sesame-results->seq
   ([prepared-query] (sesame-results->seq prepared-query identity))
