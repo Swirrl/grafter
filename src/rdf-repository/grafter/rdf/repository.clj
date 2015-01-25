@@ -26,7 +26,8 @@
            (org.openrdf.repository.sparql SPARQLRepository)
            (org.openrdf.sail.memory MemoryStore)
            (org.openrdf.sail.nativerdf NativeStore)
-           (info.aduna.iteration CloseableIteration)))
+           (info.aduna.iteration CloseableIteration)
+           (org.openrdf.sail.inferencer.fc ForwardChainingRDFSInferencer DirectTypeHierarchyInferencer CustomGraphQueryInferencer)))
 
 (defn- resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
@@ -144,6 +145,40 @@
   ([query-url update-url]
      (doto (SPARQLRepository. query-url update-url)
        (.initialize))))
+
+(defn rdfs-inferencer
+  "Returns a Sesame ForwardChainingRDFSInferencer using the rules from
+  the RDF Semantics Recommendation (10 February 2004).
+
+  You can instantiate a repository with a memory store or a native
+  store or with any SAIL that returns InferencerConnections.  e.g. to
+  instantiate a repository with a memory-store:
+
+  (repo (rdfs-inferencer (memory-store)))"
+
+  ([]
+   (ForwardChainingRDFSInferencer.))
+  ([notifying-sail]
+   (ForwardChainingRDFSInferencer. notifying-sail)))
+
+(defn direct-type-inferencer
+  "A forward-chaining inferencer that infers the direct-type hierarchy
+  relations sesame:directSubClassOf, sesame:directSubPropertyOf and
+  sesame:directType."
+  ([]
+   (DirectTypeHierarchyInferencer.))
+  ([notifying-sail]
+   (DirectTypeHierarchyInferencer. notifying-sail)))
+
+(defn custom-query-inferencer
+  "A forward-chaining inferencer that infers new statements using a
+  SPARQL graph query."
+  ([]
+   (CustomGraphQueryInferencer.))
+  ([query-text matcher-text]
+   (CustomGraphQueryInferencer. QueryLanguage/SPARQL query-text matcher-text))
+  ([notifying-sail query-text matcher-text]
+   (CustomGraphQueryInferencer. notifying-sail QueryLanguage/SPARQL query-text matcher-text)))
 
 (defn repo
   "Given a sesame Store of some type, return a sesame SailRepository."
