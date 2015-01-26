@@ -406,7 +406,7 @@ the specified column being cloned."
   appropriate values.  A normalised mapping will contain identity
   mappings for any ommitted columns."
   [dataset fs]
-  (let [resolve-ids (fn [id] (resolve-column-id dataset id nil))
+  (let [resolve-ids (fn [id] (resolve-column-id dataset id id))
         fs-hash (if (vector? fs)
                   (zipmap (column-names dataset) fs)
                   (map-keys resolve-ids fs))
@@ -417,6 +417,22 @@ the specified column being cloned."
 
     functions))
 
+(defn- concat-new-columns
+  "Given a dataset and a set of column keys return an ordered vector
+  of the new column keys.
+
+  Any new column ids will be concatenated onto the end of the existing
+  columns preserving the order as best as possible.
+
+  Any duplicate ids found in col-ids will be removed."
+
+  [dataset col-ids]
+  (let [existing-column-ids (:column-names dataset)
+        resolve-new-ids (fn [i] (resolve-column-id dataset i i))]
+
+    (concat existing-column-ids
+            (remove (set existing-column-ids) (map resolve-new-ids col-ids)))))
+
 (defn mapc
   "Takes a vector or a hashmap of functions and maps each to the key
   column for every row.  Each function should be from a cell to a
@@ -425,18 +441,17 @@ the specified column being cloned."
   of cells."
   [dataset fs]
   (let [functions (normalise-mapping dataset fs)
+        new-columns (concat-new-columns dataset (keys functions))
         apply-functions (fn [row]
-                          (let [apply-column-f (fn [col-id]
-                                                 (let [f (functions col-id)
-                                                       fval (f (row col-id))]
+                          (let [apply-column-f (fn [[col-id f]]
+                                                 (let [fval (f (row col-id))]
                                                    {col-id fval}))]
                             (apply merge (map apply-column-f
-                                              (keys row)))))]
+                                              functions))))]
 
-    (tabc/pass-rows dataset (fn [rows]
-                               (->> rows
-                                    (map apply-functions))))))
-
+    (-> (make-dataset (->> dataset :rows (map apply-functions))
+                      new-columns)
+        (with-meta (meta dataset)))))
 
 (defn apply-columns
   "Like mapc in that you associate functions with particular columns,
@@ -445,22 +460,28 @@ the specified column being cloned."
 
   With apply-columns, the function receives a collection of cell
   values from the column and should return a collection of values for
-  the column."
-  [dataset fs]
-  (let [functions (normalise-mapping dataset fs)]
+  the column.
 
-    (tabc/pass-rows dataset (fn [rows]
-                               ;; TODO consider implementing this in
-                               ;; terms of either incanter.core/to-map
-                               ;; or zipmap
-                               (let [apply-to-cols (fn [[col f]]
-                                                     (->> rows
-                                                          (map (fn [r] (get r col)))
-                                                          f
-                                                          (map (fn [r] {col r}))))]
-                                 (->> functions
-                                      (map apply-to-cols)
-                                      (apply (partial map merge))))))))
+  It is also possible to create "
+  [dataset fs]
+  (let [functions (normalise-mapping dataset fs)
+        new-columns (concat-new-columns dataset (keys functions))
+        apply-columns-f (fn [rows]
+                          ;; TODO consider implementing this in
+                          ;; terms of either incanter.core/to-map
+                          ;; or zipmap
+                          (let [apply-to-cols (fn [[col f]]
+                                                (->> rows
+                                                     (map (fn [r] (get r col)))
+                                                     f
+                                                     (map (fn [r] {col r}))))]
+                            (->> functions
+                                 (map apply-to-cols)
+                                 (apply (partial map merge)))))]
+
+    (-> (make-dataset (->> dataset :rows apply-columns-f)
+                      new-columns)
+        (with-meta (meta dataset)))))
 
 (defn swap
   "Takes an even numer of column names and swaps each column"

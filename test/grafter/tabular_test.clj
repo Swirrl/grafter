@@ -392,19 +392,29 @@
       (testing "complete hashmap"
         (is (= expected-dataset
                (mapc dataset fs))))
+
       (testing "incomplete hashmap implies mapping identity for unspecified columns"
         (is (= expected-dataset
                (mapc dataset fs-incomplete)))
         (is (= dataset
-               (mapc dataset {})))))
+               (mapc dataset {}))))
+
+      (testing "with new columns creates the column and passes nil to the function"
+        (let [dataset (make-dataset [[1 2 3]
+                                     [4 5 6]])
+              expected-dataset (make-dataset [[1 2 3 nil] [4 5 6 nil]] ["a" "b" "c" "d"])]
+
+          (is (= (mapc dataset {"d" identity}) expected-dataset)))))
+
     (testing "mapc with a vector of functions works positionally"
       (is (= expected-dataset
              (mapc dataset fs-vec))))
+
     (testing "incomplete vector implies mapping identity over unspecified columns"
       (let [dataset (make-dataset [[1 2 "foo" 4]])
             expected (make-dataset [["1" 2 "foo" 4]])]
         (is (= expected
-               (mapc dataset  [str])))))
+               (mapc dataset [str])))))
 
     (testing "preserves metadata"
       (let [md {:foo :bar}
