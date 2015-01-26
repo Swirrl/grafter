@@ -438,7 +438,11 @@ the specified column being cloned."
   column for every row.  Each function should be from a cell to a
   cell, where as with apply-columns it should be from a column to a
   column i.e. its function from a collection of cells to a collection
-  of cells."
+  of cells.
+
+  If the specified column does not exist in the source data a new
+  column will be created, though the supplied function will need to
+  either ignore its argument or handle a nil argument."
   [dataset fs]
   (let [functions (normalise-mapping dataset fs)
         new-columns (concat-new-columns dataset (keys functions))
@@ -462,7 +466,10 @@ the specified column being cloned."
   values from the column and should return a collection of values for
   the column.
 
-  It is also possible to create "
+  It is also possible to create new columns with apply-columns for
+  example to assign row ids you can do:
+
+  (apply-columns ds {:row-id (fn [_] (grafter.sequences/integers-from 0))})"
   [dataset fs]
   (let [functions (normalise-mapping dataset fs)
         new-columns (concat-new-columns dataset (keys functions))

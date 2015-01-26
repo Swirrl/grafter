@@ -11,6 +11,12 @@
 (def qb:component (qb "component"))
 (def qb:componentRequired (qb "componentRequired"))
 (def qb:componentAttachment (qb "componentAttachment"))
+(def qb:ComponentSpecification (qb "ComponentSpecification"))
+(def qb:ComponentProperty (qb "ComponentProperty"))
+
+(def qb:Attachable (qb "Attachable"))
+
+(def qb:order (qb "order"))
 
 (def qb:structure (qb "structure"))
 
