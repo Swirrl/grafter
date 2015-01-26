@@ -33,3 +33,7 @@
 (def qb:Observation (qb "Observation"))
 
 (def qb:concept (qb "concept"))
+
+
+(def qb:Slice (qb "Slice"))
+(def qb:slice (qb "slice"))
