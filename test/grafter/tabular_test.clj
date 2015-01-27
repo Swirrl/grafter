@@ -678,7 +678,7 @@
                                  [:costs 500 400 300]]
                                 [:measure :2012 :2013 :2014])
 
-          melted (melt initial :measure)
+          melted (melt initial [:measure])
           expected (make-dataset [[:sales :2012 100]
                                   [:sales :2013 200]
                                   [:sales :2014 300]

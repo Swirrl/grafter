@@ -642,7 +642,7 @@ the specified column being cloned."
   generated-column-names parameter."
   [dataset pivot-keys generated-column-names col-partition-fn row-builder-fn]
   (let [canonicalise-key (partial resolve-column-id dataset)
-        pivot-keys (map canonicalise-key pivot-keys)
+        pivot-keys (map canonicalise-key (lift->vector pivot-keys))
         input-columns (map canonicalise-key (column-names dataset))
         output-columns (concat pivot-keys generated-column-names)
         melted-columns (set/difference (set input-columns) (set pivot-keys))
@@ -661,7 +661,7 @@ the specified column being cloned."
   (view (with-data (melt (get-dataset :flow-meter) :Subject)
   (line-chart :Subject :value :group-by :variable :legend true)))
   See http://www.statmethods.net/management/reshape.html for more examples."
-  [dataset & pivot-keys]
+  [dataset pivot-keys]
   (letfn [(col-partition [cols] (map (fn [c] [c]) cols))
           (build-row [[c] row] {:variable c :value (c row)})]
     (melt-gen dataset pivot-keys [:variable :value] col-partition build-row)))
@@ -695,17 +695,18 @@ the specified column being cloned."
   pivot-keys: The fixed group of columns to copy to each output row.
   output-column-names: Collection of column names that defines the gropus from the input row."
   [dataset pivot-keys output-column-names]
-  (letfn [(col-partition [cols]
-            (let [group-size (count output-column-names)
-                  col-count (count cols)]
-              (if (= 0 (mod col-count group-size))
-                (partition group-size cols)
-                (throw (IllegalArgumentException. (str "Column group size should be a multiple of the number of non-fixed columns (" col-count ").")))))
-            (partition (count output-column-names) cols))
-          (build-row [cols row]
-            (let [col-map (zipmap cols output-column-names)]
-              (map-keys col-map (select-keys row cols))))] 
-    (melt-gen dataset pivot-keys output-column-names col-partition build-row)))
+  (let [output-column-names (lift->vector output-column-names)]
+    (letfn [(col-partition [cols]
+              (let [group-size (count output-column-names)
+                    col-count (count cols)]
+                (if (= 0 (mod col-count group-size))
+                  (partition group-size cols)
+                  (throw (IllegalArgumentException. (str "Column group size should be a multiple of the number of non-fixed columns (" col-count ").")))))
+              (partition (count output-column-names) cols))
+            (build-row [cols row]
+              (let [col-map (zipmap cols output-column-names)]
+                (map-keys col-map (select-keys row cols))))] 
+      (melt-gen dataset pivot-keys output-column-names col-partition build-row))))
 
 (defmacro defpipe
   "Declares an entry point to a grafter pipeline, allowing it to be
