@@ -226,3 +226,34 @@ Options are:
                   data)
         output-data (concat [(map name col-order)] rows)]
     output-data))
+
+(defn ^:no-doc resolve-col-id [column-key headers not-found]
+  (let [converted-column-key (cond
+                              (string? column-key) (keyword column-key)
+                              (keyword? column-key) (name column-key)
+                              (integer? column-key) (nth headers column-key not-found))]
+    (if-let [val (some #{column-key converted-column-key} headers)]
+      val
+      not-found)))
+
+(defn resolve-column-id
+  "Finds and resolves the column id by converting between symbols and
+  strings.  If column-key is not found in the datsets headers then
+  not-found is returned."
+
+  ([dataset column-key] (resolve-column-id dataset column-key nil))
+  ([dataset column-key not-found]
+
+   (let [headers (column-names dataset)]
+     (resolve-col-id column-key headers not-found))))
+
+(defn ^:no-doc map-keys [f hash]
+  "Apply f to the keys in the supplied hashmap and return a new
+  hashmap."
+  (zipmap (map f (keys hash))
+          (vals hash)))
+
+(defn ^:no-doc lift->vector [x]
+  "Lifts singular values into a sequential collection. If the given argument is sequential then it is returned, otherwise a sequential
+   container containing the value is returned."
+  (if (sequential? x) x [x]))

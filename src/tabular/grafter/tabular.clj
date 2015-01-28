@@ -3,9 +3,10 @@
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [grafter.pipeline :refer [graft-form->Pipeline]]
-            [grafter.tabular.common :as tabc]
+            [grafter.tabular.common :refer [lift->vector map-keys] :as tabc]
             [grafter.tabular.csv]
             [grafter.tabular.excel]
+            [grafter.tabular.melt]
             [clojure.tools.logging :refer [spy]]
             [incanter.core :as inc]
             [potemkin.namespaces :refer [import-vars]]
@@ -21,7 +22,10 @@
   read-datasets
   write-dataset
   with-metadata-columns
-  without-metadata-columns])
+  without-metadata-columns
+  resolve-column-id]
+ [grafter.tabular.melt
+  melt])
 
 (defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
@@ -37,26 +41,6 @@
        (map #(repeat c %))
        (take r)
        make-dataset))
-
-(defn- resolve-col-id [column-key headers not-found]
-  (let [converted-column-key (cond
-                              (string? column-key) (keyword column-key)
-                              (keyword? column-key) (name column-key)
-                              (integer? column-key) (nth headers column-key not-found))]
-    (if-let [val (some #{column-key converted-column-key} headers)]
-      val
-      not-found)))
-
-(defn resolve-column-id
-  "Finds and resolves the column id by converting between symbols and
-  strings.  If column-key is not found in the datsets headers then
-  not-found is returned."
-
-  ([dataset column-key] (resolve-column-id dataset column-key nil))
-  ([dataset column-key not-found]
-
-   (let [headers (column-names dataset)]
-     (resolve-col-id column-key headers not-found))))
 
 (defn- invalid-column-keys
   "Takes a sequence of column key names and a dataset and returns a
@@ -152,7 +136,7 @@ Returns a lazy sequence of matched rows."
 ;; This type hint is actually correct as APersistentVector implements .indexOf
 ;; from java.util.List.
 (defn- col-position [^java.util.List column-names col]
-  (if-let [canonical-col (resolve-col-id col column-names ::not-found)]
+  (if-let [canonical-col (tabc/resolve-col-id col column-names ::not-found)]
     (let [val (.indexOf column-names canonical-col)]
       (if (not= -1 val)
         val
@@ -175,12 +159,6 @@ Returns a lazy sequence of matched rows."
                              (map (partial col-position col-names)))
         selected-cols (select-indexed (indexed col-names) matched-columns)]
     (all-columns dataset selected-cols)))
-
-(defn- map-keys [f hash]
-  "Apply f to the keys in the supplied hashmap and return a new
-  hashmap."
-  (zipmap (map f (keys hash))
-          (vals hash)))
 
 (defn rename-columns
   "Renames the columns in the dataset.  Takes either a map or a
@@ -215,11 +193,8 @@ Returns a lazy sequence of matched rows."
   [dataset n]
   (tabc/pass-rows dataset (partial take n)))
 
-(defn ^:no-doc lift->vector [x]
-  (if (sequential? x) x [x]))
-
 (defn- resolve-keys [headers hash]
-  (map-keys #(resolve-col-id % headers nil) hash))
+  (map-keys #(tabc/resolve-col-id % headers nil) hash))
 
 (defn- select-row-values [src-col-ids row]
   (map #(get row %) src-col-ids))
@@ -616,97 +591,6 @@ the specified column being cloned."
                                  (with-meta triple# meta#)))))))]
 
          (mapcat graphify-row# (:rows ~ds-sym))))))
-
-(defn mapcat-rows
-  "Transforms a dataset by performing a mapcat operation on the rows. Each row in the input is transformed to
-  multiple rows in the output by the given transform function.
-  dataset: The dataset to transform.
-  columns: The collection of columns in the output dataset.
-  f: function (Row -> Seqable Row) which transforms each row in the input into a sequence of new rows in the output. Each output row should contain the
-  columns passed in the columns parameter."
-  [dataset columns f]
-  (-> (make-dataset (mapcat f (:rows dataset)) columns)
-      (with-meta (meta dataset))))
-
-(defn- melt-gen
-  "Generalised version of melt.
-  dataset: The dataset to melt.
-  pivot-keys: The collection of fixed columns in the output table.
-  generated-column-names: The collection of new columns in the output table. The output table will have (concat pivot-keys generated-column-names) columns.
-  col-partition-fn: Function to group the non-fixed columns into a number of partitions. A new row will be created for every partition in every row in the input
-  table. For example, if the input table has 4 rows, and col-partition-fn creates 3 groups for the non-fixed columns in the input, then the output table will
-  contain 3 * 4 = 12 rows.
-  row-builder-fn: Function (ColumnPartition -> Row -> RowFragment). This function is used to create the variable fragment of an output row given the source
-  row in the input table and the correspdoning column partition returned from col-partition-fn. The row in the output table is created by merging the variable
-  fragment returned from this function with the fixed part defined by the pivot-keys. The returned fragment should contain values for the column names in the
-  generated-column-names parameter."
-  [dataset pivot-keys generated-column-names col-partition-fn row-builder-fn]
-  (let [canonicalise-key (partial resolve-column-id dataset)
-        pivot-keys (map canonicalise-key (lift->vector pivot-keys))
-        input-columns (map canonicalise-key (column-names dataset))
-        output-columns (concat pivot-keys generated-column-names)
-        melted-columns (set/difference (set input-columns) (set pivot-keys))
-        ordered-melted-columns (keep melted-columns input-columns)
-        col-partition (col-partition-fn ordered-melted-columns)
-        f (fn [row]
-            (let [pivot-values (select-keys row pivot-keys)]
-              (map (fn [cp] (merge pivot-values (row-builder-fn cp row))) col-partition)))]
-    (mapcat-rows dataset output-columns f)))
-
-(defn melt
-  "Melt an object into a form suitable for easy casting, like a melt function in R.
-  It accepts multiple pivot keys (identifier variables that are reproduced for each
-  row in the output).
-  (use '(incanter core charts datasets))
-  (view (with-data (melt (get-dataset :flow-meter) :Subject)
-  (line-chart :Subject :value :group-by :variable :legend true)))
-  See http://www.statmethods.net/management/reshape.html for more examples."
-  [dataset pivot-keys]
-  (letfn [(col-partition [cols] (map (fn [c] [c]) cols))
-          (build-row [[c] row] {:variable c :value (c row)})]
-    (melt-gen dataset pivot-keys [:variable :value] col-partition build-row)))
-
-(defn melt-column-groups
-  "Melts a dataset into groups defined by the list of given column names. Given a collection of pivot columns and a collection
-  of group column names, this splits each row in the input into a collection of groups and creates a row in the output for each
-  group. The groups are all the length of the column name group and it is an error if the size of the group does not divide the number
-  of non-fixed columns exactly.
-
-  For example, given an input table:
-  ----------------------------------------------------------------------------------------------------
-  | :measure | :q1-2013 | :q2-2013 | :q3-2013 | :q4-2013 | :q1-2014 | :q2-2014 | :q3-2014 | :q4-2014 |
-  |--------------------------------------------------------------------------------------------------|
-  | :sales   | 100      | 250      | 200      | 400      | 90       | 200      | 150      | 600      |
-  ----------------------------------------------------------------------------------------------------
-
-  This can be seen as a table with a fixed :measure column and two groups containing four financial quarters. This table can be converted with
-  (melt-column-groups [:sales] [:q1 :q2 :q3 :q4])
-
-  into the table:
-
-  ---------------------------------------------
-  | :measure | :q1    | :q2   | :q3   | :q4   |
-  --------------------------------------------|
-  | :sales   | 100    | 250   | 200   | 400   |
-  | :sales   | 90     | 200   | 150   | 600   |
-  ---------------------------------------------
-  
-  dataset: The input dataset to melt.
-  pivot-keys: The fixed group of columns to copy to each output row.
-  output-column-names: Collection of column names that defines the gropus from the input row."
-  [dataset pivot-keys output-column-names]
-  (let [output-column-names (lift->vector output-column-names)]
-    (letfn [(col-partition [cols]
-              (let [group-size (count output-column-names)
-                    col-count (count cols)]
-                (if (= 0 (mod col-count group-size))
-                  (partition group-size cols)
-                  (throw (IllegalArgumentException. (str "Column group size should be a multiple of the number of non-fixed columns (" col-count ").")))))
-              (partition (count output-column-names) cols))
-            (build-row [cols row]
-              (let [col-map (zipmap cols output-column-names)]
-                (map-keys col-map (select-keys row cols))))] 
-      (melt-gen dataset pivot-keys output-column-names col-partition build-row))))
 
 (defmacro defpipe
   "Declares an entry point to a grafter pipeline, allowing it to be
