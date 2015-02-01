@@ -448,14 +448,3 @@
   "Cleanly shutsdown the repository."
   [^Repository repo]
   (.shutDown repo))
-
-(comment
-
-  ;; Don't think this one is used.
-  (defn load-rdf
-  "Loads the specified RDF file into the supplied repository.
-
-  Takes a String or File (specifying a path to an RDF file) a base-uri
-  String and an RDFFormat."
-  [^RepositoryConnection connection file ^String base-uri-str ^RDFFormat format]
-  (.add connection (io/file file) base-uri-str format (resource-array))))
