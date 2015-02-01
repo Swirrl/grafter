@@ -331,10 +331,12 @@
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string dataset]
      (let [conn (->connection repo)]
-       (doto (.prepareQuery conn
-                            QueryLanguage/SPARQL
-                            sparql-string)
-         (.setDataset dataset)))))
+       (let [pq (.prepareQuery conn
+                               QueryLanguage/SPARQL
+                               sparql-string)]
+
+         (when dataset (.setDataset pq dataset))
+         pq))))
 
 (defn prepare-update
   "Prepare (parse but don't process) a SPARQL update request.
@@ -343,11 +345,13 @@
   ([repo sparql-update-str] (prepare-update repo sparql-update-str nil))
   ([repo sparql-update-str dataset]
      (let [conn (->connection repo)]
-       (doto
-           (.prepareUpdate conn
-                           QueryLanguage/SPARQL
-                           sparql-update-str)
-         (.setDataset dataset)))))
+       (let [pu (.prepareUpdate conn
+                                QueryLanguage/SPARQL
+                                sparql-update-str)]
+         (when dataset
+           (.setDataset pu dataset))
+
+         pu))))
 
 (extend-type RepositoryConnection
   pr/ISPARQLable
