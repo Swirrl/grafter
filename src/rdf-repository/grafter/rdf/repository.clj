@@ -318,7 +318,9 @@
   [^Repository repo]
   (if (instance? RepositoryConnection repo)
     repo
-    (.getConnection repo)))
+    (let [c (.getConnection repo)]
+      (.setAutoCommit c false)
+      c)))
 
 (defn prepare-query
   "Low level function to prepare (parse, but not process) a sesame RDF
