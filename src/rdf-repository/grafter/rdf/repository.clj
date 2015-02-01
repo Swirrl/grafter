@@ -273,7 +273,8 @@
     ([this graph base-uri format triple-stream]
      (pr/add this graph triple-stream))))
 
-(defn- sesame-results->seq
+(defn ^:no-doc sesame-results->seq
+  "Convert a sesame results object into a lazy sequence of results."
   ([prepared-query] (sesame-results->seq prepared-query identity))
   ([^Query prepared-query converter-f]
      (let [^CloseableIteration results (.evaluate prepared-query)
