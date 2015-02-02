@@ -8,7 +8,7 @@
 
 (defmethod tab/read-dataset* :csv
   [f opts]
-  (let [csv-seq (tab/mapply csv/read-csv (io/reader f) opts)]
+  (let [csv-seq (tab/mapply csv/read-csv (tab/mapply io/reader f opts) opts)]
     (if (nil? csv-seq)
       (throw (IOException. (str "There was an error loading the CSV file: " f)))
       (tab/make-dataset csv-seq))))
