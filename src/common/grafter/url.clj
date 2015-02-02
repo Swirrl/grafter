@@ -92,7 +92,7 @@
     (.getFragment url))
 
   (add-path-segments [url segments]
-    (let [new-path (join-paths url segments)]
+    (let [new-path (build-path segments)]
       (URI. (protocol url) (.getUserInfo url) (host url) (or (port url) -1) new-path (.getQuery url) (.getFragment url))))
 
   (set-path-segments [url segments]
@@ -121,7 +121,7 @@
     url))
 
 (defn- append-to [url key values]
-  (update-in url [key] #(into % values)))
+  (update-in url [:path-segments] concat [[key values]]))
 
 (defn- to-uri*
   "Converts a map of URI components into a java.net.URI. The supported components are:
@@ -162,7 +162,7 @@
     (:url-fragment this))
 
   (add-path-segments [url segments]
-    (append-to url :path-segments segments))
+    (update-in url [:path-segments] concat segments))
 
   (set-path-segments [url segments]
     (assoc :path-segments segments))
