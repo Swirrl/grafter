@@ -197,7 +197,7 @@
 (extend-protocol pr/ITransactable
   Repository
   (begin [repo]
-    (-> repo .getConnection .begin))
+    (-> repo .getConnection (.setAutoCommit false)))
 
   (commit [repo]
     (-> repo .getConnection .commit))
@@ -207,7 +207,7 @@
 
   RepositoryConnection
   (begin [repo]
-    (-> repo .begin))
+    (-> repo (.setAutoCommit false)))
 
   (commit [repo]
     (-> repo .commit))
@@ -320,7 +320,6 @@
   (if (instance? RepositoryConnection repo)
     repo
     (let [c (.getConnection repo)]
-      (.setAutoCommit c false)
       c)))
 
 (defn prepare-query
