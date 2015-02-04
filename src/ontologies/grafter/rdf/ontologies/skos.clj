@@ -16,3 +16,6 @@
 (def skos:notation (skos "notation"))
 (def skos:altLabel (skos "altLabel"))
 (def skos:note (skos "note"))
+
+(def skos:Collection (skos "Collection"))
+(def skos:member (skos "member"))
