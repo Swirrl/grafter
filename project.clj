@@ -34,10 +34,10 @@
 
   :source-paths ["src/common" "src/rdf-repository" "src/tabular" "src/templater" "src/rdf-common" "src/ontologies"
                  "src/pipeline"]
-  :jvm-opts ["-Dapple.awt.UIElement=true"] ; Prevent Java process
-                                        ; from appearing as a GUI
-                                        ; app in OSX when Swing
-                                        ; classes are loaded.
+
+  ;; Prevent Java process from appearing as a GUI app in OSX when
+  ;; Swing classes are loaded.
+  :jvm-opts ["-Dapple.awt.UIElement=true"]
 
   :pedantic? :abort
 
