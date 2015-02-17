@@ -13,18 +13,15 @@
 
                   :exclusions [org.openrdf.sesame/sesame-repository-manager]]
 
-                 [org.clojure/algo.monads "0.1.5"]
                  [org.clojure/tools.logging "0.2.6"]
-                 [clj-time "0.7.0"]
-                 ;[clojure-csv/clojure-csv "2.0.1"]
                  [org.clojure/data.csv "0.1.2"]
                  [com.outpace/clj-excel "0.0.6" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.4"]
-                 [org.marianoguerra/clj-rhino "0.2.1"]
                  [potemkin "0.3.4"]
                  [incanter/incanter-core "1.5.5" :exclusions [net.sf.opencsv/opencsv commons-codec]]
-                 [net.sf.corn/corn-cps "1.1.7"]
-                 [com.novemberain/pantomime "2.3.0"]]
+                 [net.sf.corn/corn-cps "1.1.7"] ;; classpath scanner
+                 [com.novemberain/pantomime "2.3.0"] ;; mimetypes
+                 ]
 
 
   :codox {:defaults {:doc "FIXME: write docs"}
