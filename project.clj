@@ -17,7 +17,7 @@
                  [org.clojure/data.csv "0.1.2"]
                  [com.outpace/clj-excel "0.0.6" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.4"]
-                 [potemkin "0.3.4"]
+                 [potemkin "0.3.11"]
                  [incanter/incanter-core "1.5.5" :exclusions [net.sf.opencsv/opencsv commons-codec]]
                  [net.sf.corn/corn-cps "1.1.7"] ;; classpath scanner
                  [com.novemberain/pantomime "2.3.0"] ;; mimetypes
