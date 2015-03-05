@@ -4,7 +4,6 @@
             [grafter.rdf :refer [add statements]]
             [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.io :refer :all]
-            [grafter.rdf.ontologies.rdf :refer :all]
             [grafter.rdf.formats :refer :all])
   (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]))
 
@@ -49,7 +48,7 @@
 
 (deftest round-trip-quad-serialize-deserialize-test
   (let [quad (graph "http://example.org/test/graph"
-                    ["http://test/1" [rdf:a "http://test/Test"]])
+                    ["http://test/subj" ["http://test/pred" "http://test/obj"]])
         string-wtr (java.io.StringWriter.)
         serializer (rdf-serializer string-wtr :format rdf-nquads)]
     (add serializer quad)

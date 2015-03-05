@@ -3,8 +3,7 @@
             [grafter.rdf.repository :refer :all]
             [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.protocols :as pr]
-            [grafter.rdf.formats :refer :all]
-            [grafter.rdf.ontologies.rdf :refer :all])
+            [grafter.rdf.formats :refer :all])
   (:import [org.openrdf.model Value]
            [org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
             CalendarLiteralImpl
@@ -28,6 +27,6 @@
     (testing "Adding values in a transaction are visible after the transaction commits."
       (with-transaction test-db
         (pr/add test-db (graph "http://example.org/test/graph"
-                               ["http://test/1" [rdf:a "http://test/Test"]])))
+                               ["http://test/subj" ["http://test/pred" "http://test/obj"]])))
 
-      (is (query test-db "ASK WHERE { <http://test/1> ?p ?o }")))))
+      (is (query test-db "ASK WHERE { <http://test/subj> ?p ?o }")))))
