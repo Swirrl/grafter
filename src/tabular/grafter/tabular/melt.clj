@@ -52,7 +52,7 @@
           (build-row [[c] row] {:variable c :value (c row)})]
     (melt-gen dataset pivot-keys [:variable :value] col-partition build-row)))
 
-(defn melt-column-groups
+(defn ^:no-doc melt-column-groups
   "Melts a dataset into groups defined by the list of given column names. Given a collection of pivot columns and a collection
   of group column names, this splits each row in the input into a collection of groups and creates a row in the output for each
   group. The groups are all the length of the column name group and it is an error if the size of the group does not divide the number
