@@ -24,6 +24,17 @@
                                   [:costs :2013 400]
                                   [:costs :2014 300]]
                                  [:measure :variable :value])]
+      (is (datasets-equal? melted expected))))
+
+  (testing "Melts single row dataset"
+    (let [initial (make-dataset [[:sales 100 200 300]]
+                                [:measure :2012 :2013 :2014])
+
+          melted (melt initial [:measure])
+          expected (make-dataset [[:sales :2012 100]
+                                  [:sales :2013 200]
+                                  [:sales :2014 300]]
+                                 [:measure :variable :value])]
       (is (datasets-equal? melted expected)))))
 
 (deftest melt-column-groups-test
