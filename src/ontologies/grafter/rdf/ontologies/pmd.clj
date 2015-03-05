@@ -6,9 +6,18 @@
 (def pmd                 (prefixer "http://publishmydata.com/def/dataset#"))
 
 (def pmd:Dataset         (pmd "Dataset"))
+(def pmd:LinkedDataset   (pmd "LinkedDataset"))
+(def pmd:FileDataset     (pmd "FileDataset"))
+(def pmd:DeprecatedDataset (pmd "DeprecatedDataset"))
 
 (def pmd:contactEmail    (pmd "contactEmail"))
 (def pmd:graph           (pmd "graph"))
+
+(def pmd:fileName (pmd "fileName"))
+(def pmd:fileExtension (pmd "fileExtension"))
+(def pmd:mediaType (pmd "mediaType"))
+(def pmd:sizeInBytes (pmd "sizeInBytes"))
+(def pmd:downloadURL (pmd "downloadURL"))
 
 
 (def folder              (prefixer "http://publishmydata.com/def/ontology/folder/"))
