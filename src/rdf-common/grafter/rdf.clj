@@ -4,14 +4,23 @@
   (:require [grafter.rdf.protocols :as pr]
             [grafter.rdf.protocols :refer [->Quad]]
             [potemkin.namespaces :refer [import-vars]]
-            [grafter.rdf.io] ;; TODO remove this when we move s into this ns and rename literal
-            [grafter.rdf.ontologies.util]))
+            [grafter.rdf.io]));; TODO remove this when we move s into this ns and rename literal
 
 (import-vars
  [grafter.rdf.io
-  s]
- [grafter.rdf.ontologies.util
-  prefixer])
+  s])
+
+(defn prefixer
+  "Takes the base prefix of a URI string and returns a function that
+  concatenates its argument onto the end of it e.g.
+  ((prefixer \"http://example.org/\") \"foo\") ;; => \"http://example.org/foo\"
+
+  This function is being deprecated and will be replaced with functions for
+  generating URIs in a later release"
+  { :deprecated "0.4.0" }
+  [uri-prefix]
+  (fn [value]
+    (str uri-prefix value)))
 
 (defn subject
   "Return the RDF subject from a statement."

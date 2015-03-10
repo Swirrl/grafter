@@ -1,8 +1,10 @@
-(defproject grafter/grafter "0.4.0-SNAPSHOT"
+(defproject grafter/grafter "0.4.1-SNAPSHOT"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
+
+  :deploy-repositories [["releases" :clojars]]
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.openrdf.sesame/sesame-runtime "2.7.14"]
@@ -19,14 +21,13 @@
 
   :codox {:defaults {:doc "FIXME: write docs"}
           :output-dir "api-docs"
-          :source ["src/rdf-repository" "src/tabular" "src/templater"
-                   "src/rdf-common" "src/ontologies" "src/pipeline"
-                   "src/common"]
+          :source ["src/common" "src/rdf-repository" "src/tabular"
+                   "src/templater" "src/rdf-common" "src/pipeline" ]
           :src-dir-uri "http://github.com/Swirrl/grafter/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
-  :source-paths ["src/common" "src/rdf-repository" "src/tabular" "src/templater" "src/rdf-common" "src/ontologies"
-                 "src/pipeline"]
+  :source-paths ["src/common" "src/rdf-repository" "src/tabular"
+                 "src/templater" "src/rdf-common" "src/pipeline"]
 
   ;; Prevent Java process from appearing as a GUI app in OSX when
   ;; Swing classes are loaded.
@@ -39,9 +40,6 @@
             :path "src/rdf-common"}
            {:subpackage "templater"
             :path "src/templater"}
-           {:type :clojure
-            :path "src/ontologies"
-            :levels 2}
            {:type :clojure
             :path "src/pipeline"
             :levels 2}

@@ -3,9 +3,10 @@
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [grafter.pipeline :refer [graft-form->Pipeline]]
-            [grafter.tabular.common :as tabc]
+            [grafter.tabular.common :refer [lift->vector map-keys] :as tabc]
             [grafter.tabular.csv]
             [grafter.tabular.excel]
+            [grafter.tabular.melt]
             [clojure.tools.logging :refer [spy]]
             [incanter.core :as inc]
             [potemkin.namespaces :refer [import-vars]]
@@ -21,7 +22,10 @@
   read-datasets
   write-dataset
   with-metadata-columns
-  without-metadata-columns])
+  without-metadata-columns
+  resolve-column-id]
+ [grafter.tabular.melt
+  melt])
 
 (defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
@@ -37,26 +41,6 @@
        (map #(repeat c %))
        (take r)
        make-dataset))
-
-(defn- resolve-col-id [column-key headers not-found]
-  (let [converted-column-key (cond
-                              (string? column-key) (keyword column-key)
-                              (keyword? column-key) (name column-key)
-                              (integer? column-key) (nth headers column-key not-found))]
-    (if-let [val (some #{column-key converted-column-key} headers)]
-      val
-      not-found)))
-
-(defn resolve-column-id
-  "Finds and resolves the column id by converting between symbols and
-  strings.  If column-key is not found in the datsets headers then
-  not-found is returned."
-
-  ([dataset column-key] (resolve-column-id dataset column-key nil))
-  ([dataset column-key not-found]
-
-   (let [headers (column-names dataset)]
-     (resolve-col-id column-key headers not-found))))
 
 (defn- invalid-column-keys
   "Takes a sequence of column key names and a dataset and returns a
@@ -152,7 +136,7 @@ Returns a lazy sequence of matched rows."
 ;; This type hint is actually correct as APersistentVector implements .indexOf
 ;; from java.util.List.
 (defn- col-position [^java.util.List column-names col]
-  (if-let [canonical-col (resolve-col-id col column-names ::not-found)]
+  (if-let [canonical-col (tabc/resolve-col-id col column-names ::not-found)]
     (let [val (.indexOf column-names canonical-col)]
       (if (not= -1 val)
         val
@@ -175,12 +159,6 @@ Returns a lazy sequence of matched rows."
                              (map (partial col-position col-names)))
         selected-cols (select-indexed (indexed col-names) matched-columns)]
     (all-columns dataset selected-cols)))
-
-(defn- map-keys [f hash]
-  "Apply f to the keys in the supplied hashmap and return a new
-  hashmap."
-  (zipmap (map f (keys hash))
-          (vals hash)))
 
 (defn rename-columns
   "Renames the columns in the dataset.  Takes either a map or a
@@ -215,11 +193,8 @@ Returns a lazy sequence of matched rows."
   [dataset n]
   (tabc/pass-rows dataset (partial take n)))
 
-(defn ^:no-doc lift->vector [x]
-  (if (sequential? x) x [x]))
-
 (defn- resolve-keys [headers hash]
-  (map-keys #(resolve-col-id % headers nil) hash))
+  (map-keys #(tabc/resolve-col-id % headers nil) hash))
 
 (defn- select-row-values [src-col-ids row]
   (map #(get row %) src-col-ids))
@@ -616,29 +591,6 @@ the specified column being cloned."
                                  (with-meta triple# meta#)))))))]
 
          (mapcat graphify-row# (:rows ~ds-sym))))))
-
-(defn melt
-  "Melt an object into a form suitable for easy casting, like a melt function in R.
-It accepts multiple pivot keys (identifier variables that are reproduced for each
-row in the output).
-(use '(incanter core charts datasets))
-(view (with-data (melt (get-dataset :flow-meter) :Subject)
-(line-chart :Subject :value :group-by :variable :legend true)))
-See http://www.statmethods.net/management/reshape.html for more examples."
-  [dataset & pivot-keys]
-  (let [resolve-keys (partial resolve-column-id dataset)
-        pivot-keys (map resolve-keys pivot-keys)
-        in-m (map-keys resolve-keys (inc/to-map dataset))
-        nrows (inc/nrow dataset)
-        ks (keys in-m)]
-
-    (-> (inc/to-dataset
-         (for [k ks i (range nrows) :when (not-any? #(= k %) pivot-keys)]
-           (zipmap (conj pivot-keys :variable :value)
-                   (conj (map #(nth (get in-m %) i) pivot-keys)
-                         k
-                         (nth (get in-m k) i)))))
-        (with-meta (meta dataset)))))
 
 (defmacro defpipe
   "Declares an entry point to a grafter pipeline, allowing it to be
