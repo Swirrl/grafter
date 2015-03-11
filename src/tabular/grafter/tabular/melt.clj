@@ -120,7 +120,9 @@
                     col-count (count cols)]
                 (if (= 0 (mod col-count group-size))
                   (partition group-size cols)
-                  (throw (IllegalArgumentException. (str "Column group size should be a multiple of the number of non-fixed columns (" col-count ").")))))
+                  (throw (IllegalArgumentException.
+                          (str "Column group size should be a multiple of the "
+                               "number of non-fixed columns (" col-count ").")))))
               (partition (count output-column-names) cols))
             (build-row [cols row]
               (let [col-map (zipmap cols output-column-names)]
