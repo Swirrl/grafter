@@ -41,10 +41,6 @@ the [leiningen](http://leiningen.org/) build tool:
 
 [![Clojars Project](http://clojars.org/grafter/latest-version.svg)](http://clojars.org/grafter)
 
-Release candidates are released as `SNAPSHOT` builds and our first
-official release will be `0.2.0`, this will hopefully be released in
-the coming weeks.
-
 **NOTE:** We are currently following a `MAJOR.MINOR.PATCH` versioning
 scheme, but are anticipating significant breaking API changes between
 minor versions at least until we reach `1.0.0`.
@@ -54,6 +50,16 @@ versions.
 
 Releases will be tagged with an appropriate tag indicating their
 `MAJOR.MINOR.PATCH` version.
+
+We are currently producing API docs for the master branch and all
+tagged releases.
+
+- [API docs (master branch)](http://api.grafter.org/master)
+- [API docs (all releases)](http://api.grafter.org/)
+
+Additionally [grafter.org](http://grafter.org/) contains a
+[quick start guide](http://grafter.org/getting-started/index.html) and
+supplementary documentation.
 
 ## License
 
