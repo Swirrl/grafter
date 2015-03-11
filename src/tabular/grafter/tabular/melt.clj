@@ -1,4 +1,4 @@
-(ns grafter.tabular.melt
+(ns ^:no-doc grafter.tabular.melt
   "Functions for melting data and building variations on melt."
   (:require
    [clojure.set :as set]
