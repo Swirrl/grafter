@@ -2,18 +2,18 @@
   "Symbols used to specify different Linked Data Serializations."
   (:import [org.openrdf.rio RDFFormat]))
 
-(def rdf-xml RDFFormat/RDFXML)
+(def ^{:doc "RDF XML Serialisation."} rdf-xml RDFFormat/RDFXML)
 
-(def rdf-n3 RDFFormat/N3)
+(def ^{:doc "N3 RDF Serialisation."} rdf-n3 RDFFormat/N3)
 
-(def rdf-ntriples RDFFormat/NTRIPLES)
+(def ^{:doc "N-triples RDF Serialisation."} rdf-ntriples RDFFormat/NTRIPLES)
 
-(def rdf-nquads RDFFormat/NQUADS)
+(def ^{:doc "NQuads RDF Serialisation."} rdf-nquads RDFFormat/NQUADS)
 
-(def rdf-turtle RDFFormat/TURTLE)
+(def ^{:doc "Turtle RDF Serialisation."} rdf-turtle RDFFormat/TURTLE)
 
-(def rdf-jsonld RDFFormat/JSONLD)
+(def ^{:doc "JSON-LD RDF Serialisation."} rdf-jsonld RDFFormat/JSONLD)
 
-(def rdf-trix RDFFormat/TRIX)
+(def ^{:doc "Trix RDF Serialisation."} rdf-trix RDFFormat/TRIX)
 
-(def rdf-trig RDFFormat/TRIG)
+(def ^{:doc "Trig RDF Serialisation."} rdf-trig RDFFormat/TRIG)

@@ -75,9 +75,11 @@
   a lazy-sequence of quad Statements.  A turtle-like template should
   be structured like this:
 
+  ````
   [subject [predicate1 object1]
            [predicate2 object2]
            [predicate3 [[blank-node-predicate blank-node-object]]]]
+  ````
 
   Subjects, predicates and objects can be strings, URI's or URL's,
   whilst objects can also be literal types such as java numeric types,

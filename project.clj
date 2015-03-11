@@ -19,7 +19,8 @@
                  ]
 
 
-  :codox {:defaults {:doc "FIXME: write docs"}
+  :codox {:defaults {:doc "FIXME: write docs"
+                     :doc/format :markdown}
           :output-dir "api-docs"
           :source ["src/common" "src/rdf-repository" "src/tabular"
                    "src/templater" "src/rdf-common" "src/pipeline" ]

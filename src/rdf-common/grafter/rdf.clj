@@ -13,7 +13,8 @@
 (defn prefixer
   "Takes the base prefix of a URI string and returns a function that
   concatenates its argument onto the end of it e.g.
-  ((prefixer \"http://example.org/\") \"foo\") ;; => \"http://example.org/foo\"
+
+`((prefixer \"http://example.org/\") \"foo\") ;; => \"http://example.org/foo\"`
 
   This function is being deprecated and will be replaced with functions for
   generating URIs in a later release"
@@ -44,7 +45,7 @@
 
 (defn add-statement
   "Add an RDF statement to the target datasink.  Datasinks must
-  implement grafter.rdf.protocols/ITripleWriteable.
+  implement `grafter.rdf.protocols/ITripleWriteable`.
 
   Datasinks include sesame RDF repositories, connections and anything
   built by rdf-serializer.
@@ -81,14 +82,14 @@
   Takes optional parameters which may be used depending on the
   context e.g. specifiying the format of the source triples.
 
-  The :format option is supplied by the wrapping function and may be
+  The `:format` option is supplied by the wrapping function and may be
   nil, or act as an indicator about the format of the triples to read.
   Implementers can choose whether or not to ignore or require the
   format parameter.
 
-  The :buffer-size option can be used to configure the buffer size at
-  which statements are parsed from an RDF stream.  Its default value
-  of 32 was found to work well in practice, and also aligns with chunk
-  size of Clojure's lazy sequences."
+  The `:buffer-size` option can be used to configure the buffer size
+  at which statements are parsed from an RDF stream.  Its default
+  value of 32 was found to work well in practice, and also aligns with
+  chunk size of Clojure's lazy sequences."
   [this & {:keys [format buffer-size] :as options}]
   (pr/to-statements this options))

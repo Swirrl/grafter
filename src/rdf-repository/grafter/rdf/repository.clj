@@ -154,7 +154,7 @@
   store or with any SAIL that returns InferencerConnections.  e.g. to
   instantiate a repository with a memory-store:
 
-  (repo (rdfs-inferencer (memory-store)))"
+  `(repo (rdfs-inferencer (memory-store)))`"
 
   ([]
    (ForwardChainingRDFSInferencer.))
@@ -372,7 +372,7 @@
 
 (defn make-restricted-dataset
   "Build a dataset to act as a graph restriction.  You can specify for
-  both :default-graph and :named-graphs.  Both of which take sequences
+  both `:default-graph` and `:named-graphs`.  Both of which take sequences
   of URI strings."
   [& {:as options}]
   (when options
@@ -408,21 +408,22 @@
 
   e.g.
 
+  ````
   (with-open [conn (->connection repo)]
      (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
         (println res)))
-
+  ````
 
   Takes a repo and sparql string and an optional set of k/v argument
   pairs, and executes the sparql query on the repository.
 
   Options are:
 
-  :default-graph a seq of URI strings representing named graphs to be set
-                 as the default union graph for the query.
+  - `:default-graph` a seq of URI strings representing named graphs to be set
+    as the default union graph for the query.
 
-  :named-graphs a seq of URI strings representing the named graphs in
-  to be used in the query.
+  - `:named-graphs` a seq of URI strings representing the named graphs in
+    to be used in the query.
 
   If no options are passed then we use the default of no graph
   restrictions whilst the union graph is the union of all graphs."

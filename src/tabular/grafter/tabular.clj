@@ -30,10 +30,10 @@
 (defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
 
-(test-dataset 2 2) ;; =>
+`(test-dataset 2 2) ;; =>`
 
 | A | B |
-|---+---|
+|---|---|
 | 0 | 0 |
 | 1 | 1 |"
   [r c]
@@ -91,9 +91,9 @@
 (defn- select-indexed
   "Selects indexed rows or columns (outside of the dataset).  Assumes the seq of
   row-numbers to select on is ordered, and that row-data is a tuple
-  of form [index row].
+  of form `[index row]`.
 
-Returns a lazy sequence of matched rows."
+  Returns a lazy sequence of matched rows."
   [[[index current-item] & item-data]
    [current-item-number & rest-item-numbers :as item-numbers]]
   (cond
@@ -259,7 +259,7 @@ the specified column being cloned."
 (defn add-columns
   "Add several new columns to a dataset at once.  There are a number of different parameterisations:
 
-  (add-columns ds {:foo 10 :bar 20})
+  `(add-columns ds {:foo 10 :bar 20})`
 
   Calling with two arguments where the second argument is a hash map
   creates new columns in the dataset for each of the hashmaps keys and
@@ -271,12 +271,10 @@ the specified column being cloned."
   specified columns into the given function, and then associate its
   returned map back into the dataset.  e.g.
 
-  (add-columns ds \"a\" (fn [a] {:b (inc a) :c (inc a)} ))
-
-  ; =>
+  `(add-columns ds \"a\" (fn [a] {:b (inc a) :c (inc a)} )) ; =>`
 
   | a | :b | :c |
-  |---+----+----|
+  |---|----|----|
   | 0 |  1 |  1 |
   | 1 |  2 |  2 |
 
@@ -284,16 +282,13 @@ the specified column being cloned."
   them from the return value of the first row.  If you don't want to
   infer them from the first row then you can also supply them like so:
 
-  (add-columns ds [:b :c] \"a\" (fn [a] {:b (inc a) :c (inc a)} ))
-
-  ; =>
+  `(add-columns ds [:b :c] \"a\" (fn [a] {:b (inc a) :c (inc a)} )) ; =>`
 
   | a | :b | :c |
-  |---+----+----|
+  |---|----|----|
   | 0 |  1 |  1 |
-  | 1 |  2 |  2 |
+  | 1 |  2 |  2 |"
 
-"
   ([dataset hash]
      (let [merge-cols (fn [ds k]
                         (add-column ds k (hash k)))
@@ -444,7 +439,7 @@ the specified column being cloned."
   It is also possible to create new columns with apply-columns for
   example to assign row ids you can do:
 
-  (apply-columns ds {:row-id (fn [_] (grafter.sequences/integers-from 0))})"
+  `(apply-columns ds {:row-id (fn [_] (grafter.sequences/integers-from 0))})`"
   [dataset fs]
   (let [functions (normalise-mapping dataset fs)
         new-columns (concat-new-columns dataset (keys functions))
@@ -616,7 +611,7 @@ the specified column being cloned."
   It is effectively equivalent to the following call with additional
   metadata benefits:
 
-  (def my-graft (comp make-graph my-pipeline))
+  `(def my-graft (comp make-graph my-pipeline))`
 
   It is used with defpipeline to indicate that a transformation also
   supports conversion into graph data.

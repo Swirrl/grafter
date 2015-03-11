@@ -21,7 +21,8 @@
     ;; A more efficient way to add an InputStream/Reader of RDF data to the destination.
     [this graph format triple-stream]
     [this graph base-uri format triple-stream]
-    "Add a seq of triples or quads to a destination.  Works with a sequence of IStatements an InputStream, File or Reader"))
+    "Add a seq of triples or quads to a destination.  Works with a
+    sequence of IStatements an InputStream, File or Reader"))
 
 (defprotocol ITripleReadable
   "Use the higher level wrapper function statements if you just wish to read in some RDF.
@@ -46,23 +47,24 @@
   "NOTE this protocol is intended for low-level access.  End users
   should use query instead.
 
-  Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
-  and SELECT queries.
+  Run an arbitrary SPARQL query.  Works with `ASK`, `DESCRIBE`,
+  `CONSTRUCT` and `SELECT` queries.
 
   You can call this on a Repository however if you do you may in some
   cases cause a resource leak, for example if the sequence of results
   isn't fully consumed.
 
   To use this without leaking resources it is recommended that you
-  call ->connection on your repository, inside a with-open; and then
-  consume all your results inside of a nested doseq/dorun/etc...
+  call `->connection` on your repository, inside a `with-open`; and
+  then consume all your results inside of a nested `doseq`/`dorun`/etc...
 
   e.g.
 
+  ````
   (with-open [conn (->connection repo)]
      (doseq [res (query conn \"SELECT * WHERE { ?s ?p ?o .}\")]
         (println res)))
-  "
+  ````"
   ;; TODO: reimplement interfaces with proper resource handling.
   (query-dataset [this sparql-string model])
 
