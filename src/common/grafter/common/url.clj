@@ -129,8 +129,8 @@
   (url-fragment [url]
     (.getFragment url))
 
-  (add-path-segments [url segments]
-    (let [new-path (build-path segments)]
+  (append-path-segments [url segments]
+    (let [new-path (join-paths url segments)]
       (URI. (scheme url) (.getUserInfo url) (host url) (or (port url) -1) new-path (.getQuery url) (.getFragment url))))
 
   (set-path-segments [url segments]

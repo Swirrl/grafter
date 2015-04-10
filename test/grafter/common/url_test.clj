@@ -12,7 +12,7 @@
       (set-path-segments ["articles" "yaks"])
       (append-path-segments ["hair" "shaving"])
       (set-query-params {"article-id" 1})
-      ->url))
+      str))
 
 (deftest test-url-builders
   (let [in "http://foobar.com/blah/blah/blah"
