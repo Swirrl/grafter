@@ -5,6 +5,14 @@
   (:import [java.net URL URI]
            [org.openrdf.model.impl URIImpl]))
 
+(defprotocol IURLable
+  (->url [url]
+    "Convert into a java.net.URL"))
+
+(defprotocol IURIable
+  (->uri [url]
+    "Convert into a java.net.URI"))
+
 (defprotocol IURL
   (set-host [url host])
   (host [url])
@@ -25,10 +33,10 @@
     "Adds the map of key value pairs to the query params.  Sorts the
     keys first to help provide guarantee's around URL equality.")
   (query-params [url])
-  (->url [url]
-    "Convert into a java.net.URI")
-  (->uri [url]
-    "Convert into a java.net.URI"))
+
+  ;; Implementations should also implement IURLable and IURIable
+
+  )
 
 (defn parse-path [path-str]
   (when-not (#{nil ""} path-str)
