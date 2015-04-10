@@ -61,12 +61,7 @@
 
   (query-params [url]
     "Return the query parameters for the URL as an ordered sequence of
-    key/value tuples.")
-
-  (query-params-map [url]
-    "Return the query parameters for the URL as a hash-map if there
-    are multiple occurrences of the same parameter the last occurrence
-    wins."))
+    key/value tuples."))
 
 (defn parse-path [path-str]
   (when-not (#{nil ""} path-str)
