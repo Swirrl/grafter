@@ -43,7 +43,7 @@
   (url-fragment [url]
     "Get the URL fragment from the URL.")
 
-  (add-path-segments [url segments]
+  (append-path-segments [url segments]
     "Append new path segments to the URL path.")
 
   (set-path-segments [url segments]
@@ -209,7 +209,7 @@
   (url-fragment [url]
     (.getRef url))
 
-  (add-path-segments [url segments]
+  (append-path-segments [url segments]
     (set-path-segments url
                        (parse-path (join-paths url segments))))
 
@@ -285,7 +285,7 @@
   (url-fragment [this]
     (:url-fragment this))
 
-  (add-path-segments [url segments]
+  (append-path-segments [url segments]
     (update-in url [:path-segments] concat segments))
 
   (set-path-segments [url segments]

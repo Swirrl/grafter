@@ -10,7 +10,7 @@
       (set-scheme "https")
       (set-url-fragment "11-things-you-can-do-with-yak-hair")
       (set-path-segments ["articles" "yaks"])
-      (add-path-segments ["hair" "shaving"])
+      (append-path-segments ["hair" "shaving"])
       (set-query-params {"article-id" 1})
       ->url))
 
