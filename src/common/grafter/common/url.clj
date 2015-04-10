@@ -115,7 +115,10 @@
     (URI. (scheme url) (.getUserInfo url) (host url) (or port -1) (.getPath url) (.getQuery url) (.getFragment url)))
 
   (port [url]
-    (.getPort url))
+    (let [p (.getPort url)]
+      (if (= -1 p)
+        nil
+        p)))
 
   (set-scheme [url protocol]
     (URI. protocol (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) (.getQuery url) (.getFragment url)))
