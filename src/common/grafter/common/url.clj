@@ -5,38 +5,67 @@
   (:import [java.net URL URI]
            [org.openrdf.model.impl URIImpl]))
 
+
 (defprotocol IURLable
-  (->url [url]
-    "Convert into a java.net.URL"))
+  (->java-url [url]
+    "Convert into a URL"))
 
 (defprotocol IURIable
-  (->uri [url]
+  (->java-uri [url]
     "Convert into a java.net.URI"))
 
 (defprotocol IURL
-  (set-host [url host])
-  (host [url])
-  (set-scheme [url scheme])
-  (scheme [this])
-  (set-port [this port])
-  (port [this])
-  (set-protocol [this protocol])
-  (protocol [this])
-  (set-url-fragment [url fragment])
-  (url-fragment [url])
-  (add-path-segments [url segments])
-  (set-path-segments [url segments])
-  (path-segments [url])
+  "A protocol for manipulating URL objects.  Implementations of this
+  protocol should also implement the protocols IURLable and IURIable"
+
+  (set-host [url host]
+    "Set the host domain of the URL.")
+
+  (host [url]
+    "Get the host domain of the URL.")
+
+  (set-scheme [url scheme]
+    "Set the URL scheme e.g. http, https.")
+
+  (scheme [this]
+    "Get the URL scheme.")
+
+  (set-port [this port]
+    "Set the port of the URL.")
+
+  (port [this]
+    "Get the port of the URL.")
+
+  (set-url-fragment [url fragment]
+    "Set the URL #fragment")
+
+  (url-fragment [url]
+    "Get the URL fragment from the URL.")
+
+  (add-path-segments [url segments]
+    "Append new path segments to the URL path.")
+
+  (set-path-segments [url segments]
+    "Set the path segments to those supplied.")
+
+  (path-segments [url]
+    "Get the path segments for the URL.")
+
   (append-query-param [url key value]
     "Append the key and value to the query parameters")
+
   (set-query-params [url hash-map]
     "Adds the map of key value pairs to the query params.  Sorts the
     keys first to help provide guarantee's around URL equality.")
-  (query-params [url])
 
-  ;; Implementations should also implement IURLable and IURIable
+  (query-params [url]
+    "Return the query parameters for the URL as an ordered sequence of
+    key/value tuples.")
 
-  )
+  (query-params-map [url]
+    "Return the query parameters for the URL as a hash-map if there
+    are multiple occurrences of the same parameter the last occurrence
+    wins."))
 
 (defn parse-path [path-str]
   (when-not (#{nil ""} path-str)
@@ -65,68 +94,159 @@
        (map (fn [[k v]] (str k "=" v)))
        (str/join "&")))
 
-(defn build-sorted-params [hash-map]
+(defn- build-sorted-params [hash-map]
   (->> hash-map
        (map (fn [[k v]] [(name k) (str v)]))
        (sort-by first)
        vec))
 
-(extend-protocol IURL
+(defn- build-sorted-query-params [hash-map]
+  (->> hash-map
+       build-sorted-params
+       build-query-params))
 
-  URI
+(extend-type URI
+
+  IURL
 
   (set-host [url host]
-    (URI. (protocol url) (.getUserInfo url) host (or (port url) -1) (.getPath url) (.getQuery url) (.getFragment url)))
+    (URI. (scheme url) (.getUserInfo url) host (or (port url) -1) (.getPath url) (.getQuery url) (.getFragment url)))
 
   (host [url]
     (.getHost url))
 
   (set-port [url port]
-    (URI. (protocol url) (.getUserInfo url) (host url) (or port -1) (.getPath url) (.getQuery url) (.getFragment url)))
+    (URI. (scheme url) (.getUserInfo url) (host url) (or port -1) (.getPath url) (.getQuery url) (.getFragment url)))
 
   (port [url]
     (.getPort url))
 
-  (set-protocol [url protocol]
+  (set-scheme [url protocol]
     (URI. protocol (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) (.getQuery url) (.getFragment url)))
 
-  (protocol [this]
+  (scheme [this]
     (.getScheme this))
 
   (set-url-fragment [url fragment]
-    (URI. (protocol url) (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) (.getQuery url) (.getFragment fragment)))
+    (URI. (scheme url) (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) (.getQuery url) fragment))
 
   (url-fragment [url]
     (.getFragment url))
 
   (add-path-segments [url segments]
     (let [new-path (build-path segments)]
-      (URI. (protocol url) (.getUserInfo url) (host url) (or (port url) -1) new-path (.getQuery url) (.getFragment url))))
+      (URI. (scheme url) (.getUserInfo url) (host url) (or (port url) -1) new-path (.getQuery url) (.getFragment url))))
 
   (set-path-segments [url segments]
-    (URI. (protocol url) (.getUserInfo url) (host url) (or (port url) -1) (build-path segments) (.getQuery url) (.getFragment url)))
+    (URI. (scheme url) (.getUserInfo url) (host url) (or (port url) -1) (build-path segments) (.getQuery url) (.getFragment url)))
 
   (path-segments [url]
     (parse-path (.getPath url)))
 
   (append-query-param [url key value]
     (let [query-params (build-query-params (concat (query-params url) [[key value]]))]
-      (URI. (protocol url) (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) query-params (.getFragment url))))
+      (URI. (scheme url) (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) query-params (.getFragment url))))
 
   (set-query-params [url hash-map]
-    (let [params (->> hash-map
-                      build-sorted-params
-                      build-query-params)]
-      (URI. (protocol url) (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) params (.getFragment url))))
+    (let [params (build-sorted-query-params hash-map)]
+      (URI. (scheme url) (.getUserInfo url) (host url) (or (port url) -1) (.getPath url) params (.getFragment url))))
 
   (query-params [url]
     (parse-query-params (.getQuery url)))
 
-  (->url [url]
+  IURLable
+
+  (->java-url [url]
     (.toURL url))
 
-  (->uri [url]
+  IURIable
+  (->java-uri [url]
     url))
+
+(defn- url-end
+  "Build the tail end of a URL (the file path + query string +
+  fragment)"
+  [url]
+
+  (if-let [fragment (.getRef url)]
+    (str (.getFile url) "#" fragment)
+    (.getFile url)))
+
+(defn- url-end-path-fragment [url]
+  (if-let [fragment (.getRef url)]
+    (str (.getPath url) "#" fragment)
+    (.getPath url)))
+
+(extend-type URL
+
+  IURL
+
+  (set-host [url host]
+    (URL. (scheme url) host (or (port url) -1) (url-end url)))
+
+  (host [url]
+    (.getHost url))
+
+  (set-scheme [url scheme]
+    (URL. scheme (host url) (or (port url) -1) (url-end url)))
+
+  (scheme [this]
+    (.getProtocol this))
+
+  (set-port [url port]
+    (let [p (or port -1)
+          port (if (instance? String p)
+                 (Integer/parseInt p)
+                 p)]
+      (URL. (scheme url) (host url) port (url-end url))))
+
+  (port [this]
+    (let [port (.getPort this)]
+      (when-not (= -1 port)
+        port)))
+
+  (set-url-fragment [url fragment]
+    (if fragment
+      (URL. (scheme url) (host url) (or (port url) -1) (str (.getFile url) "#" fragment))
+      (URL. (scheme url) (host url) (or (port url) -1) (str (.getFile url)))))
+
+  (url-fragment [url]
+    (.getRef url))
+
+  (add-path-segments [url segments]
+    (set-path-segments url
+                       (parse-path (join-paths url segments))))
+
+  (set-path-segments [url segments]
+    (let [path (build-path segments)
+          file (if-let [qp (query-params url)]
+                 (str path "?" qp)
+                 path)
+          file-frag (if-let [fragment (url-fragment url)]
+                      (str file "#" fragment)
+                      file)]
+      (URL. (scheme url) (host url) (or (port url) -1) file-frag)))
+
+  (path-segments [url]
+    (parse-path (.getPath url)))
+
+  (append-query-param [url key value]
+    (let [query-params (build-query-params (concat (query-params url) [[key value]]))]
+      (if-let [fragment (.getRef url)]
+        (URL. (scheme url) (host url) (or (port url) -1) (str (.getPath url) "?" query-params "#" fragment))
+        (URL. (scheme url) (host url) (or (port url) -1) (str (.getPath url) "?" query-params)))))
+
+  (set-query-params [url hash-map]
+    (URL. (scheme url) (host url) (or (port url) -1)
+          (if hash-map
+            (let [file (str (.getPath url) "?" (build-sorted-query-params hash-map))]
+              (if-let [fragment (url-fragment url)]
+                (str file "#" fragment)
+                file))
+            (url-end-path-fragment url))))
+
+  (query-params [url]
+    (parse-query-params (.getQuery url))))
 
 (defn- append-to [url key values]
   (update-in url [:path-segments] concat [[key values]]))
@@ -152,13 +272,13 @@
     (:host this))
 
   (set-scheme [url scheme]
-    (:assoc url :scheme scheme))
+    (assoc url :scheme scheme))
 
   (scheme [this]
     (:scheme this))
 
   (set-port [this port]
-    (assoc :port port))
+    (assoc this :port port))
 
   (port [this]
     (:port this))
@@ -173,13 +293,13 @@
     (update-in url [:path-segments] concat segments))
 
   (set-path-segments [url segments]
-    (assoc :path-segments segments))
+    (assoc url :path-segments segments))
 
   (path-segments [url]
     (:path-segments url))
 
   (query-params [url]
-    :query-params url)
+    (:query-params url))
 
   (append-query-param [url key value]
     (update-in url [:query-params] concat [[key value]]))
@@ -188,28 +308,43 @@
     (let [kvs (build-sorted-params hash-map)]
       (assoc url :query-params kvs)))
 
-  (->url [url]
+  IURLable
+  (->java-url [url]
     (to-uri* url))
 
-  (->uri [url]
+  IURIable
+  (->java-uri [url]
     (to-uri* url))
 
   Object
   (toString [this]
-    (.toString (->uri this))))
+    (.toString (->java-uri this))))
+
+(defn query-params-map
+  "Returns a map of query parameters from a URL query string.  If
+  there are duplicate keys, the last occurrence of each duplicate
+  parameter wins.
+
+  e.g. with the following query parameters ?foo=1&foo=2&bar=3 the map
+  {\"foo\" 2 \"bar\" 3} is returned."
+  [url]
+  (->> url
+       query-params
+       flatten
+       (apply hash-map)))
 
 (defmethod print-method GrafterURL [v ^java.io.Writer w]
   (.write w (str "#<GrafterURL " v ">")))
 
-(defn url-builder
-  "Parses a given string into a GrafterURL record. If the represented
+(defn ->url
+  "Parses a given string into a GrafterURL record.  If the represented
   URI contains any reserved characters, they should be encoded
   correctly in the input string."
   [uri-str]
   (let [uri (if (instance? URI uri-str)
               uri-str
               (URI. uri-str))
-        scheme (protocol uri)
+        scheme (scheme uri)
         host (host uri)
         port (port uri)
         fragment (url-fragment uri)
