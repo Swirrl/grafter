@@ -1,18 +1,19 @@
 (ns grafter.common.url
+  "Utilities and protocols for building and handling URLs and URIs."
   (:require [clojure.string :as str]
             [grafter.rdf.io :refer [ISesameRDFConverter]])
 
   (:import [java.net URL URI]
            [org.openrdf.model.impl URIImpl]))
 
-
-(defprotocol IURLable
-  (->java-url [url]
-    "Convert into a URL"))
-
 (defprotocol IURIable
   (->java-uri [url]
     "Convert into a java.net.URI"))
+
+(defn ->java-url
+  "Convert a URI into a java.net.URL."
+  [url]
+  (.toURL (->java-uri url)))
 
 (defprotocol IURL
   "A protocol for manipulating URL objects.  Implementations of this
@@ -153,11 +154,6 @@
 
   (query-params [url]
     (parse-query-params (.getQuery url)))
-
-  IURLable
-
-  (->java-url [url]
-    (.toURL url))
 
   IURIable
   (->java-uri [url]
@@ -308,10 +304,6 @@
     (let [kvs (build-sorted-params hash-map)]
       (assoc url :query-params kvs)))
 
-  IURLable
-  (->java-url [url]
-    (to-uri* url))
-
   IURIable
   (->java-uri [url]
     (to-uri* url))
@@ -360,3 +352,10 @@
 
   (->sesame-rdf-type [uri]
     (URIImpl. (str uri))))
+
+(extend-protocol IURIable
+
+  org.openrdf.model.URI
+
+  (->java-uri [this]
+    (URI. (.stringValue this))))
