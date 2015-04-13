@@ -6,9 +6,17 @@
 
   :deploy-repositories [["releases" :clojars]]
 
+
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.openrdf.sesame/sesame-runtime "2.7.14"]
+                 [org.openrdf.sesame/sesame-runtime "2.7.14"
+                  :exclusions [org.openrdf.sesame/sesame-repository-manager]]
                  [org.clojure/tools.logging "0.3.1"]
+
+                 [org.clojure/algo.monads "0.1.5"]
+                 [org.clojure/tools.logging "0.2.6"]
+                 [grafter/url "0.1.0-SNAPSHOT"]
+                 [clj-time "0.7.0"]
+
                  [org.clojure/data.csv "0.1.2"]
                  [com.outpace/clj-excel "0.0.6" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.6"]
