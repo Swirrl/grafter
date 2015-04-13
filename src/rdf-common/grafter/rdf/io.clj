@@ -5,8 +5,10 @@
             [grafter.rdf.protocols :as pr]
             [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
-            [pantomime.media :as mime])
+            [pantomime.media :as mime]
+            [grafter.url :refer [->url IURIable]])
   (:import (grafter.rdf.protocols IStatement Quad Triple)
+           (grafter.url GrafterURL)
            (java.io File)
            (java.net MalformedURLException URL)
            (java.util GregorianCalendar)
@@ -296,6 +298,23 @@
   clojure.lang.Keyword
   (->sesame-rdf-type [this]
     (BNodeImpl. (name this))))
+
+(extend-protocol ISesameRDFConverter
+  GrafterURL
+
+  (sesame-rdf-type->type [uri]
+    (->url (str uri)))
+
+  (->sesame-rdf-type [uri]
+    (URIImpl. (str uri))))
+
+;; Extend IURIable protocol to sesame URI's.
+(extend-protocol IURIable
+
+  org.openrdf.model.URI
+
+  (->java-uri [this]
+    (java.net.URI. (.stringValue this))))
 
 (defn sesame-statement->IStatement
   "Convert a sesame Statement into a grafter Quad."
