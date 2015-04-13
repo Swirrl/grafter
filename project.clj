@@ -30,8 +30,10 @@
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
           :output-dir "api-docs"
-          :source ["src/common" "src/rdf-repository" "src/tabular"
-                   "src/templater" "src/rdf-common" "src/pipeline" ]
+          :sources ["src/common" "src/rdf-repository" "src/tabular"
+                   "src/templater" "src/rdf-common" "src/pipeline"
+                   ;; Include docs from grafter-url project too
+                   "../grafter-url/src"]
           :src-dir-uri "http://github.com/Swirrl/grafter/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
