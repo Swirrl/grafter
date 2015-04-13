@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.4.1-SNAPSHOT"
+(defproject grafter/grafter "0.5.0-SNAPSHOT"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
