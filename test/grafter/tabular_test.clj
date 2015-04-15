@@ -223,6 +223,8 @@
            :not-found "z"
            :not-found :z))))
 
+
+;; Merge column test with all-columns
 (deftest columns-tests
   (let [expected-dataset (test-dataset 5 2)
         test-data (test-dataset 5 10)]
@@ -250,7 +252,15 @@
         (let [md {:foo :bar}
               ds (with-meta (make-dataset [[1 2 3]]) md)]
           (is (= md
-                 (meta (columns ds [0])))))))))
+                 (meta (columns ds [0]))))))
+
+      (testing "Returns all columns from unordered sequence"
+        (let [expected-dataset (assoc (test-dataset 5 4)
+                                      :column-names
+                                      ["a" "b" "d" "c"])]
+          (is (= expected-dataset
+                 (columns test-data [:a :b :d :c]))
+              "should return dataset containing the cols :a :b :d :c"))))))
 
 (deftest all-columns-test
   (testing "all-columns"

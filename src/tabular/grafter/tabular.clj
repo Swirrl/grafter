@@ -102,23 +102,23 @@
        (= ::not-found current-item-number)) []
 
        (= current-item-number index) (let [[repeated-item-numbers remaining-item-numbers]
-                                      (split-with #(= current-item-number %) item-numbers)
-                                      repeated-items (repeat (count repeated-item-numbers) current-item)]
-                                  (lazy-cat
-                                   repeated-items
-                                   (select-indexed item-data remaining-item-numbers)))
+                                           (split-with #(= current-item-number %) item-numbers)
+                                           repeated-items (repeat (count repeated-item-numbers) current-item)]
+                                       (lazy-cat
+                                         repeated-items
+                                         (select-indexed item-data remaining-item-numbers)))
 
        (< current-item-number index) (select-indexed
-                                     (drop-while (fn [[index item]]
-                                                   (not= index current-item-number))
-                                                 item-data)
-                                     rest-item-numbers)
+                                       (drop-while (fn [[index item]]
+                                                     (not= index current-item-number))
+                                                   item-data)
+                                       rest-item-numbers)
        (> current-item-number index) (select-indexed
-                                     (drop-while (fn [[index item]]
-                                                   (not= index current-item-number))
-                                                 item-data)
-                                     ;; leave item-numbers as is (i.e. stay on current item after fast forwarding the data)
-                                     item-numbers)))
+                                       (drop-while (fn [[index item]]
+                                                     (not= index current-item-number))
+                                                   item-data)
+                                       ;; leave item-numbers as is (i.e. stay on current item after fast forwarding the data)
+                                       item-numbers)))
 
 (defn rows
   "Takes a dataset and a seq of row-numbers and returns a dataset
@@ -146,18 +146,20 @@
   "Given a dataset and some columns, narrow the dataset to just the
   supplied columns.
 
-  cols are paired off with columns in the data and then a selection is
-  done.  Any cols left over after the pairing are discarded, but if a
-  selected col is not actually in the data an IndexOutOfBoundsException will
-  be thrown.
+  Supplied cols are paired off with columns in the data and then a selection is
+  done. Any cols left over after the pairing are discarded, but if a selected col
+  is not actually in the data an IndexOutOfBoundsException will be thrown.
 
   This function can safely be used with infinite sequences."
 
   [dataset cols]
   (let [col-names (column-names dataset)
-        matched-columns (->> cols
+        max-cols (count (:column-names dataset))
+        matched-column-pos (->>
+                             (take max-cols cols)
                              (map (partial col-position col-names)))
-        selected-cols (select-indexed (indexed col-names) matched-columns)]
+        valid-positions (filterv #(not= ::not-found %) matched-column-pos)
+        selected-cols (map #(nth col-names %) valid-positions)]
     (all-columns dataset selected-cols)))
 
 (defn rename-columns
