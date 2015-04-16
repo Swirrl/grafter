@@ -224,7 +224,6 @@
            :not-found :z))))
 
 
-;; Merge column test with all-columns
 (deftest columns-tests
   (let [expected-dataset (test-dataset 5 2)
         test-data (test-dataset 5 10)]
@@ -245,7 +244,8 @@
         (is (columns test-data (grafter.sequences/integers-from 5))
             "Takes as much as it can from the supplied sequence and returns those columns.")
 
-        (is (thrown? IndexOutOfBoundsException (columns test-data (range 10 100)))
+        (is (thrown? IndexOutOfBoundsException
+                     (columns test-data (range 10 100)))
             "Raises an exception if columns when paired with data are not actually column headings."))
 
       (testing "preserves metadata"
@@ -254,6 +254,13 @@
           (is (= md
                  (meta (columns ds [0]))))))
 
+      (testing "still returns a dataset even with only one row"
+        (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])
+              result (columns test-data ["Owner" "Dog"])]
+          (is (is-a-dataset? result))
+
+          (is (= test-data result))))
+
       (testing "Returns all columns from unordered sequence"
         (let [expected-dataset (assoc (test-dataset 5 4)
                                       :column-names
@@ -261,28 +268,6 @@
           (is (= expected-dataset
                  (columns test-data [:a :b :d :c]))
               "should return dataset containing the cols :a :b :d :c"))))))
-
-(deftest all-columns-test
-  (testing "all-columns"
-    (let [test-data (test-dataset 5 5)]
-      (is (thrown? IndexOutOfBoundsException
-                   (all-columns test-data (range 100))))
-      (testing "is the default"
-        (is (thrown? IndexOutOfBoundsException
-                     (all-columns test-data (range 100))))))
-
-    (testing "still returns a dataset even with only one row"
-      (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])
-            result (all-columns test-data ["Owner" "Dog"])]
-        (is (is-a-dataset? result))
-
-        (is (= test-data result))))
-
-    (testing "preserves metadata"
-      (let [md {:foo :bar}
-            ds (with-meta (make-dataset [[1 2 3]]) md)]
-        (is (= md
-               (meta (all-columns ds [0]))))))))
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
@@ -316,7 +301,7 @@
         (let [md {:foo :bar}
               ds (with-meta (make-dataset [[1 2 3]]) md)]
           (is (= md
-                 (meta (all-columns ds [0])))))))))
+                 (meta (rows ds [0])))))))))
 
 (deftest drop-rows-test
   (testing "drop-rows"
