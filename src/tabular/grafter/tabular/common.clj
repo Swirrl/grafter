@@ -26,11 +26,11 @@
 
   [first-row other-rows])
 
-(defn- fill-empty-cells-with-nil [rows column-count]
-  (let [nil-where-empty (fn [row] (if (empty? row)
-                                    (repeat column-count nil)
-                                    row))]
-    (map nil-where-empty rows)))
+(defn- fill-gaps-with-nil [rows headers]
+  (let [blank-row (zipmap headers (repeat (count headers) nil))
+        pad-with-nils (fn [row] (let [row-map (if (map? row) row (zipmap headers row))]
+                                  (merge blank-row row-map)))]
+    (map pad-with-nils rows)))
 
 (defn make-dataset
   "Like incanter's dataset function except it can take a lazy-sequence
@@ -47,28 +47,17 @@
    (inc/dataset []))
 
   ([data]
-   (if (sequential? data)
-     (make-dataset data (seqs/alphabetical-column-names))
-     data))
+   (let [columns (take (-> data first count) (seqs/alphabetical-column-names))]
+     (make-dataset data columns)))
 
   ([data columns-or-f]
-     {:pre [(or (ifn? columns-or-f)
-                (sequential? columns-or-f))]}
-     (let [[column-names data] (if (sequential? columns-or-f)
-                                 [(if (inc/dataset? data)
-                                    (take (-> data :column-names count) columns-or-f)
-                                    (take (-> data first count) columns-or-f))
-                                   data]
-                                 (columns-or-f (if (inc/dataset? data)
-                                                 (inc/to-list data)
-                                                 data)))
-           data (if (sequential? data)
-                  data
-                  (inc/to-list data))
-           non-empty-data (fill-empty-cells-with-nil data (count column-names))]
-
-       (-> (inc/dataset column-names non-empty-data)
-           (with-meta (meta data))))))
+   (let [data-seq (if (inc/dataset? data) (inc/to-list data) data)
+         [column-headers rows] (if (fn? columns-or-f)
+                                 (columns-or-f data-seq)
+                                 [columns-or-f data-seq])
+         full-data (fill-gaps-with-nil rows column-headers)]
+     (-> (inc/dataset column-headers full-data)
+         (with-meta (meta full-data))))))
 
 (defn dataset?
   "Predicate function to test whether the supplied argument is a

@@ -20,6 +20,20 @@
           (testing "and the second item is the source data without the first row"
             (is (= (rest raw-data) (second retval)))))))))
 
+(= (make-dataset '({"a" 1, "b" 2}
+                   {"a" 3, "b" 4, "c" 5})
+                 ["a" "b" "c"])
+   (make-dataset '({"a" 1, "b" 2, "c" nil}
+                   {"a" 3, "b" 4, "c" 5})
+                 ["a" "b" "c"]))
+
+(= (make-dataset '({"a" 1, "b" 2, "c" 5}
+                   {"a" 3, "b" 4})
+                  ["a" "b" "c"])
+   (make-dataset '({"a" 1, "b" 2, "c" 5}
+                   {"a" 3, "b" 4, "c" nil})
+                  ["a" "b" "c"]))
+
 (deftest make-dataset-tests
   (testing "make-dataset"
     (let [raw-data [[1 2 3] [4 5 6]]
@@ -47,6 +61,21 @@
         (is (= ds2
                (make-dataset ds1 ["c" "d"]))))
 
+      (testing "making a dataset with ragged rows"
+        (is (= (make-dataset '({"a" 1, "b" 2}
+                               {"a" 3, "b" 4, "c" 5})
+                              ["a" "b" "c"])
+               (make-dataset '({"a" 1, "b" 2, "c" nil}
+                               {"a" 3, "b" 4, "c" 5})
+                              ["a" "b" "c"])))
+
+        (is (= (make-dataset '({"a" 1, "b" 2, "c" 5}
+                               {"a" 3, "b" 4})
+                              ["a" "b" "c"])
+               (make-dataset '({"a" 1, "b" 2, "c" 5}
+                               {"a" 3, "b" 4, "c" nil})
+                              ["a" "b" "c"]))))
+
       (testing "making a dataset with empty rows"
         (let [dataset (make-dataset '((1 2) () ()) ["a" "b"])
               expected (make-dataset '((1 2) (nil nil) (nil nil)) ["a" "b"])]
@@ -59,6 +88,7 @@
           (is (= (meta (make-dataset ds))
                  md)
               "Copy metadata when making a new dataset"))))))
+
 
 
 ;;; These two vars define what the content of the files
@@ -313,7 +343,7 @@
     (let [dataset (test-dataset 3 1)]
       (is (= (make-dataset [[1] [2]]) (drop-rows dataset 1)))
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
-      (is (= (make-dataset []) (drop-rows dataset 1000)))))
+      (is (= (make-dataset [] ["a"]) (drop-rows dataset 1000)))))
 
   (testing "preserves metadata"
       (let [md {:foo :bar}
@@ -475,12 +505,20 @@
   (let [subject (make-dataset [[1 2 3] [4 5 6]])]
     (testing "add-columns"
       (testing "with hash-map"
-        (is (= (make-dataset [[1 2 3 "kitten" "trousers"]
-                              [4 5 6 "kitten" "trousers"]]
-                             ["a" "b" "c" "animal" "clothes"])
+        (testing "fully populated"
+          (is (= (make-dataset [[1 2 3 "kitten" "trousers"]
+                                [4 5 6 "kitten" "trousers"]]
+                               ["a" "b" "c" "animal" "clothes"])
 
-               (add-columns subject {"animal" "kitten" "clothes" "trousers"}))
-            "adds cells to every row of the specified columns"))
+                 (add-columns subject {"animal" "kitten" "clothes" "trousers"}))
+              "adds cells to every row of the specified columns"))
+
+        (testing "where the first row of data has no value in the lookup"
+          (is (= (make-dataset [[1 2 3 nil]
+                                [4 5 6 "yes"]]
+                               ["a" "b" "c" "above_4"])
+                 (add-columns subject ["above_4"] ["a"] {4 {"above_4" "yes"}}))
+              "adds columns to every row")))
 
       (testing "with function"
         (testing "with 1 argument"
