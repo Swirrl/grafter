@@ -12,3 +12,5 @@ pom.xml.asc
 /tmp/
 .DS_Store
 /api-docs
+*.iml
+.idea/

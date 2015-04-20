@@ -55,26 +55,28 @@
                              (map first))]
     not-found-items))
 
-(defn all-columns
-  "Takes a dataset and any number of integers corresponding to column
-  numbers and returns a dataset containing only those columns.
+(defn- all-columns
+  "Takes a dataset and a finite sequence of column identifiers.
 
   If you want to use infinite sequences of columns or allow the
   specification of more cols than are in the data without error you
   should use columns instead.  Using an infinite sequence with this
   function will result in non-termination.
 
-  One advantage of this over using columns is that you can duplicate
-  an arbitrary number of columns."
- [dataset cols]
+  Unlike the columns function this function will raise an
+  IndexOutOfBoundsException if a specified column is not actually
+  found in the Dataset."
+  [dataset cols]
   (let [not-found-items (invalid-column-keys dataset cols)]
     (if (and (empty? not-found-items)
-            (some identity cols))
+             (some identity cols))
       (let [inc-ds (inc/$ cols dataset)]
         (if (inc/dataset? inc-ds)
           (with-meta inc-ds (meta dataset))
           (with-meta (make-dataset [inc-ds] cols) (meta dataset))))
-      (throw (IndexOutOfBoundsException. (str "The columns: " (str/join ", " not-found-items) " are not currently defined."))))))
+      (throw (IndexOutOfBoundsException. (str "The columns: "
+                                              (str/join ", " not-found-items)
+                                              " are not currently defined."))))))
 
 (defn- indexed [col]
   (map-indexed vector col))
@@ -102,23 +104,23 @@
        (= ::not-found current-item-number)) []
 
        (= current-item-number index) (let [[repeated-item-numbers remaining-item-numbers]
-                                      (split-with #(= current-item-number %) item-numbers)
-                                      repeated-items (repeat (count repeated-item-numbers) current-item)]
-                                  (lazy-cat
-                                   repeated-items
-                                   (select-indexed item-data remaining-item-numbers)))
+                                           (split-with #(= current-item-number %) item-numbers)
+                                           repeated-items (repeat (count repeated-item-numbers) current-item)]
+                                       (lazy-cat
+                                         repeated-items
+                                         (select-indexed item-data remaining-item-numbers)))
 
        (< current-item-number index) (select-indexed
-                                     (drop-while (fn [[index item]]
-                                                   (not= index current-item-number))
-                                                 item-data)
-                                     rest-item-numbers)
+                                       (drop-while (fn [[index item]]
+                                                     (not= index current-item-number))
+                                                   item-data)
+                                       rest-item-numbers)
        (> current-item-number index) (select-indexed
-                                     (drop-while (fn [[index item]]
-                                                   (not= index current-item-number))
-                                                 item-data)
-                                     ;; leave item-numbers as is (i.e. stay on current item after fast forwarding the data)
-                                     item-numbers)))
+                                       (drop-while (fn [[index item]]
+                                                     (not= index current-item-number))
+                                                   item-data)
+                                       ;; leave item-numbers as is (i.e. stay on current item after fast forwarding the data)
+                                       item-numbers)))
 
 (defn rows
   "Takes a dataset and a seq of row-numbers and returns a dataset
@@ -143,21 +145,19 @@
         ::not-found))))
 
 (defn columns
-  "Given a dataset and some columns, narrow the dataset to just the
-  supplied columns.
+  "Given a dataset and a sequence of column identifiers, narrow the
+  dataset to just the supplied columns.
 
-  cols are paired off with columns in the data and then a selection is
-  done.  Any cols left over after the pairing are discarded, but if a
-  selected col is not actually in the data an IndexOutOfBoundsException will
-  be thrown.
-
-  This function can safely be used with infinite sequences."
-
+  The supplied sequence of columns are first cropped to the number of
+  columns in the dataset before being selected, this means that
+  infinite sequences can safely supplied to this function."
   [dataset cols]
   (let [col-names (column-names dataset)
-        matched-columns (->> cols
-                             (map (partial col-position col-names)))
-        selected-cols (select-indexed (indexed col-names) matched-columns)]
+        max-cols (count (:column-names dataset))
+        matched-col-positions (->> (take max-cols cols)
+                                   (map (partial col-position col-names)))
+        valid-positions (filterv #(not= ::not-found %) matched-col-positions)
+        selected-cols (map #(nth col-names %) valid-positions)]
     (all-columns dataset selected-cols)))
 
 (defn rename-columns

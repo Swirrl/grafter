@@ -20,6 +20,20 @@
           (testing "and the second item is the source data without the first row"
             (is (= (rest raw-data) (second retval)))))))))
 
+(= (make-dataset '({"a" 1, "b" 2}
+                   {"a" 3, "b" 4, "c" 5})
+                 ["a" "b" "c"])
+   (make-dataset '({"a" 1, "b" 2, "c" nil}
+                   {"a" 3, "b" 4, "c" 5})
+                 ["a" "b" "c"]))
+
+(= (make-dataset '({"a" 1, "b" 2, "c" 5}
+                   {"a" 3, "b" 4})
+                  ["a" "b" "c"])
+   (make-dataset '({"a" 1, "b" 2, "c" 5}
+                   {"a" 3, "b" 4, "c" nil})
+                  ["a" "b" "c"]))
+
 (deftest make-dataset-tests
   (testing "make-dataset"
     (let [raw-data [[1 2 3] [4 5 6]]
@@ -47,6 +61,21 @@
         (is (= ds2
                (make-dataset ds1 ["c" "d"]))))
 
+      (testing "making a dataset with ragged rows"
+        (is (= (make-dataset '({"a" 1, "b" 2}
+                               {"a" 3, "b" 4, "c" 5})
+                              ["a" "b" "c"])
+               (make-dataset '({"a" 1, "b" 2, "c" nil}
+                               {"a" 3, "b" 4, "c" 5})
+                              ["a" "b" "c"])))
+
+        (is (= (make-dataset '({"a" 1, "b" 2, "c" 5}
+                               {"a" 3, "b" 4})
+                              ["a" "b" "c"])
+               (make-dataset '({"a" 1, "b" 2, "c" 5}
+                               {"a" 3, "b" 4, "c" nil})
+                              ["a" "b" "c"]))))
+
       (testing "making a dataset with empty rows"
         (let [dataset (make-dataset '((1 2) () ()) ["a" "b"])
               expected (make-dataset '((1 2) (nil nil) (nil nil)) ["a" "b"])]
@@ -59,6 +88,7 @@
           (is (= (meta (make-dataset ds))
                  md)
               "Copy metadata when making a new dataset"))))))
+
 
 
 ;;; These two vars define what the content of the files
@@ -223,6 +253,7 @@
            :not-found "z"
            :not-found :z))))
 
+
 (deftest columns-tests
   (let [expected-dataset (test-dataset 5 2)
         test-data (test-dataset 5 10)]
@@ -243,36 +274,50 @@
         (is (columns test-data (grafter.sequences/integers-from 5))
             "Takes as much as it can from the supplied sequence and returns those columns.")
 
-        (is (thrown? IndexOutOfBoundsException (columns test-data (range 10 100)))
+        (is (thrown? IndexOutOfBoundsException
+                     (columns test-data (range 10 100)))
             "Raises an exception if columns when paired with data are not actually column headings."))
 
       (testing "preserves metadata"
         (let [md {:foo :bar}
               ds (with-meta (make-dataset [[1 2 3]]) md)]
           (is (= md
-                 (meta (columns ds [0])))))))))
+                 (meta (columns ds [0]))))))
 
-(deftest all-columns-test
-  (testing "all-columns"
-    (let [test-data (test-dataset 5 5)]
-      (is (thrown? IndexOutOfBoundsException
-                   (all-columns test-data (range 100))))
-      (testing "is the default"
-        (is (thrown? IndexOutOfBoundsException
-                     (all-columns test-data (range 100))))))
+      (testing "still returns a dataset even with only one row"
+        (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])
+              result (columns test-data ["Owner" "Dog"])]
+          (is (is-a-dataset? result))
 
-    (testing "still returns a dataset even with only one row"
-      (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])
-            result (all-columns test-data ["Owner" "Dog"])]
-        (is (is-a-dataset? result))
+          (is (= test-data result))))
 
-        (is (= test-data result))))
+      (testing "Returns all columns from unordered sequence"
+        (let [expected-dataset (assoc (test-dataset 5 4)
+                                      :column-names
+                                      ["a" "b" "d" "c"])]
+          (is (= expected-dataset
+                 (columns test-data [:a :b :d :c]))
+              "should return dataset containing the cols :a :b :d :c")))
 
-    (testing "preserves metadata"
-      (let [md {:foo :bar}
-            ds (with-meta (make-dataset [[1 2 3]]) md)]
-        (is (= md
-               (meta (all-columns ds [0]))))))))
+      (testing "Duplicate columns in the selection leads to duplicated column-names"
+        ;; NOTE that these behaviour's aren't really desirable - but its
+        ;; hard to prevent without using only finite sequences for
+        ;; selection.
+        ;;
+        ;; These tests are primarily to document this behaviour - even
+        ;; though it can be undesirable.
+        (let [expected-dataset (make-dataset [[0 0] [1 1]]
+                                             ["a" "a"])
+              test-dataset (test-dataset 2 2)
+
+              result (columns test-dataset ["a" "a"])]
+          (is (= ["a" "a"] (column-names result)))
+          (is (= expected-dataset result))
+          ;; Columns crops the supplied sequence to the data.
+          ;; This means duplicate columns may sneak in.
+          (is (= expected-dataset (columns test-dataset ["a" "a" "b"]))))))))
+
+
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
@@ -306,14 +351,14 @@
         (let [md {:foo :bar}
               ds (with-meta (make-dataset [[1 2 3]]) md)]
           (is (= md
-                 (meta (all-columns ds [0])))))))))
+                 (meta (rows ds [0])))))))))
 
 (deftest drop-rows-test
   (testing "drop-rows"
     (let [dataset (test-dataset 3 1)]
       (is (= (make-dataset [[1] [2]]) (drop-rows dataset 1)))
       (is (= (make-dataset [[2]]) (drop-rows dataset 2)))
-      (is (= (make-dataset []) (drop-rows dataset 1000)))))
+      (is (= (make-dataset [] ["a"]) (drop-rows dataset 1000)))))
 
   (testing "preserves metadata"
       (let [md {:foo :bar}
@@ -475,12 +520,20 @@
   (let [subject (make-dataset [[1 2 3] [4 5 6]])]
     (testing "add-columns"
       (testing "with hash-map"
-        (is (= (make-dataset [[1 2 3 "kitten" "trousers"]
-                              [4 5 6 "kitten" "trousers"]]
-                             ["a" "b" "c" "animal" "clothes"])
+        (testing "fully populated"
+          (is (= (make-dataset [[1 2 3 "kitten" "trousers"]
+                                [4 5 6 "kitten" "trousers"]]
+                               ["a" "b" "c" "animal" "clothes"])
 
-               (add-columns subject {"animal" "kitten" "clothes" "trousers"}))
-            "adds cells to every row of the specified columns"))
+                 (add-columns subject {"animal" "kitten" "clothes" "trousers"}))
+              "adds cells to every row of the specified columns"))
+
+        (testing "where the first row of data has no value in the lookup"
+          (is (= (make-dataset [[1 2 3 nil]
+                                [4 5 6 "yes"]]
+                               ["a" "b" "c" "above_4"])
+                 (add-columns subject ["above_4"] ["a"] {4 {"above_4" "yes"}}))
+              "adds columns to every row")))
 
       (testing "with function"
         (testing "with 1 argument"
