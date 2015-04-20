@@ -56,17 +56,17 @@
     not-found-items))
 
 (defn- all-columns
-  "Takes a dataset and any number of integers corresponding to column
-  numbers and returns a dataset containing only those columns.
+  "Takes a dataset and a finite sequence of column identifiers.
 
   If you want to use infinite sequences of columns or allow the
   specification of more cols than are in the data without error you
   should use columns instead.  Using an infinite sequence with this
   function will result in non-termination.
 
-  One advantage of this over using columns is that you can duplicate
-  an arbitrary number of columns."
- [dataset cols]
+  Unlike the columns function this function will raise an
+  IndexOutOfBoundsException if a specified column is not actually
+  found in the Dataset."
+  [dataset cols]
   (let [not-found-items (invalid-column-keys dataset cols)]
     (if (and (empty? not-found-items)
              (some identity cols))
@@ -145,20 +145,17 @@
         ::not-found))))
 
 (defn columns
-  "Given a dataset and some columns, narrow the dataset to just the
-  supplied columns.
+  "Given a dataset and a sequence of column identifiers, narrow the
+  dataset to just the supplied columns.
 
-  Supplied cols matched with columns in the data and then a selection is done.
-  Any cols left over after the pairing are discarded, but if a selected col
-  is not actually in the data an IndexOutOfBoundsException will be thrown.
-
-  This function can safely be used with infinite sequences."
+  The supplied sequence of columns are first cropped to the number of
+  columns in the dataset before being selected, this means that
+  infinite sequences can safely supplied to this function."
   [dataset cols]
   (let [col-names (column-names dataset)
         max-cols (count (:column-names dataset))
-        matched-col-positions (->>
-                             (take max-cols cols)
-                             (map (partial col-position col-names)))
+        matched-col-positions (->> (take max-cols cols)
+                                   (map (partial col-position col-names)))
         valid-positions (filterv #(not= ::not-found %) matched-col-positions)
         selected-cols (map #(nth col-names %) valid-positions)]
     (all-columns dataset selected-cols)))

@@ -297,7 +297,27 @@
                                       ["a" "b" "d" "c"])]
           (is (= expected-dataset
                  (columns test-data [:a :b :d :c]))
-              "should return dataset containing the cols :a :b :d :c"))))))
+              "should return dataset containing the cols :a :b :d :c")))
+
+      (testing "Duplicate columns in the selection leads to duplicated column-names"
+        ;; NOTE that these behaviour's aren't really desirable - but its
+        ;; hard to prevent without using only finite sequences for
+        ;; selection.
+        ;;
+        ;; These tests are primarily to document this behaviour - even
+        ;; though it can be undesirable.
+        (let [expected-dataset (make-dataset [[0 0] [1 1]]
+                                             ["a" "a"])
+              test-dataset (test-dataset 2 2)
+
+              result (columns test-dataset ["a" "a"])]
+          (is (= ["a" "a"] (column-names result)))
+          (is (= expected-dataset result))
+          ;; Columns crops the supplied sequence to the data.
+          ;; This means duplicate columns may sneak in.
+          (is (= expected-dataset (columns test-dataset ["a" "a" "b"]))))))))
+
+
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
