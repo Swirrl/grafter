@@ -145,8 +145,14 @@
         ::not-found))))
 
 (defn columns
-  "Given a dataset and a sequence of column identifiers, narrow the
-  dataset to just the supplied columns.
+  "Given a dataset and a sequence of column identifiers, columns
+  narrows the dataset to just the supplied columns.
+
+  Columns specified in the selection that are not included in the
+  Dataset will be silently ignored.
+
+  The order of the columns in the returned dataset will be determined
+  by the order of matched columns in the selection.
 
   The supplied sequence of columns are first cropped to the number of
   columns in the dataset before being selected, this means that
