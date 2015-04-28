@@ -371,6 +371,10 @@
                                   :append append
                                   :encoding encoding)))))
 
+(def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
+                                       RDFFormat/TRIX
+                                       RDFFormat/TRIG})
+
 (extend-protocol pr/ITripleWriteable
   RDFWriter
   (pr/add-statement [this statement]
@@ -386,10 +390,10 @@
            (.endRDF this))
          (throw (IllegalArgumentException. "This serializer does not support writing a single statement.  It should be passed a sequence of statements."))))
 
-    ([this _graph triples]
-       ;; TODO if format allows graphs we should support
-       ;; them... otherwise.. ignore the graph param
-       (pr/add this triples))))
+    ([this graph triples]
+     (if (format-supports-graphs (.getRDFFormat this))
+       (pr/add this (map (fn [s] (assoc s :c graph)) triples))
+       (pr/add this triples)))))
 
 (defn ^:no-doc format->parser
   "Convert a format into a sesame parser for that format."
@@ -458,9 +462,8 @@
   ;; as we hack around Sesame to generate a lazy sequence of results.
   ;; Sesame's parse methods always assume you want to consume the
   ;; whole file of triples, so we spawn a thread to consume through
-  ;; the file and use a blocking queue of 1 element to pass elements
-  ;; back into a lazy sequence on the calling thread.  The queue has a
-  ;; bounded size of 1 forcing it be in lockstep with the consumer.
+  ;; the file and use a blocking queue of buffer-size elements to pass elements
+  ;; back into a lazy sequence on the calling thread.
   ;;
   ;; NOTE also none of these functions really allow for proper
   ;; resource clean-up unless the whole sequence is consumed.
