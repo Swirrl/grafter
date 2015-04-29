@@ -56,9 +56,8 @@
                 (instance? IStatement triples))]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
-               ( let [^Iterable stmts (map IStatement->sesame-statement triples)]
-               (.add this stmts (resource-array)))
-             )
+               (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+                 (.add this stmts (resource-array))))
          (pr/add-statement this triples)))
 
 
@@ -68,9 +67,8 @@
                 (instance? IStatement triples))]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
-             ( let [^Iterable stmts (map IStatement->sesame-statement triples)]
-                   (.add this stmts (resource-array (URIImpl. graph))))
-             )
+             (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+               (.add this stmts (resource-array (URIImpl. graph)))))
          (pr/add-statement this triples)))
 
     ([this graph format triple-stream]
