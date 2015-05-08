@@ -185,8 +185,8 @@
           new-columns (map col-map-or-fn
                            (column-names dataset))]
 
-      (-> (make-dataset new-columns
-                        (inc/to-list dataset))
+      (-> (make-dataset (inc/to-list dataset)
+                        new-columns)
           (with-meta (meta dataset))))))
 
 (defn drop-rows

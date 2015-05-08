@@ -717,3 +717,16 @@
           (is (= {"a" "http://one/" "b" "http://two/" "c" "http://three/"}
                  (:grafter.tabular/row quad-meta))
               "Adds the row that yielded each Quad as metadata"))))))
+
+(deftest rename-test
+  (let [ds (test-dataset 1 2)]
+    (is (= (make-dataset [[0 0]] [:a :b])
+           (rename-columns ds keyword) ))
+
+    (is (= (make-dataset [[0 0]] ["foo" "b"])
+           (rename-columns ds {"a" "foo"})))
+
+
+    )
+
+  )
