@@ -27,7 +27,9 @@
            (org.openrdf.sail.memory MemoryStore)
            (org.openrdf.sail.nativerdf NativeStore)
            (info.aduna.iteration CloseableIteration)
-           (org.openrdf.sail.inferencer.fc ForwardChainingRDFSInferencer DirectTypeHierarchyInferencer CustomGraphQueryInferencer)))
+           (org.openrdf.sail.inferencer.fc ForwardChainingRDFSInferencer
+                                           DirectTypeHierarchyInferencer
+                                           CustomGraphQueryInferencer)))
 
 (defn- resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
@@ -135,13 +137,15 @@
     (.initialize)))
 
 (defn sparql-repo
-  "Given a query-url and an optional update-url String return a Sesame
-  SPARQLRepository for communicating with remote repositories."
+  "Given a query-url (String or IURI) and an optional update-url String
+  or IURI, return a Sesame SPARQLRepository for communicating with
+  remote repositories."
   ([query-url]
-     (doto (SPARQLRepository. query-url)
+     (doto (SPARQLRepository. (str query-url))
        (.initialize)))
   ([query-url update-url]
-     (doto (SPARQLRepository. query-url update-url)
+     (doto (SPARQLRepository. (str query-url)
+                              (str update-url))
        (.initialize))))
 
 (defn rdfs-inferencer
