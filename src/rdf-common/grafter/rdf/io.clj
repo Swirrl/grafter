@@ -340,7 +340,22 @@
   [mime-type]
   (let [base-type (str (mime/base-type mime-type))]
     (condp = base-type
-      "application/n-triples" RDFFormat/NTRIPLES ;; Sesame doesn't yet support application/n-triples
+      "application/rdf+xml" RDFFormat/RDFXML
+      "application/xml" RDFFormat/RDFXML
+      "text/plain" RDFFormat/NTRIPLES
+      "application/n-triples" RDFFormat/NTRIPLES
+      "text/turtle" RDFFormat/TURTLE
+      "application/x-turtle" RDFFormat/TURTLE
+      "text/n3" RDFFormat/N3
+      "text/rdf+n3" RDFFormat/N3
+      "application/trix" RDFFormat/TRIX
+      "application/x-trig" RDFFormat/TRIG
+      "application/x-binary-rdf" RDFFormat/BINARY
+      "text/x-nquads" RDFFormat/NQUADS
+      "application/ld+json" RDFFormat/JSONLD
+      "application/rdf+json" RDFFormat/RDFJSON
+      "application/xhtml+xml" RDFFormat/RDFA
+      "application/html" RDFFormat/RDFA
       (Rio/getParserFormatForMIMEType mime-type))))
 
 (defn rdf-serializer
