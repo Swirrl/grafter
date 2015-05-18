@@ -66,8 +66,9 @@
         (println res)))
   ````"
   ;; TODO: reimplement interfaces with proper resource handling.
-  (query-dataset [this sparql-string model])
+  (query-dataset [this sparql-string model]))
 
+(defprotocol ISPARQLUpdateable
   (update! [this sparql-string]))
 
 (defn- destructure-quad [quad i default]

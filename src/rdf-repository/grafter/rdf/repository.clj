@@ -235,6 +235,7 @@
   (pr/query-dataset [this query-str model]
     (pr/query-dataset (.getConnection this) query-str model))
 
+  pr/ISPARQLUpdateable
   (pr/update! [this query-str]
     (with-open [connection (.getConnection this)]
       (pr/update! connection query-str)))
@@ -371,6 +372,7 @@
     (let [preped-query (prepare-query this sparql-string dataset)]
       (evaluate preped-query)))
 
+  pr/ISPARQLUpdateable
   (pr/update! [this sparql-string]
     (let [prepared-query (.prepareUpdate this
                                          QueryLanguage/SPARQL
