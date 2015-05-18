@@ -13,7 +13,7 @@
                  [org.clojure/tools.logging "0.3.1"]
 
                  [org.clojure/algo.monads "0.1.5"]
-                 [grafter/url "0.1.0-SNAPSHOT"]
+                 [grafter/url "0.2.0-SNAPSHOT"]
                  [clj-time "0.7.0"]
 
                  ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
