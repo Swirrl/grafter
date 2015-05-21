@@ -4,7 +4,8 @@
             [grafter.rdf :refer [add statements]]
             [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.io :refer :all]
-            [grafter.rdf.formats :refer :all])
+            [grafter.rdf.formats :refer :all]
+            [grafter.url :refer :all])
   (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]))
 
 (deftest mimetype->rdf-format-test
@@ -75,3 +76,13 @@
 
         (is (= {:foo :bar} (:quad-meta ex))
             "Metadata from quads is reported in exception data")))))
+
+(deftest to-grafter-url-protocol-test
+  (testing "extends RDF Model URI"
+    (let [uri (URIImpl. "http://www.tokyo-3.com:777/ayanami?geofront=retracted")
+          grafter-url (->grafter-url uri)]
+      (are [expected actual] (= expected actual)
+                             777 (port grafter-url)
+                             "www.tokyo-3.com" (host grafter-url)
+                             "http" (scheme grafter-url)
+                             ["ayanami"] (path-segments grafter-url)))))

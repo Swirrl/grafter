@@ -1,12 +1,12 @@
 (ns grafter.rdf.io
-  "Functions & Protocols for serializing Grafter Statements into
+  "Functions & Protocols for serializing Grafter Statements to (and from)
   any Linked Data format supported by Sesame."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
             [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [pantomime.media :as mime]
-            [grafter.url :refer [->url IURIable]])
+            [grafter.url :refer [->url ->grafter-url IURIable ToGrafterURL]])
   (:import (grafter.rdf.protocols IStatement Quad Triple)
            (grafter.url GrafterURL)
            (java.io File)
@@ -515,3 +515,11 @@
                                            {:type :reading-aborted} msg))
                            (sesame-statement->IStatement msg)))]
           (map read-rdf statements))))))
+
+(extend-protocol ToGrafterURL
+
+  URI
+  (->grafter-url [uri]
+    (-> uri
+        str
+        ->grafter-url)))
