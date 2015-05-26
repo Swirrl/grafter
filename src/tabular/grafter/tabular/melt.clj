@@ -84,7 +84,7 @@
   {:doc/format :markdown}
   [dataset pivot-keys]
   (letfn [(col-partition [cols] (map (fn [c] [c]) cols))
-          (build-row [[c] row] {:variable c :value (c row)})]
+          (build-row [[c] row] {:variable c :value (row c)})]
     (melt-gen dataset pivot-keys [:variable :value] col-partition build-row)))
 
 (defn ^:no-doc melt-column-groups

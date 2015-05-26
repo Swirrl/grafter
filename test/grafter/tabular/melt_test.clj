@@ -13,14 +13,14 @@
 (deftest melt-test
   (testing "Melts dataset"
     (let [initial (make-dataset [[:sales 100 200 300]
-                                 [:costs 500 400 300]]
-                                [:measure :2012 :2013 :2014])
+                                 [:costs 500 400 300]] ;; test we handle string keys too
+                                [:measure "2012" :2013 :2014])
 
           melted (melt initial [:measure])
-          expected (make-dataset [[:sales :2012 100]
+          expected (make-dataset [[:sales "2012" 100]
                                   [:sales :2013 200]
                                   [:sales :2014 300]
-                                  [:costs :2012 500]
+                                  [:costs "2012" 500]
                                   [:costs :2013 400]
                                   [:costs :2014 300]]
                                  [:measure :variable :value])]
