@@ -1,10 +1,10 @@
 (ns grafter.rdf.repository
   "Functions for constructing and working with various Sesame repositories."
   (:require [clojure.java.io :as io]
-            [grafter.rdf.protocols :as pr]
+            [grafter.rdf.protocols :refer [ToConnection ->connection query-dataset] :as pr]
             [grafter.rdf.io :refer :all]
             [clojure.tools.logging :as log])
-  (:import (grafter.rdf.protocols IStatement Quad Triple)
+  (:import (grafter.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
            (java.util GregorianCalendar)
@@ -232,8 +232,8 @@
 
 (extend-type Repository
   pr/ISPARQLable
-  (pr/query-dataset [this query-str model]
-    (pr/query-dataset (.getConnection this) query-str model))
+  (query-dataset [this query-str model]
+    (query-dataset (.getConnection this) query-str model))
 
   pr/ISPARQLUpdateable
   (pr/update! [this query-str]
@@ -316,25 +316,6 @@
   (evaluate [this]
     (.execute this)))
 
-(defn ->connection
-  "Given a sesame repository return a connection to it."
-  ;; NOTE: that the return type hint here is intentionally fully qualified
-  ;; as a workaround for the clojure compiler bug:
-  ;;
-  ;; http://dev.clojure.org/jira/browse/CLJ-1232
-  ;;
-  ;; Basically ->connection is designed to be used with the macro with-open and
-  ;; which will cause a compile error unless the user also imports the class
-  ;; RepositoryConnection into their namespace.
-  ;;
-  ;; This is scheduled to be fixed in Clojure 1.8.
-  ^org.openrdf.repository.RepositoryConnection
-  [^Repository repo]
-  (if (instance? RepositoryConnection repo)
-    repo
-    (let [c (.getConnection repo)]
-      c)))
-
 (defn prepare-query
   "Low level function to prepare (parse, but not process) a sesame RDF
   query.  Takes a repository a query string and an optional sesame
@@ -343,7 +324,7 @@
   Prepared queries still need to be evaluated with evaluate."
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string dataset]
-     (let [conn (->connection repo)]
+     (let [conn (pr/->connection repo)]
        (let [pq (.prepareQuery conn
                                QueryLanguage/SPARQL
                                sparql-string)]
@@ -357,7 +338,7 @@
   Prepared updates still need to be evaluated with evaluate."
   ([repo sparql-update-str] (prepare-update repo sparql-update-str nil))
   ([repo sparql-update-str dataset]
-     (let [conn (->connection repo)]
+     (let [conn (pr/->connection repo)]
        (let [pu (.prepareUpdate conn
                                 QueryLanguage/SPARQL
                                 sparql-update-str)]
@@ -368,7 +349,7 @@
 
 (extend-type RepositoryConnection
   pr/ISPARQLable
-  (pr/query-dataset [this sparql-string dataset]
+  (query-dataset [this sparql-string dataset]
     (let [preped-query (prepare-query this sparql-string dataset)]
       (evaluate preped-query)))
 
@@ -378,6 +359,25 @@
                                          QueryLanguage/SPARQL
                                          sparql-string)]
       (.execute prepared-query))))
+
+(extend-protocol ToConnection
+  RepositoryConnection
+  (->connection
+    [^Repository repo]
+    (if (instance? RepositoryConnection repo)
+      repo
+      (let [c (.getConnection repo)]
+        c)))
+
+  SailRepository
+  (->connection
+    [^Repository repo]
+    (.getConnection repo))
+
+  SPARQLRepository
+  (->connection
+    [^Repository repo]
+    (.getConnection repo)))
 
 (defn make-restricted-dataset
   "Build a dataset to act as a graph restriction.  You can specify for
