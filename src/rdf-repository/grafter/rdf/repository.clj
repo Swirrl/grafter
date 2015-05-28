@@ -4,7 +4,7 @@
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.io :refer :all]
             [clojure.tools.logging :as log])
-  (:import (grafter.rdf.protocols IStatement Quad Triple)
+  (:import (grafter.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
            (java.util GregorianCalendar)
@@ -30,6 +30,10 @@
            (org.openrdf.sail.inferencer.fc ForwardChainingRDFSInferencer
                                            DirectTypeHierarchyInferencer
                                            CustomGraphQueryInferencer)))
+
+(defprotocol ToConnection
+  (->connection [repo] "Given a sesame repository return a connection to it.
+  ->connection is designed to be used with the macro with-open"))
 
 (defn- resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
   (into-array Resource rs))
@@ -316,25 +320,6 @@
   (evaluate [this]
     (.execute this)))
 
-(defn ->connection
-  "Given a sesame repository return a connection to it."
-  ;; NOTE: that the return type hint here is intentionally fully qualified
-  ;; as a workaround for the clojure compiler bug:
-  ;;
-  ;; http://dev.clojure.org/jira/browse/CLJ-1232
-  ;;
-  ;; Basically ->connection is designed to be used with the macro with-open and
-  ;; which will cause a compile error unless the user also imports the class
-  ;; RepositoryConnection into their namespace.
-  ;;
-  ;; This is scheduled to be fixed in Clojure 1.8.
-  ^org.openrdf.repository.RepositoryConnection
-  [^Repository repo]
-  (if (instance? RepositoryConnection repo)
-    repo
-    (let [c (.getConnection repo)]
-      c)))
-
 (defn prepare-query
   "Low level function to prepare (parse, but not process) a sesame RDF
   query.  Takes a repository a query string and an optional sesame
@@ -378,6 +363,25 @@
                                          QueryLanguage/SPARQL
                                          sparql-string)]
       (.execute prepared-query))))
+
+(extend-protocol ToConnection
+  RepositoryConnection
+  (->connection
+    [^Repository repo]
+    (if (instance? RepositoryConnection repo)
+      repo
+      (let [c (.getConnection repo)]
+        c)))
+
+  SailRepository
+  (->connection
+    [^Repository repo]
+    (.getConnection repo))
+
+  SPARQLRepository
+  (->connection
+    [^Repository repo]
+    (.getConnection repo)))
 
 (defn make-restricted-dataset
   "Build a dataset to act as a graph restriction.  You can specify for
