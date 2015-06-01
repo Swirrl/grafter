@@ -17,7 +17,11 @@
 
     (is (= rdf-xml
            (mimetype->rdf-format "application/rdf+xml"))
-        "works without charset parameters")))
+        "works without charset parameters")
+
+    (is (thrown? IllegalArgumentException
+                 (mimetype->rdf-format nil))
+        "throws on nil mime type")))
 
 (deftest round-trip-integer-types-test
   (let [types [["http://www.w3.org/2001/XMLSchema#byte" Byte "10"]
