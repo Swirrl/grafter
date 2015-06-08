@@ -185,6 +185,12 @@
         (is-a-dataset? dataset)
         (has-metadata? dataset))))
 
+  (testing "Open a CSV via an InputStream"
+    (with-open [in-str (io/input-stream "./test/grafter/test.csv")]
+      (let [dataset (read-dataset in-str :format :csv)]
+        (is-a-dataset? dataset)
+        (has-metadata? dataset))))
+
   (testing "Open an Excel file via a URL string"
     (let [dataset (read-dataset (->file-url-string "./test/grafter/test.xls") :format :csv)]
       (testing "returns a dataset"
@@ -218,6 +224,12 @@
   (testing "Open java.io.File"
     (let [datasets (read-datasets (io/file "./test/grafter/test.xls"))]
       (testing "returns a hashmap of sheet-names to datasets"
+        (is (every? is-a-dataset? (mapcat vals datasets)))
+        (is (= '("Sheet1" "Sheet2") (mapcat keys datasets))))))
+
+  (testing "Open InputStream"
+    (with-open [in-stream (io/input-stream "./test/grafter/test.xlsx")]
+      (let [datasets (read-datasets in-stream :format :xlsx)]
         (is (every? is-a-dataset? (mapcat vals datasets)))
         (is (= '("Sheet1" "Sheet2") (mapcat keys datasets))))))
 
