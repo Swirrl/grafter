@@ -15,8 +15,7 @@
 
 (defmethod tab/read-datasets* :csv
   [f opts]
-  (when-let [ds (-> (tab/read-dataset* f opts)
-                    (tab/assoc-data-source-meta f))]
+  (when-let [ds (tab/mapply tab/read-dataset f opts)]
     [{"csv" ds}]))
 
 (defmethod tab/write-dataset* :csv [destination dataset {:keys [format] :as opts}]
