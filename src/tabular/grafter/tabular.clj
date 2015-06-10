@@ -575,23 +575,26 @@ the specified column being cloned."
   [[row-bindings] & forms]
   {:pre [(or (symbol? row-bindings) (map? row-bindings)
              (vector? row-bindings))]}
+
   (let [row-sym (gensym "row")
         ds-sym (gensym "ds")]
-    `(fn graphify-dataset [~ds-sym]
-       (letfn [(graphify-row# [~row-sym]
-                 (let ~(if (vector? row-bindings)
-                         (generate-vector-bindings ds-sym row-sym row-bindings)
-                         (splice-supplied-bindings row-sym row-bindings))
-                   (->> (concat ~@forms)
-                        (map (fn with-row-meta [triple#]
-                               (let [meta# {::row ~row-sym}
-                                     meta# (if-let [ds-meta# (meta ~ds-sym)]
-                                             (assoc meta# ::dataset (meta ~ds-sym))
-                                             meta#)]
+    `(with-meta (fn graphify-dataset [~ds-sym]
+                  (letfn [(graphify-row# [~row-sym]
+                            (let ~(if (vector? row-bindings)
+                                    (generate-vector-bindings ds-sym row-sym row-bindings)
+                                    (splice-supplied-bindings row-sym row-bindings))
+                              (->> (concat ~@forms)
+                                   (map (fn with-row-meta [triple#]
+                                          (let [meta# {::row ~row-sym}
+                                                meta# (if-let [ds-meta# (meta ~ds-sym)]
+                                                        (assoc meta# ::dataset (meta ~ds-sym))
+                                                        meta#)]
 
-                                 (with-meta triple# meta#)))))))]
+                                            (with-meta triple# meta#)))))))]
 
-         (mapcat graphify-row# (:rows ~ds-sym))))))
+                    (mapcat graphify-row# (:rows ~ds-sym))))
+       ;; quote the form to prevent infinite recursive expansion of the macro
+       {::template (quote ~&form)})))
 
 (defmacro defpipe
   "Declares an entry point to a grafter pipeline, allowing it to be
@@ -607,7 +610,6 @@ the specified column being cloned."
             vmeta# (meta var#)]
         (alter-meta! var# (fn [_#] (merge vmeta# {:pipeline true})))
         var#))))
-
 
 (defmacro defgraft
   "Declares an entry point to a graph-generating pipeline allowing it
