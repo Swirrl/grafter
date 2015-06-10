@@ -15,6 +15,7 @@
                  [org.clojure/algo.monads "0.1.5"]
                  [grafter/url "0.2.0-SNAPSHOT"]
                  [clj-time "0.7.0"]
+                 [rewrite-clj "0.4.12"]
 
                  ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
                  [commons-logging "1.1.1"]
@@ -73,6 +74,7 @@
                              [lein-repack "0.2.10" :exclusions [org.clojure/clojure
                                                                 org.codehaus.plexus/plexus-utils]]]
 
-                   :dependencies [[com.aphyr/prism "0.1.3"]]
+                   :dependencies [[com.aphyr/prism "0.1.3"]
+                                  [prismatic/schema "0.4.3"]]
 
                    :env {:dev true}}})
