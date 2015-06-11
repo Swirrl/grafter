@@ -593,8 +593,13 @@ the specified column being cloned."
                                             (with-meta triple# meta#)))))))]
 
                     (mapcat graphify-row# (:rows ~ds-sym))))
-       ;; quote the form to prevent infinite recursive expansion of the macro
-       {::template (quote ~&form)})))
+       ;; Add metadata to function definition to support
+       ;; grafter.rdf.preview/graph-preview functionality.
+       ;;
+       ;; NOTE: We quote these form to prevent infinite recursive expansion of
+       ;; the macro
+       {::template (quote ~&form)
+        ::defined-in-ns (quote ~(.getName *ns*))})))
 
 (defmacro defpipe
   "Declares an entry point to a grafter pipeline, allowing it to be
