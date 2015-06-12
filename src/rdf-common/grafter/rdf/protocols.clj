@@ -71,6 +71,10 @@
 (defprotocol ISPARQLUpdateable
   (update! [this sparql-string]))
 
+(defprotocol ToConnection
+   (->connection [repo] "Given a sesame repository return a connection to it.
+  ->connection is designed to be used with the macro with-open"))
+
 (defn- destructure-quad [quad i default]
   (case i
     0 (:s quad)
