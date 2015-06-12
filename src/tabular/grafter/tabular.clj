@@ -586,10 +586,9 @@ the specified column being cloned."
                               (->> (concat ~@forms)
                                    (map (fn with-row-meta [triple#]
                                           (let [meta# {::row ~row-sym}
-                                                meta# (if-let [ds-meta# (meta ~ds-sym)]
+                                                meta# (if (meta ~ds-sym)
                                                         (assoc meta# ::dataset (meta ~ds-sym))
                                                         meta#)]
-
                                             (with-meta triple# meta#)))))))]
 
                     (mapcat graphify-row# (:rows ~ds-sym))))
