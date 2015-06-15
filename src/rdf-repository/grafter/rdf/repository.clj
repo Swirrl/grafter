@@ -1,7 +1,7 @@
 (ns grafter.rdf.repository
   "Functions for constructing and working with various Sesame repositories."
   (:require [clojure.java.io :as io]
-            [grafter.rdf.protocols :refer [ToConnection ->connection query-dataset] :as pr]
+            [grafter.rdf.protocols :as pr]
             [grafter.rdf.io :refer :all]
             [clojure.tools.logging :as log])
   (:import (grafter.rdf.protocols IStatement Quad)
@@ -236,8 +236,8 @@
 
 (extend-type Repository
   pr/ISPARQLable
-  (query-dataset [this query-str model]
-    (query-dataset (.getConnection this) query-str model))
+  (pr/query-dataset [this query-str model]
+    (pr/query-dataset (.getConnection this) query-str model))
 
   pr/ISPARQLUpdateable
   (pr/update! [this query-str]
@@ -328,7 +328,7 @@
   Prepared queries still need to be evaluated with evaluate."
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string dataset]
-     (let [conn (pr/->connection repo)]
+     (let [conn (->connection repo)]
        (let [pq (.prepareQuery conn
                                QueryLanguage/SPARQL
                                sparql-string)]
@@ -342,7 +342,7 @@
   Prepared updates still need to be evaluated with evaluate."
   ([repo sparql-update-str] (prepare-update repo sparql-update-str nil))
   ([repo sparql-update-str dataset]
-     (let [conn (pr/->connection repo)]
+     (let [conn (->connection repo)]
        (let [pu (.prepareUpdate conn
                                 QueryLanguage/SPARQL
                                 sparql-update-str)]
@@ -353,7 +353,7 @@
 
 (extend-type RepositoryConnection
   pr/ISPARQLable
-  (query-dataset [this sparql-string dataset]
+  (pr/query-dataset [this sparql-string dataset]
     (let [preped-query (prepare-query this sparql-string dataset)]
       (evaluate preped-query)))
 
