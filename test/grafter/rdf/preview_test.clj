@@ -3,7 +3,8 @@
             [clojure.test :refer :all]
             [grafter.rdf.templater :refer [graph]]
             [grafter.tabular :refer [make-dataset graph-fn]]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [grafter.rdf :as rdf]))
 
 (def rdf:a "rdf:a")
 (def foaf:name "foaf:name")
@@ -30,7 +31,6 @@
                                      [foaf:knows person-uri]])))
 
 (deftest preview-graph-test
-
   (let [schema {:bindings {:strs [s/Symbol]}
                 :row s/Any
                 :template [s/Any]}]
@@ -76,3 +76,20 @@
                           ["foaf:knows" "http://wayne/"]]) template)
 
               "Template includes substitutions from the source data"))))))
+
+(def unprintable-template (graph-fn [{:strs [a b c g]}]
+                                    (graph g
+                                           [a [b c]])))
+
+(deftest unprintable-previews-test
+  (let [obj (Object.)
+        ds (make-dataset [["a" "b" obj]])
+        template (:template (preview-graph ds unprintable-template 0))
+        unprintable-item (second (second (nth (first template) 2)))]
+
+    (is (instance? grafter.rdf.preview.UnreadableForm unprintable-item)
+        "Unprintable item should be wrapped in a printable wrapper.")
+
+    (is (= (str obj) (:form-string unprintable-item)))
+    (is (= (.getName (class obj))
+           (:form-class unprintable-item)))))
