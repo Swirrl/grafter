@@ -625,8 +625,8 @@ the specified column being cloned."
 
   `(def my-graft (comp make-graph my-pipeline))`
 
-  It is used with defpipeline to indicate that a transformation also
-  supports conversion into graph data.
+  It is used with defpipe to indicate that a transformation also supports
+  conversion into graph data.
 
   It takes an optional docstring, if no docstring is specified then a
   default docstring will be generated."
