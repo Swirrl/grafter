@@ -45,7 +45,7 @@
   ;; Swing classes are loaded.
   :jvm-opts ["-Dapple.awt.UIElement=true"]
 
-  :pedantic? :abort
+  :pedantic? true
 
   :repack [{:subpackage "rdf.common"
             :dependents #{"templater"}
