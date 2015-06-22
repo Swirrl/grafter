@@ -11,7 +11,13 @@
   (symbolize-keys (merge (select-keys row-data (map (comp keyword name) (:keys bindings)))
                          (select-keys row-data (map name (:strs bindings))))))
 
-(defmulti templatable? class)
+(defmulti ^:private templatable?
+  "Predicate that returns true if the supplied argument should be emitted when
+  attempting to inline global vars in a graph template.
+
+  Used with bind-constants."
+
+  class)
 
 (defmethod templatable? nil [v] true)
 
@@ -23,18 +29,12 @@
 
 (defmethod templatable? clojure.lang.Keyword [v] true)
 
-(defn- bind-constants [ns form]
-  (comment
-    (z/root (walk/prewalk form (fn [n]
-                                 (let [s (z/sexpr n)]
-                                   (if (and (symbol? s)
-                                            (ns-resolve ns s))
-                                     (when-let [varr (get (ns-map ns) s)]
-                                       (when (templatable? @varr)
-                                         (z/replace n @varr)))
-                                     n))))))
+(defn- bind-constants
+  "Walks the given form and resolves symbols from the namespace to their vars,
+  returning the values they reference if they are templatable?.
 
-  ;; TODO replace above with this
+  Non templatable values are unexpanded/uninlined and left as symbols."
+  [ns form]
   (clojure.walk/postwalk
    (fn [f]
      (if (and (symbol? f)
@@ -44,8 +44,7 @@
            @varr
            f)
          f)
-       f)
-     ) form))
+       f)) form))
 
 (defrecord UnreadableForm [form-string form-class])
 
@@ -112,6 +111,4 @@
                                          [b c]])
                                  (graph a [a [b c]]))))
 
-  (preview-graph ds my-template 0)
-
-  )
+  (preview-graph ds my-template 0))
