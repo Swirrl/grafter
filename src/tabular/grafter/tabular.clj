@@ -160,11 +160,16 @@
   [dataset cols]
   (let [col-names (column-names dataset)
         max-cols (count (:column-names dataset))
-        matched-col-positions (->> (take max-cols cols)
+        restrained-cols (take max-cols cols)
+        matched-col-positions (->> restrained-cols
                                    (map (partial col-position col-names)))
         valid-positions (filterv #(not= ::not-found %) matched-col-positions)
         selected-cols (map #(nth col-names %) valid-positions)]
-    (all-columns dataset selected-cols)))
+    (if (not (empty? selected-cols))
+      (all-columns dataset selected-cols)
+      (throw (IndexOutOfBoundsException. (str "The columns: "
+                                              (str/join ", " restrained-cols)
+                                              " are not currently defined."))))))
 
 (defn rename-columns
   "Renames the columns in the dataset.  Takes either a map or a
