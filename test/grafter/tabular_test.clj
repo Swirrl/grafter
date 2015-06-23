@@ -284,7 +284,28 @@
                                  ["a" "b" "d" "c"])]
           (is (= expected-dataset
                  (columns test-data [:a :b :d :c]))
-              "should return dataset containing the cols :a :b :d :c"))))
+              "should return dataset containing the cols :a :b :d :c")))
+
+      (testing "Missing keys"
+        (testing "when at least one key is found (even though rest of key range is missing)"
+          (is (columns test-data (range -3 2))
+              expected-dataset))
+
+        (testing "when no keys are found"
+          (testing "with a range"
+            (is (thrown-with-msg? IndexOutOfBoundsException
+                                  #"The columns: 11, 12 are not currently defined"
+                                  (columns test-data (range 11 13)))))
+
+          (testing "with an infinite range"
+            (is (thrown-with-msg? IndexOutOfBoundsException
+                                  #"The columns: 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 are not currently defined"
+                                  (columns test-data (iterate inc 11)))))
+
+          (testing "with keywords"
+            (is (thrown-with-msg? IndexOutOfBoundsException
+                                  #"The columns: :k, :l are not currently defined"
+                                  (columns test-data [:k :l]))))))))
 
     (testing "preserves metadata"
       (let [md {:foo :bar}
@@ -315,7 +336,7 @@
         (is (= expected-dataset result))
         ;; Columns crops the supplied sequence to the data.
         ;; This means duplicate columns may sneak in.
-        (is (= expected-dataset (columns test-dataset ["a" "a" "b"])))))))
+        (is (= expected-dataset (columns test-dataset ["a" "a" "b"]))))))
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]
