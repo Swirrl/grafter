@@ -144,6 +144,12 @@
         val
         ::not-found))))
 
+(defn- elided-col-description [coll]
+  (let [[examples more] (take 2 (partition 3 3 nil coll))
+        csv (str/join ", " examples)
+        ellision (if (not (nil? more)) " ..." nil)]
+    (str csv ellision)))
+
 (defn columns
   "Given a dataset and a sequence of column identifiers, columns
   narrows the dataset to just the supplied columns.
@@ -168,7 +174,7 @@
     (if (not (empty? selected-cols))
       (all-columns dataset selected-cols)
       (throw (IndexOutOfBoundsException. (str "The columns: "
-                                              (str/join ", " restrained-cols)
+                                              (elided-col-description cols)
                                               " are not currently defined."))))))
 
 (defn rename-columns

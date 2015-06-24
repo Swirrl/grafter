@@ -253,7 +253,6 @@
            :not-found "z"
            :not-found :z))))
 
-
 (deftest columns-tests
   (testing "columns"
     (let [expected-dataset (test-dataset 5 2)
@@ -299,8 +298,8 @@
 
           (testing "with an infinite range"
             (is (thrown-with-msg? IndexOutOfBoundsException
-                                  #"The columns: 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 are not currently defined"
-                                  (columns test-data (iterate inc 11)))))
+                                  #"The columns: 13, 14, 15 ... are not currently defined"
+                                  (columns test-data (iterate inc 13)))))
 
           (testing "with keywords"
             (is (thrown-with-msg? IndexOutOfBoundsException
