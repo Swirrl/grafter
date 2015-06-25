@@ -42,30 +42,28 @@
       (get-sheet sheet)))
 
 (defmethod tab/read-dataset* :xls
-  [filename opts]
-  (-> filename
+  [source opts]
+  (-> source
       xls/workbook-hssf
-      (read-dataset** opts)
-      (tab/assoc-data-source-meta filename)))
+      (read-dataset** opts)))
 
 (defmethod tab/read-dataset* :xlsx
-  [filename opts]
-  (-> filename
+  [source opts]
+  (-> source
       xls/workbook-xssf
-      (read-dataset** opts)
-      (tab/assoc-data-source-meta filename)))
+      (read-dataset** opts)))
 
 (defmethod tab/read-datasets* :xls
-  [filename opts]
-  (-> filename
+  [source opts]
+  (-> source
       xls/workbook-hssf
-      (sheets filename)))
+      (sheets source)))
 
 (defmethod tab/read-datasets* :xlsx
-  [filename opts]
-  (-> filename
+  [source opts]
+  (-> source
       xls/workbook-xssf
-      (sheets filename)))
+      (sheets source)))
 
 (defn write-dataset** [destination wb dataset-map]
   (with-open [output (io/writer destination)]
