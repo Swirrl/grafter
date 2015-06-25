@@ -144,10 +144,14 @@
         val
         ::not-found))))
 
-(defn- elided-col-description [coll]
-  (let [[examples more] (take 2 (partition 3 3 nil coll))
+(defn- elided-col-description
+  "Print elided descriptions of columns for error messages with a sample set and
+  the rest hidden behind an elipsis, e.g. \":one, :two, :three ...\""
+  [coll]
+  (let [[examples more] (take 2 (partition-all 3 coll))
         csv (str/join ", " examples)
-        ellision (if (not (nil? more)) " ..." nil)]
+        ellision (when (seq more)
+                   " ...")]
     (str csv ellision)))
 
 (defn columns
@@ -171,7 +175,7 @@
                                    (map (partial col-position col-names)))
         valid-positions (filterv #(not= ::not-found %) matched-col-positions)
         selected-cols (map #(nth col-names %) valid-positions)]
-    (if (not (empty? selected-cols))
+    (if (seq selected-cols)
       (all-columns dataset selected-cols)
       (throw (IndexOutOfBoundsException. (str "The columns: "
                                               (elided-col-description cols)
