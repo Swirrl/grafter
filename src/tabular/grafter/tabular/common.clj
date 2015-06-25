@@ -102,6 +102,9 @@
     (or format (extension ds))
     (class ds)))
 
+(defn- get-format [source {:keys [format] :as opts}]
+  format)
+
 (defn assoc-data-source-meta [output-ds data-source]
   "Adds metadata about where the dataset was loaded from to the object."
   (cond
@@ -115,59 +118,99 @@
   API users should use the front end function read-dataset instead of
   calling this."
 
-  format-or-type)
+  get-format)
 
-(defmethod read-dataset* Dataset [dataset opts]
-  dataset)
+(defprotocol DatasetFormat
+  "Represents a type from which it may be possible to infer the format
+  of the contained data."
+  (infer-format [source]
+    "Attempt to infer the data format of the given source. Should
+    return a keyword if the format was inferred, or nil if the
+    inference failed."))
 
-(defn- read-dataset-with-inferred-extension [dataset {:keys [format] :as opts}]
-  (let [format (or format (extension dataset))]
-    (-> (read-dataset* (io/input-stream dataset) {:format (extension dataset)}))))
+(extend-protocol DatasetFormat
+  String
+  (infer-format [s] (extension s))
 
-(defmethod read-dataset* String [dataset opts]
-  (read-dataset-with-inferred-extension dataset opts))
+  File
+  (infer-format [f] (extension (.getName f)))
 
-(defmethod read-dataset* File [dataset opts]
-  (read-dataset-with-inferred-extension dataset opts))
+  java.net.URL
+  (infer-format [url] (extension (.getPath url)))
 
-(defmethod read-dataset* InputStream [dataset {:keys [format]}]
-  (read-dataset* dataset {:format format}))
+  java.net.URI
+  (infer-format [uri] (extension (.getPath uri)))
 
-(defmethod read-dataset* ::default
-  [dataset {:keys [format] :as opts}]
-  (if (nil? format)
-    (throw (IllegalArgumentException. (str "Please specify a format, it could not be infered when opening a dataset of type: " (class dataset))))
-    (-> (io/input-stream dataset)
-        (read-dataset* opts))))
+  nil
+  (infer-format [_] nil))
 
-(defn read-dataset
-  "Opens a dataset from a datasetable thing i.e. a filename or an existing Dataset.
-The multi-method dispatches based upon a :format option. If this isn't provided then
-the type is used. If this isn't provided then we fallback to file extension.
+(defn- ^:no-doc infer-format-of
+  "Attempt to infer the format of the given data source. Returns nil
+  if the format could not be inferred."
+  [source]
+  (if (satisfies? DatasetFormat source)
+    (infer-format source)))
 
-Options are:
+(defmulti read-dataset-source
+  "Opens a dataset from a datasetable thing e.g. a filename or an existing Dataset.
+  The multi-method dispatches based upon the type of the source.
 
-  :format - to force the datasetable to be opened with a particular method."
-  [datasetable & {:keys [format] :as opts}]
+  Supplied options are passed to the individual handler methods and they may
+  have their own requirements on the options provided."
+  ;; NOTE: This is not a protocol, because protocols don't give you a :default
+  ;; option for dispatch.
+  (fn [src opts]
+    (class src)))
 
-  (-> (read-dataset* datasetable opts)
-      (assoc-data-source-meta datasetable)))
+(defn- ^:no-doc dispatch-with-format-option
+  "Takes a function to call, a data source and an options hash containing an
+  optional :format key.
+
+  If :format is not provided then an attempt will be made to infer it from the
+  data source via the DatasetFormat protocol.
+
+  Once the format is resolved it then the target function is called with the
+  data source and options map."
+  [f source {:keys [format] :as opts}]
+  (if-let [format (or format (infer-format-of source))]
+    (f source (assoc opts :format format))
+    (throw (IllegalArgumentException. (str "Please specify a format, it could not be from the source: " source)))))
+
+(defmethod read-dataset-source Dataset [ds opts] ds)
+
+(defmethod read-dataset-source :default [source opts]
+  (dispatch-with-format-option read-dataset* source opts))
+
+(defn read-dataset [source & {:as opts}]
+  (-> (read-dataset-source source opts)
+      (assoc-data-source-meta source)))
+
+(defmulti read-datasets-source
+  "Reads a sequence of datasets from a given data source given a map of
+  options. Dispatches on the type of the data source.
+
+  NOTE: implementations for different source types may have different
+  requirements for the provided options."
+  (fn [source {:keys [sheet] :as opts}]
+    (when sheet
+      (throw (IllegalArgumentException. "read-datasets cannot open a single sheet. Use read-dataset* to do this.")))
+    (class source)))
 
 (defmulti read-datasets*
-  (fn [multidatasetable {:keys [format] :as opts}]
-    (when (:sheet opts)
-      (throw (IllegalArgumentException. "read-datasets cannot open a single sheet.  Use read-dataset* to do this.")))
-    (format-or-type multidatasetable format)))
+  get-format)
 
-(defmethod read-datasets* clojure.lang.Sequential [datasets opts]
+(defmethod read-datasets-source clojure.lang.Sequential [datasets opts]
   datasets)
+
+(defmethod read-datasets-source :default [source opts]
+  (dispatch-with-format-option read-datasets* source opts))
 
 (defn read-datasets
   "Opens a lazy sequence of datasets from a something that returns multiple
   datasetables - i.e. all the worksheets in an Excel workbook."
 
   [dataset & {:keys [format] :as opts}]
-  (read-datasets* dataset opts))
+  (read-datasets-source dataset opts))
 
 (defmulti ^:no-doc write-dataset*
   "Multi-method for adapter implementers to extend to allow
