@@ -253,11 +253,10 @@
            :not-found "z"
            :not-found :z))))
 
-
 (deftest columns-tests
-  (let [expected-dataset (test-dataset 5 2)
-        test-data (test-dataset 5 10)]
-    (testing "columns"
+  (testing "columns"
+    (let [expected-dataset (test-dataset 5 2)
+          test-data (test-dataset 5 10)]
       (testing "Narrows by string names"
         (is (= expected-dataset
                (columns test-data ["a" "b"]))  "Should select just columns a and b"))
@@ -278,46 +277,65 @@
                      (columns test-data (range 10 100)))
             "Raises an exception if columns when paired with data are not actually column headings."))
 
-      (testing "preserves metadata"
-        (let [md {:foo :bar}
-              ds (with-meta (make-dataset [[1 2 3]]) md)]
-          (is (= md
-                 (meta (columns ds [0]))))))
-
-      (testing "still returns a dataset even with only one row"
-        (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])
-              result (columns test-data ["Owner" "Dog"])]
-          (is (is-a-dataset? result))
-
-          (is (= test-data result))))
-
       (testing "Returns all columns from unordered sequence"
         (let [expected-dataset (assoc (test-dataset 5 4)
-                                      :column-names
-                                      ["a" "b" "d" "c"])]
+                                 :column-names
+                                 ["a" "b" "d" "c"])]
           (is (= expected-dataset
                  (columns test-data [:a :b :d :c]))
               "should return dataset containing the cols :a :b :d :c")))
 
-      (testing "Duplicate columns in the selection leads to duplicated column-names"
-        ;; NOTE that these behaviour's aren't really desirable - but its
-        ;; hard to prevent without using only finite sequences for
-        ;; selection.
-        ;;
-        ;; These tests are primarily to document this behaviour - even
-        ;; though it can be undesirable.
-        (let [expected-dataset (make-dataset [[0 0] [1 1]]
-                                             ["a" "a"])
-              test-dataset (test-dataset 2 2)
+      (testing "Missing keys"
+        (testing "when at least one key is found (even though rest of key range is missing)"
+          (is (columns test-data (range -3 2))
+              expected-dataset))
 
-              result (columns test-dataset ["a" "a"])]
-          (is (= ["a" "a"] (column-names result)))
-          (is (= expected-dataset result))
-          ;; Columns crops the supplied sequence to the data.
-          ;; This means duplicate columns may sneak in.
-          (is (= expected-dataset (columns test-dataset ["a" "a" "b"]))))))))
+        (testing "when no keys are found"
+          (testing "with a range"
+            (is (thrown-with-msg? IndexOutOfBoundsException
+                                  #"The columns: 11, 12 are not currently defined"
+                                  (columns test-data (range 11 13)))))
 
+          (testing "with an infinite range"
+            (is (thrown-with-msg? IndexOutOfBoundsException
+                                  #"The columns: 13, 14, 15 ... are not currently defined"
+                                  (columns test-data (iterate inc 13)))))
 
+          (testing "with keywords"
+            (is (thrown-with-msg? IndexOutOfBoundsException
+                                  #"The columns: :k, :l are not currently defined"
+                                  (columns test-data [:k :l]))))))))
+
+    (testing "preserves metadata"
+      (let [md {:foo :bar}
+            ds (with-meta (make-dataset [[1 2 3]]) md)]
+        (is (= md
+               (meta (columns ds [0]))))))
+
+    (testing "still returns a dataset even with only one row"
+      (let [test-data (make-dataset [["Doc Brown" "Einstein"]] ["Owner" "Dog"])
+            result (columns test-data ["Owner" "Dog"])]
+        (is (is-a-dataset? result))
+
+        (is (= test-data result))))
+
+    (testing "Duplicate columns in the selection leads to duplicated column-names"
+      ;; NOTE that these behaviour's aren't really desirable - but its
+      ;; hard to prevent without using only finite sequences for
+      ;; selection.
+      ;;
+      ;; These tests are primarily to document this behaviour - even
+      ;; though it can be undesirable.
+      (let [expected-dataset (make-dataset [[0 0] [1 1]]
+                                           ["a" "a"])
+            test-dataset (test-dataset 2 2)
+
+            result (columns test-dataset ["a" "a"])]
+        (is (= ["a" "a"] (column-names result)))
+        (is (= expected-dataset result))
+        ;; Columns crops the supplied sequence to the data.
+        ;; This means duplicate columns may sneak in.
+        (is (= expected-dataset (columns test-dataset ["a" "a" "b"]))))))
 
 (deftest rows-tests
   (let [test-data (test-dataset 10 2)]

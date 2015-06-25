@@ -144,6 +144,16 @@
         val
         ::not-found))))
 
+(defn- elided-col-description
+  "Print elided descriptions of columns for error messages with a sample set and
+  the rest hidden behind an elipsis, e.g. \":one, :two, :three ...\""
+  [coll]
+  (let [[examples more] (take 2 (partition-all 3 coll))
+        csv (str/join ", " examples)
+        ellision (when (seq more)
+                   " ...")]
+    (str csv ellision)))
+
 (defn columns
   "Given a dataset and a sequence of column identifiers, columns
   narrows the dataset to just the supplied columns.
@@ -160,11 +170,16 @@
   [dataset cols]
   (let [col-names (column-names dataset)
         max-cols (count (:column-names dataset))
-        matched-col-positions (->> (take max-cols cols)
+        restrained-cols (take max-cols cols)
+        matched-col-positions (->> restrained-cols
                                    (map (partial col-position col-names)))
         valid-positions (filterv #(not= ::not-found %) matched-col-positions)
         selected-cols (map #(nth col-names %) valid-positions)]
-    (all-columns dataset selected-cols)))
+    (if (seq selected-cols)
+      (all-columns dataset selected-cols)
+      (throw (IndexOutOfBoundsException. (str "The columns: "
+                                              (elided-col-description cols)
+                                              " are not currently defined."))))))
 
 (defn rename-columns
   "Renames the columns in the dataset.  Takes either a map or a
