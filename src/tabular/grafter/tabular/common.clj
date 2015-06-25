@@ -122,7 +122,7 @@
 
 (defprotocol DatasetFormat
   "Represents a type from which it may be possible to infer the format
-  of the contained data"
+  of the contained data."
   (infer-format [source]
     "Attempt to infer the data format of the given source. Should
     return a keyword if the format was inferred, or nil if the
@@ -153,20 +153,24 @@
 
 (defmulti read-dataset-source
   "Opens a dataset from a datasetable thing e.g. a filename or an existing Dataset.
-  The multi-method dispatches based upon the type of the source. The options are passed
-  to the individual handler functions and they may have their own requirements on the
-  options provided."
+  The multi-method dispatches based upon the type of the source.
+
+  Supplied options are passed to the individual handler methods and they may
+  have their own requirements on the options provided."
+  ;; NOTE: This is not a protocol, because protocols don't give you a :default
+  ;; option for dispatch.
   (fn [src opts]
     (class src)))
 
 (defn- ^:no-doc dispatch-with-format-option
-  "Takes a function to call, a data source and an options hash
-  containing an optional :format key. If the data format is not
-  provided then it is inferred from the data source if possible and
-  then updated in the options map. If it is not provided and cannot be
-  inferred then an exception is thrown. If a format is available then
-  the target function is called with the data source and options
-  map."
+  "Takes a function to call, a data source and an options hash containing an
+  optional :format key.
+
+  If :format is not provided then an attempt will be made to infer it from the
+  data source via the DatasetFormat protocol.
+
+  Once the format is resolved it then the target function is called with the
+  data source and options map."
   [f source {:keys [format] :as opts}]
   (if-let [format (or format (infer-format-of source))]
     (f source (assoc opts :format format))
@@ -182,9 +186,10 @@
       (assoc-data-source-meta source)))
 
 (defmulti read-datasets-source
-  "Reads a sequence of datasets from a given data source given a map
-  of options. Dispatches on the type of the data source -
-  implementations for different source types may have different
+  "Reads a sequence of datasets from a given data source given a map of
+  options. Dispatches on the type of the data source.
+
+  NOTE: implementations for different source types may have different
   requirements for the provided options."
   (fn [source {:keys [sheet] :as opts}]
     (when sheet
