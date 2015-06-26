@@ -20,19 +20,20 @@
           (testing "and the second item is the source data without the first row"
             (is (= (rest raw-data) (second retval)))))))))
 
-(= (make-dataset '({"a" 1, "b" 2}
-                   {"a" 3, "b" 4, "c" 5})
-                 ["a" "b" "c"])
-   (make-dataset '({"a" 1, "b" 2, "c" nil}
-                   {"a" 3, "b" 4, "c" 5})
-                 ["a" "b" "c"]))
+(deftest dataset-equality-tests
+  (is (= (make-dataset '({"a" 1, "b" 2}
+                         {"a" 3, "b" 4, "c" 5})
+                       ["a" "b" "c"])
+         (make-dataset '({"a" 1, "b" 2, "c" nil}
+                         {"a" 3, "b" 4, "c" 5})
+                       ["a" "b" "c"])))
 
-(= (make-dataset '({"a" 1, "b" 2, "c" 5}
-                   {"a" 3, "b" 4})
-                  ["a" "b" "c"])
-   (make-dataset '({"a" 1, "b" 2, "c" 5}
-                   {"a" 3, "b" 4, "c" nil})
-                  ["a" "b" "c"]))
+  (is (= (make-dataset '({"a" 1, "b" 2, "c" 5}
+                         {"a" 3, "b" 4})
+                       ["a" "b" "c"])
+         (make-dataset '({"a" 1, "b" 2, "c" 5}
+                         {"a" 3, "b" 4, "c" nil})
+                       ["a" "b" "c"]))))
 
 (deftest make-dataset-tests
   (testing "make-dataset"
