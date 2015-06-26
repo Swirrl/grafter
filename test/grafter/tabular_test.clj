@@ -132,10 +132,11 @@
 
 (deftest read-dataset-tests
   (testing "Open an existing Dataset"
-    (let [dataset (read-dataset (make-dataset raw-csv-data))]
+    (let [dataset (read-dataset (with-meta (make-dataset raw-csv-data) {:other :metadata}))]
       (testing "returns a dataset"
         (is-a-dataset? dataset)
-        (has-metadata? dataset))))
+        (is (= {:other :metadata}
+               (meta dataset))))))
 
   (testing "Open CSV file"
     (let [dataset (read-dataset "./test/grafter/test.csv")]
