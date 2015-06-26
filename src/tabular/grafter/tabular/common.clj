@@ -57,7 +57,7 @@
                                  [columns-or-f data-seq])
          full-data (fill-gaps-with-nil rows column-headers)]
      (-> (inc/dataset column-headers full-data)
-         (with-meta (meta full-data))))))
+         (with-meta (meta data))))))
 
 (defn dataset?
   "Predicate function to test whether the supplied argument is a
@@ -109,6 +109,7 @@
   "Adds metadata about where the dataset was loaded from to the object."
   (cond
     (#{String File URI URL} (class data-source)) (with-meta output-ds {:grafter.tabular/data-source data-source})
+    (instance? incanter.core.Dataset data-source) (with-meta output-ds (meta data-source))
     :else (with-meta output-ds {:grafter.tabular/data-source :datasource-unknown})))
 
 (defmulti ^:no-doc read-dataset*
@@ -174,7 +175,7 @@
   [f source {:keys [format] :as opts}]
   (if-let [format (or format (infer-format-of source))]
     (f source (assoc opts :format format))
-    (throw (IllegalArgumentException. (str "Please specify a format, it could not be from the source: " source)))))
+    (throw (IllegalArgumentException. (str "Please specify a format, it could not be inferred from the source: " source)))))
 
 (defmethod read-dataset-source Dataset [ds opts] ds)
 
