@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.5.0-SNAPSHOT"
+(defproject grafter/grafter "0.5.0"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -13,7 +13,7 @@
                  [org.clojure/tools.logging "0.3.1"]
 
                  [org.clojure/algo.monads "0.1.5"]
-                 [grafter/url "0.2.0-SNAPSHOT"]
+                 [grafter/url "0.2.0"]
                  [clj-time "0.7.0"]
 
                  ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
