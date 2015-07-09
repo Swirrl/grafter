@@ -127,7 +127,7 @@
   consisting of just the supplied rows.  If a row number is not found
   the function will assume it has consumed all the rows and return
   normally."
-  [dataset row-numbers & {:as opts}]
+  [dataset row-numbers]
   (let [rows (indexed (inc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
 
@@ -377,6 +377,12 @@ the specified column being cloned."
 
 (defmethod grep java.util.regex.Pattern [dataset p & cols]
   (apply grep dataset #(re-find p (str %)) cols))
+
+;; grep with a sequence of integers is equivalent to using rows
+(defmethod grep clojure.lang.Sequential [dataset row-numbers]
+  (rows dataset row-numbers))
+
+(prefer-method grep clojure.lang.Sequential clojure.lang.IFn)
 
 (defmethod grep :default [dataset v & cols]
   (apply grep dataset (partial = v) cols))

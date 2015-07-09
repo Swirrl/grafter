@@ -443,6 +443,10 @@
         (is (= expected-dataset
                (grep dataset #"\d"))))
 
+      (testing "with a sequence"
+        (is (= expected-dataset
+               (grep dataset [1 2]))))
+
       (testing "on an empty dataset"
         (let [empty-ds (make-dataset)]
           (is (= empty-ds
