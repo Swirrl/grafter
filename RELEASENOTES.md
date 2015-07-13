@@ -2,6 +2,21 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
+## 2015-06-26
+`VERSION: 0.5.0`
+
+- grafter-url library for building URLs
+- `all-columns` removed
+- Fixed issue #19 adjusting behaviour of `columns` to crop infinite sequences
+- Make `columns` raise `IndexOutOfBoundsException` on unknown column names
+- `make-dataset` doesnt infer column width from first row if f provided
+- `make-dataset` preserves metadata if given a Dataset
+- Serializing to quads with `add` supports overriding the graph
+- Workaround minor Clojure compiler type-hint bug when using `->connection` with `with-open`
+- Fix `rename-columns` to support renaming with an arbitrary rename function
+- Fix bug in `melt` to work with string column names
+- Make `->connection` a protocol
+- Add support for previewing pretty printed graph templates
 
 ## 2015-03-05
 `VERSION: 0.4.0`
