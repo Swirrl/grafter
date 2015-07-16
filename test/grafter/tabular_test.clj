@@ -692,7 +692,7 @@
       :xlsx
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       :csv
-      "application/csv")
+      "text/csv")
 
     (testing "in an unknown format"
       (with-tempfile a-file

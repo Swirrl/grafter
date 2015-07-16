@@ -26,6 +26,6 @@
              stringified-rows
              (mapcat identity opts)))))
 
-(tab/register-format-alias tab/read-dataset* :csv "application/csv")
-(tab/register-format-alias tab/read-datasets* :csv "application/csv")
-(tab/register-format-alias tab/write-dataset* :csv "application/csv")
+(tab/register-format-alias tab/read-dataset* :csv "text/csv")
+(tab/register-format-alias tab/read-datasets* :csv "text/csv")
+(tab/register-format-alias tab/write-dataset* :csv "text/csv")
