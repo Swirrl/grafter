@@ -307,3 +307,16 @@
   "Lifts singular values into a sequential collection. If the given argument is sequential then it is returned, otherwise a sequential
    container containing the value is returned."
   (if (sequential? x) x [x]))
+
+(defmacro register-format-alias
+  "Register an extra format alias to be handled by a root multi-method (either
+  read-dataset*, read-datasets* or write-dataset*.
+
+  This works by building defmethod definitions that delegate to the root-key
+  dispatch value for each of the supplied aliases."
+  [multi-fn-symbol root-key alias]
+
+  (let [args 'args]
+    `(defmethod ~multi-fn-symbol ~alias [& ~args]
+       (let [opts# (merge (last ~args) {:format ~root-key})]
+         (apply ~multi-fn-symbol (concat (drop-last ~args) [opts#]))))))

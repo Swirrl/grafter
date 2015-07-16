@@ -47,6 +47,14 @@
       xls/workbook-hssf
       (read-dataset** opts)))
 
+(defmethod tab/read-dataset* "application/vnd.ms-excel"
+  [source opts]
+  (tab/read-dataset* source (merge opts {:format :xls})))
+
+(defmethod tab/read-dataset* "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  [source opts]
+  (tab/read-dataset* source (merge opts {:format :xlsx})))
+
 (defmethod tab/read-dataset* :xlsx
   [source opts]
   (-> source
@@ -65,6 +73,14 @@
       xls/workbook-xssf
       (sheets source)))
 
+(defmethod tab/read-datasets* "application/vnd.ms-excel"
+  [source opts]
+  (tab/read-datasets* source (merge opts {:format :xls})))
+
+(defmethod tab/read-datasets* "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  [source opts]
+  (tab/read-datasets* source (merge opts {:format :xlsx})))
+
 (defn write-dataset** [destination wb dataset-map]
   (with-open [output (io/writer destination)]
     (xls/save (xls/build-workbook wb dataset-map)
@@ -80,3 +96,20 @@
 
   (write-dataset** destination (xls/workbook-hssf)
                    {sheet-name (tab/dataset->seq-of-seqs dataset) }))
+
+(defmethod tab/write-dataset* "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  [destination dataset opts]
+  (tab/write-dataset* destination dataset (merge opts {:format :xlsx})))
+
+(defmethod tab/write-dataset* "application/vnd.ms-excel"
+  [destination dataset opts]
+  (tab/write-dataset* destination dataset (merge opts {:format :xls})))
+
+(tab/register-format-alias tab/read-dataset* :xls "application/vnd.ms-excel")
+(tab/register-format-alias tab/read-dataset* :xlsx "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+(tab/register-format-alias tab/read-datasets* :xls "application/vnd.ms-excel")
+(tab/register-format-alias tab/read-datasets* :xlsx "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+(tab/register-format-alias tab/write-dataset* :xls "application/vnd.ms-excel")
+(tab/register-format-alias tab/write-dataset* :xlsx "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

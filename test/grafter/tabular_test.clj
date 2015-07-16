@@ -670,33 +670,29 @@
 (deftest write-dataset-test
   (testing "write-dataset"
 
-    (testing "in csv format"
-      (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
-        (with-tempfile csv-file
-          (write-dataset csv-file sample-dataset :format :csv)
-          (is (= sample-dataset (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header))))
+    (are [format]
+        (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
 
-        (testing "with a stream"
-          (with-tempfile csv-file
-            (with-open [stream (clojure.java.io/output-stream csv-file)]
-              (write-dataset stream sample-dataset :format :csv))
+          (testing (str "with format" format)
+            (testing "with a file"
+              (with-tempfile a-file
+                (write-dataset a-file sample-dataset :format format)
+                (is (= sample-dataset (make-dataset (read-dataset a-file :format format) move-first-row-to-header)))))
 
-            (is (= sample-dataset
-                   (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header)))))))
+            (testing "with a stream"
+              (with-tempfile a-file
+                (with-open [stream (clojure.java.io/output-stream a-file)]
+                  (write-dataset stream sample-dataset :format format))
 
-    (testing "in xlsx format"
-      (let [sample-dataset (make-dataset raw-excel-data move-first-row-to-header)]
+                (is (= sample-dataset
+                       (make-dataset (read-dataset a-file :format format) move-first-row-to-header)))))))
 
-        (with-tempfile xlsx-file
-          (write-dataset xlsx-file sample-dataset :format :xlsx)
-          (is (= sample-dataset (make-dataset (read-dataset xlsx-file :format :xlsx) move-first-row-to-header))))))
-
-    (testing "in xls format"
-      (let [sample-dataset (make-dataset raw-excel-data move-first-row-to-header)]
-
-        (with-tempfile xls-file
-          (write-dataset xls-file sample-dataset :format :xls)
-          (is (= sample-dataset (make-dataset (read-dataset xls-file :format :xls) move-first-row-to-header))))))
+      :xls
+      "application/vnd.ms-excel"
+      :xlsx
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      :csv
+      "application/csv")
 
     (testing "in an unknown format"
       (with-tempfile a-file

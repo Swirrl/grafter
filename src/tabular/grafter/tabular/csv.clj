@@ -7,15 +7,15 @@
            [java.net URI URL]))
 
 (defmethod tab/read-dataset* :csv
-  [f opts]
-  (let [csv-seq (tab/mapply csv/read-csv (tab/mapply io/reader f opts) opts)]
+  [source opts]
+  (let [csv-seq (tab/mapply csv/read-csv (tab/mapply io/reader source opts) opts)]
     (if (nil? csv-seq)
-      (throw (IOException. (str "There was an error loading the CSV file: " f)))
+      (throw (IOException. (str "There was an error loading the CSV file: " source)))
       (tab/make-dataset csv-seq))))
 
 (defmethod tab/read-datasets* :csv
-  [f opts]
-  (when-let [ds (tab/mapply tab/read-dataset f opts)]
+  [source opts]
+  (when-let [ds (tab/mapply tab/read-dataset source opts)]
     [{"csv" ds}]))
 
 (defmethod tab/write-dataset* :csv [destination dataset {:keys [format] :as opts}]
@@ -25,3 +25,7 @@
       (apply csv/write-csv output
              stringified-rows
              (mapcat identity opts)))))
+
+(tab/register-format-alias tab/read-dataset* :csv "application/csv")
+(tab/register-format-alias tab/read-datasets* :csv "application/csv")
+(tab/register-format-alias tab/write-dataset* :csv "application/csv")
