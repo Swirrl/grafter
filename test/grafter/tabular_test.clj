@@ -6,6 +6,7 @@
             [grafter.rdf.templater :refer [graph triplify]]
             [grafter.tabular.csv]
             [grafter.tabular.excel]
+            [grafter.tabular.edn]
             [incanter.core :as inc]
             [clojure.java.io :as io])
   (:import [java.io File]))
@@ -693,6 +694,21 @@
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       :csv
       "text/csv")
+
+    (testing "edn serialization"
+      (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
+        (testing "with a file"
+          (with-tempfile a-file
+            (write-dataset a-file sample-dataset :format :edn)
+            (is (= sample-dataset (read-dataset a-file :format :edn)))))
+
+        (testing "with a stream"
+          (with-tempfile a-file
+            (with-open [stream (clojure.java.io/output-stream a-file)]
+              (write-dataset stream sample-dataset :format :edn))
+
+            (is (= sample-dataset
+                   (read-dataset a-file :format :edn)))))))
 
     (testing "in an unknown format"
       (with-tempfile a-file
