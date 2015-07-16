@@ -674,7 +674,15 @@
       (let [sample-dataset (make-dataset [["1" "2" "3"] ["4" "5" "6"]])]
         (with-tempfile csv-file
           (write-dataset csv-file sample-dataset :format :csv)
-          (is (= sample-dataset (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header))))))
+          (is (= sample-dataset (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header))))
+
+        (testing "with a stream"
+          (with-tempfile csv-file
+            (with-open [stream (clojure.java.io/output-stream csv-file)]
+              (write-dataset stream sample-dataset :format :csv))
+
+            (is (= sample-dataset
+                   (make-dataset (read-dataset csv-file :format :csv) move-first-row-to-header)))))))
 
     (testing "in xlsx format"
       (let [sample-dataset (make-dataset raw-excel-data move-first-row-to-header)]
@@ -688,7 +696,11 @@
 
         (with-tempfile xls-file
           (write-dataset xls-file sample-dataset :format :xls)
-          (is (= sample-dataset (make-dataset (read-dataset xls-file :format :xls) move-first-row-to-header))))))))
+          (is (= sample-dataset (make-dataset (read-dataset xls-file :format :xls) move-first-row-to-header))))))
+
+    (testing "in an unknown format"
+      (with-tempfile a-file
+        (is (thrown? IllegalArgumentException (write-dataset a-file :format :an-unknown-format)))))))
 
 (deftest graph-fn-test
   (let [test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]

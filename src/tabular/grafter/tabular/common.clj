@@ -163,6 +163,17 @@
   (fn [src opts]
     (class src)))
 
+(defmulti write-dataset-source
+  "Writes a dataset from a datasetable thing e.g. a filename or an existing Dataset.
+  The multi-method dispatches based upon the type of the source.
+
+  Supplied options are passed to the individual handler methods and they may
+  have their own requirements on the options provided."
+  ;; NOTE: This is not a protocol, because protocols don't give you a :default
+  ;; option for dispatch.
+  (fn [dest ds opts]
+    (class dest)))
+
 (defn- ^:no-doc dispatch-with-format-option
   "Takes a function to call, a data source and an options hash containing an
   optional :format key.
@@ -221,17 +232,23 @@
       (throw (IllegalArgumentException.
               (str "Could not write dataset to" destination " as " (class dataset)
                    " is not a valid Dataset.  This error usually occurs if you try and generate tabular data from a graft"))))
-    (format-or-type destination opts)))
+    (get-format destination opts)))
 
-(defmethod write-dataset* ::default [destination dataset {:keys [format] :as opts}]
-  (if (nil? format)
-    (throw (IllegalArgumentException. (str "Please specify a format, it could not be infered when opening a dataset of type: " (class dataset))))
-    (-> (io/output-stream destination)
-        (write-dataset* dataset destination opts))))
+(defn- ^:no-doc dispatch-write-with-format-option
+  "Same as above but for writer - so it takes an additional argument"
+  [f dest ds {:keys [format] :as opts}]
+  (if-let [format (or format (infer-format-of dest))]
+    (f dest ds (assoc opts :format format))
+    (throw (IllegalArgumentException. (str "Please specify a format, it could not be inferred from the destination: " dest)))))
+
+(defmethod write-dataset-source :default [dest ds opts]
+  (dispatch-write-with-format-option write-dataset* dest ds opts))
+
+(defmethod write-dataset-source Dataset [dest ds opts] ds)
 
 (defn write-dataset
   [destination dataset & {:keys [format] :as opts}]
-  (write-dataset* destination dataset opts))
+  (write-dataset-source destination dataset opts))
 
 (defn without-metadata-columns
   "Ignores any possible metadata and leaves the dataset as is."
