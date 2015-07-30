@@ -14,3 +14,7 @@ pom.xml.asc
 /api-docs
 *.iml
 .idea/
+*.ipr
+*.iws
+out/
+.idea_modules/
