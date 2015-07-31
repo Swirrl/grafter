@@ -1,16 +1,16 @@
-(ns grafter.tabular
+(ns ^{:doc "Functions for processing tabular data."}
+  grafter.tabular
   "Functions for processing tabular data."
-  (:require [clojure.set :as set]
-            [clojure.string :as str]
-            [grafter.pipeline :refer [graft-form->Pipeline]]
-            [grafter.tabular.common :refer [lift->vector map-keys] :as tabc]
-            [grafter.tabular.csv]
-            [grafter.tabular.excel]
-            [grafter.tabular.melt]
-            [clojure.tools.logging :refer [spy]]
+  (:require [clojure
+             [set :as set]
+             [string :as str]]
+            [grafter
+             [common :refer [build-defgraft-docstring]]
+             [pipeline :refer [graft-form->Pipeline]]]
+            [grafter.tabular.common :as tabc :refer [lift->vector map-keys]]
             [incanter.core :as inc]
             [potemkin.namespaces :refer [import-vars]]
-            [grafter.common :refer [build-defgraft-docstring]]))
+            [grafter.tabular.melt]))
 
 (import-vars
  [grafter.tabular.common
