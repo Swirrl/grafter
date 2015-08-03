@@ -2,6 +2,12 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
+## 2015-08-03
+`VERSION: 0.5.1`
+
+- Support reader and input-stream for read-dataset
+- Support mime-types as :format parameters to read-dataset, read-datasets and write-dataset.
+
 ## 2015-06-26
 `VERSION: 0.5.0`
 
