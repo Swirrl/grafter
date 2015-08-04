@@ -4,9 +4,6 @@
   (:require [clojure
              [set :as set]
              [string :as str]]
-            [grafter
-             [common :refer [build-defgraft-docstring]]
-             [pipeline :refer [graft-form->Pipeline]]]
             [grafter.tabular.common :as tabc :refer [lift->vector map-keys]]
             [incanter.core :as inc]
             [potemkin.namespaces :refer [import-vars]]))
@@ -630,68 +627,3 @@ the specified column being cloned."
        ;; the macro
        {::template (quote ~&form)
         ::defined-in-ns (quote ~(.getName *ns*))})))
-
-(defmacro defpipe
-  "Declares an entry point to a grafter pipeline, allowing it to be
-  exposed to the Grafter import service and executed via the leiningen
-  plugin.
-
-  It has the same form as \"defn\" but adds metadata to the defined
-  var that lets pipelines be discovered at runtime through both
-  syntactic and meta-data means."
-  ([& args]
-   (let [defppln (cons 'defn args)]
-     `(let [var# ~defppln
-            vmeta# (meta var#)]
-        (alter-meta! var# (fn [_#] (merge vmeta# {:pipeline true})))
-        var#))))
-
-(defmacro defgraft
-  "Declares an entry point to a graph-generating pipeline allowing it
-  to be exposed to the Grafter import service and executed via the
-  leiningen plugin.
-
-  It is effectively equivalent to the following call with additional
-  metadata benefits:
-
-  `(def my-graft (comp make-graph my-pipeline))`
-
-  It is used with defpipe to indicate that a transformation also supports
-  conversion into graph data.
-
-  It takes an optional docstring, if no docstring is specified then a
-  default docstring will be generated."
-
-  ([name f]
-   (let [doc (build-defgraft-docstring f)]
-     `(defgraft ~name ~doc ~f)))
-
-  ([name pipeline-or-doc-str f]
-   (if (string? pipeline-or-doc-str)
-     (let [docstring pipeline-or-doc-str]
-       `(defgraft ~name ~docstring ~f identity))
-     (let [docstring (or (:doc (meta name)) (build-defgraft-docstring pipeline-or-doc-str f))]
-       `(defgraft ~name ~docstring ~pipeline-or-doc-str ~f))))
-
-  ([name docstring-or-pipe pipe-or-graphfn graphfn-or-quadfn & quadfns]
-   (let [graft (graft-form->Pipeline *ns* &form)
-         docstring (:doc graft)
-         pipe (if (string? docstring-or-pipe)
-                pipe-or-graphfn
-                docstring-or-pipe)
-         comp-form (:body graft)
-         name-with-meta (vary-meta name assoc
-                                   :doc docstring
-                                   :arglists (:arglists (meta pipe)))]
-
-     `(def ~name-with-meta ~comp-form))))
-
-;; put a better argslist on the defgraft macro
-(alter-meta! #'defgraft assoc :arglists '([name docstring? tabular->graph-fn]
-                                          [name docstring? pipeline template quad-fn*]))
-
-(comment
-  ;; TODO implement inner join, maybe l/r outer joins too
-  (defn join [csv f & others]
-    ;;(filter)
-    (apply map vector csv others)))
