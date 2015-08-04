@@ -360,6 +360,27 @@
         "application/html" RDFFormat/RDFA
         (Rio/getParserFormatForMIMEType mime-type)))))
 
+(defn- resolve-format-preference
+  "Takes an clojure.java.io destination (e.g. URL/File etc...) and a
+  format-preference and tries to resolve them in a fallback chain.
+
+  If format-preference does not resolve then we fallback to the destination's
+  file extension if there is one. If no format can be resolved we raise an
+  exception.
+
+  format-preference can be a keyword e.g. :ttl, a string of an extension e.g
+  \"nt\" or a mime-type.
+  "
+  [dest format-preference]
+  (if (instance? RDFFormat format-preference)
+    format-preference
+    (or (try (mimetype->rdf-format format-preference) (catch Exception nx nil))
+        (filename->rdf-format (str "." format-preference))
+        (condp = (class dest)
+          String (filename->rdf-format dest)
+          File   (filename->rdf-format (str dest)))
+        (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object dest})))))
+
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
   clojure.java.io/writer and returns an RDFSerializer.
@@ -378,11 +399,7 @@
 
   ([destination & {:keys [append format encoding] :or {append false
                                                        encoding "UTF-8"}}]
-   (let [^RDFFormat format (or format
-                               (condp = (class destination)
-                                 String (filename->rdf-format destination)
-                                 File   (filename->rdf-format destination))
-                               (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object destination})))]
+   (let [^RDFFormat format (resolve-format-preference destination format)]
      (Rio/createWriter format
                        (io/writer destination
                                   :append append
