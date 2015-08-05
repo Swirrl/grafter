@@ -9,8 +9,18 @@
              [pipeline :refer [graft-form->Pipeline]]]
             [grafter.tabular.common :as tabc :refer [lift->vector map-keys]]
             [incanter.core :as inc]
-            [potemkin.namespaces :refer [import-vars]]
-            [grafter.tabular.melt]))
+            [potemkin.namespaces :refer [import-vars]]))
+
+;; Load protocol definitions.  This could occur in the ns definition but putting
+;; them in their means that namespace refactoring tools can clear them out
+;; accidentally.  Better to explicitly require them to ensure they're loaded.
+(require '[grafter.tabular
+           [csv]
+           [excel]])
+
+;; This one is necessary for import-vars - again separating these from the ns
+;; definition protects them against overzealous refactoring tools.
+(require '[grafter.tabular.melt])
 
 (import-vars
  [grafter.tabular.common

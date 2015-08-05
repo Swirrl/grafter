@@ -3,8 +3,11 @@
   DSL for creating turtle-like templated forms."
   (:require [grafter.rdf.protocols :as pr]
             [grafter.rdf.protocols :refer [->Quad]]
-            [potemkin.namespaces :refer [import-vars]]
-            [grafter.rdf.io]));; TODO remove this when we move s into this ns and rename literal
+            [potemkin.namespaces :refer [import-vars]]))
+
+;; Force loading the required protocol implementations.  Keep separate from ns
+;; definition to prevent ns refactoring tools cleaning it away.
+(require '[grafter.rdf.io])
 
 (import-vars
  [grafter.rdf.io
