@@ -9,11 +9,9 @@
 ;; definition to prevent ns refactoring tools cleaning it away.
 (require '[grafter.rdf.io])
 
-(comment (import-vars
-          [grafter.rdf.io
-           s]))
-
-(def s grafter.rdf.io/s)
+(import-vars
+ [grafter.rdf.io
+  s])
 
 (defn prefixer
   "Takes the base prefix of a URI string and returns a function that
