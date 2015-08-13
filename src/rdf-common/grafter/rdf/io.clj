@@ -3,6 +3,7 @@
   any Linked Data format supported by Sesame."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
+            [grafter.rdf.protocols :refer [->Quad]]
             [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [pantomime.media :as mime]
@@ -322,11 +323,11 @@
   ;; TODO fix this to work properly with object & context.
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
-  (Quad. (str (.getSubject st))
-         (str (.getPredicate st))
-         (sesame-rdf-type->type (.getObject st))
-         (when-let [graph (.getContext st)]
-           (sesame-rdf-type->type graph))))
+  (->Quad (str (.getSubject st))
+          (str (.getPredicate st))
+          (sesame-rdf-type->type (.getObject st))
+          (when-let [graph (.getContext st)]
+            (sesame-rdf-type->type graph))))
 
 (defn filename->rdf-format
   "Given a filename we attempt to return an appropriate RDFFormat
