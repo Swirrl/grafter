@@ -56,9 +56,6 @@
             :path "src/pipeline"
             :levels 2}
            {:type :clojure
-            :path "src/common"
-            :levels 1}
-           {:type :clojure
             :path "src/rdf-repository"
             :levels 2}
            {:type :clojure
