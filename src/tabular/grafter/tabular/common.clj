@@ -47,8 +47,10 @@
    (inc/dataset []))
 
   ([data]
-   (let [columns (take (-> data first count) (seqs/alphabetical-column-names))]
-     (make-dataset data columns)))
+   (if (inc/dataset? data)
+     data
+     (let [columns (take (-> data first count) (seqs/alphabetical-column-names))]
+       (make-dataset data columns))))
 
   ([data columns-or-f]
    (let [data-seq (if (inc/dataset? data) (inc/to-list data) data)

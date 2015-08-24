@@ -255,7 +255,11 @@
       (testing "Automatically assigns column names alphabetically if none are given"
         (let [columns (:column-names (make-dataset [(range 30)]))]
           (is (= "aa" (nth columns 26)))
-          (is (= "ab" (nth columns 27))))))))
+          (is (= "ab" (nth columns 27)))))
+
+      (testing "Returns self if data is already a dataset and no column names are specified"
+        (let [ds (test-dataset 5 5)]
+          (is (= ds (make-dataset ds))))))))
 
 (deftest resolve-column-id-tests
   (testing "resolve-column-id"
