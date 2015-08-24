@@ -450,7 +450,7 @@ the specified column being cloned."
   [dataset fs]
   (let [functions (normalise-mapping dataset fs)
         new-columns (concat-new-columns dataset (keys functions))
-        apply-functions (fn [row]
+        apply-functions (fn [row] ;; TODO consider using zipmap to do this job
                           (let [apply-column-f (fn [[col-id f]]
                                                  (let [fval (f (row col-id))]
                                                    {col-id fval}))]
