@@ -255,7 +255,7 @@ the specified column being cloned."
                             (map (fn [row]
                                    (let [args-from-cols (select-row-values resolved-from-cols row)
                                          new-col-val (apply f args-from-cols)]
-                                     (merge row {new-column-name new-col-val })))))
+                                     (assoc row new-column-name new-col-val)))))
                        (concat (column-names dataset) [new-column-name]))
          (with-meta (meta dataset))))))
 
