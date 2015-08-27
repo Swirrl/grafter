@@ -79,21 +79,6 @@
     3 (or (:c quad) default)
     :else default))
 
-(defrecord Triple
-    [s p o]
-  IStatement
-  (subject [s] (.s s))
-  (predicate [s] (.p s))
-  (object [s] (.o s))
-  (context [s] nil)
-
-  clojure.lang.Indexed
-  (nth [this ^int i]
-    (destructure-quad this i nil))
-
-  (nth [this ^int i default]
-    (destructure-quad this i default)))
-
 (defrecord Quad
     [s p o c]
   IStatement
@@ -109,13 +94,11 @@
   (nth [this ^int i default]
     (destructure-quad this i default)))
 
-(defn quad
-  "Build a quad from a graph and a grafter.rdf.protocols/Triple."
-  [graph triple]
-  (->Quad (subject triple)
-          (predicate triple)
-          (object triple)
-          graph))
+(defn ->Triple [s p o]
+  (->Quad s p o nil))
+
+(defn map->Triple [m]
+  (->Triple (:s m) (:p m) (:o m)))
 
 (extend-type clojure.lang.IPersistentVector
   IStatement

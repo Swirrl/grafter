@@ -1,7 +1,7 @@
 (ns grafter.rdf-test
   (:require [clojure.test :refer :all]
             [grafter.rdf :refer :all]
-            [grafter.rdf.protocols :refer [->Quad ->Triple]]
+            [grafter.rdf.protocols :refer [->Quad]]
             [grafter.tabular :refer [make-dataset]]
             [grafter.rdf.templater :refer [graph triplify]]))
 
@@ -12,16 +12,7 @@
 
 (def second-quad (->Quad "http://a2" "http://b2" "http://c2" "http://graph2"))
 
-(deftest quads-and-triples-test
-  (testing "Triples"
-    (testing "support positional destructuring"
-      (let [triple (->Triple "http://subject/" "http://predicate/" "http://object/")
-            [s p o] triple]
-
-        (is (= "http://subject/" s))
-        (is (= "http://predicate/" p))
-        (is (= "http://object/" o)))))
-
+(deftest quads-test
   (testing "Quads"
     (testing "support positional destructuring"
       (let [quad (->Quad "http://subject/" "http://predicate/" "http://object/" "http://context/")

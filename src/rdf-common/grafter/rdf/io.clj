@@ -8,7 +8,7 @@
             [me.raynes.fs :as fs]
             [pantomime.media :as mime]
             [grafter.url :refer [->url ->grafter-url IURIable ToGrafterURL]])
-  (:import (grafter.rdf.protocols IStatement Quad Triple)
+  (:import (grafter.rdf.protocols IStatement Quad)
            (grafter.url GrafterURL)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -235,10 +235,6 @@
 
   (sesame-rdf-type->type [this]
     this)
-
-  Triple
-  (->sesame-rdf-type [this]
-    (IStatement->sesame-statement this))
 
   Quad
   (->sesame-rdf-type [this]
