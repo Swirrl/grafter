@@ -71,6 +71,7 @@
                                                                 org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.3"]
-                                  [prismatic/schema "0.4.3"]]
+                                  [prismatic/schema "0.4.3"]
+                                  [criterium "0.4.3"]]
 
                    :env {:dev true}}})
