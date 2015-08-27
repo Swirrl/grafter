@@ -94,10 +94,19 @@
   (nth [this ^int i default]
     (destructure-quad this i default)))
 
-(defn ->Triple [s p o]
+(defn ->Triple
+  "Constructs a Quad with a nil graph (context)."
+  [s p o]
   (->Quad s p o nil))
 
-(defn map->Triple [m]
+(defn triple? [t]
+  (if (context t)
+    true
+    false))
+
+(defn map->Triple
+  "Constructs a Quad from an {:s :p :o } mapwith a nil graph (context)."
+  [m]
   (->Triple (:s m) (:p m) (:o m)))
 
 (extend-type clojure.lang.IPersistentVector
