@@ -3,7 +3,7 @@
             [grafter.rdf :refer :all]
             [grafter.rdf.protocols :refer [->Quad]]
             [grafter.tabular :refer [make-dataset]]
-            [grafter.rdf.templater :refer [graph triplify]]))
+            [grafter.rdf.templater :refer [triplify]]))
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])

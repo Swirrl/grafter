@@ -99,7 +99,9 @@
   [s p o]
   (->Quad s p o nil))
 
-(defn triple? [t]
+(defn triple?
+  "Predicate function to test if object is a valid RDF triple."
+  [t]
   (if (context t)
     true
     false))
@@ -108,15 +110,3 @@
   "Constructs a Quad from an {:s :p :o } mapwith a nil graph (context)."
   [m]
   (->Triple (:s m) (:p m) (:o m)))
-
-(extend-type clojure.lang.IPersistentVector
-  IStatement
-  (subject [this]
-    (first this))
-  (predicate [this]
-    (second this))
-  (object [this]
-    (nth this 2))
-
-  ;; TODO add context to this one
-  )
