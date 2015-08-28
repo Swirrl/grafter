@@ -1,4 +1,4 @@
-# Grafter
+# Grafter - Linked Data & RDF Processing
 
     "For the hard graft of linked data processing."
 
