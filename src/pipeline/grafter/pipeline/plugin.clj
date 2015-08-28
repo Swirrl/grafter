@@ -1,8 +1,12 @@
 (ns grafter.pipeline.plugin
   {:no-doc true}
   (:require [clojure.string :as string]
-            [grafter.pipeline :refer [fully-qualified-name all-pipelines-on-classpath
-                                      all-pipes-on-classpath all-grafts-on-classpath]]))
+            [grafter.pipeline :refer [all-declared-pipelines
+                                      all-declared-pipes
+                                      all-declared-grafts]]))
+
+(defn fully-qualified-name [pipeline]
+  "a.clojure.namespace.qualified/pipeline-name")
 
 ;; NOTE
 ;;
@@ -34,10 +38,10 @@
     (String/format pattern data)))
 
 (defn list-pipelines []
-  (cons header-row (map format-pipeline (all-pipelines-on-classpath))))
+  (cons header-row (map format-pipeline (all-declared-pipelines))))
 
 (defn list-pipes []
-  (cons header-row (map format-pipeline (all-pipes-on-classpath))))
+  (cons header-row (map format-pipeline (all-declared-pipes))))
 
 (defn list-grafts []
-  (cons header-row (map format-pipeline (all-grafts-on-classpath))))
+  (cons header-row (map format-pipeline (all-declared-grafts))))
