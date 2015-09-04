@@ -47,6 +47,7 @@
 
 (def ^:private type-readers
   {Boolean (reader-for-type Boolean)
+   Integer (reader-for-type Integer)
    String (reader-for-type String)
    URI read-uri
    incanter.core.Dataset file-part->dataset})
