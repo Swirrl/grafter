@@ -25,18 +25,14 @@ args])
     (register-pipeline! var-name decl)
     nil))
 
-(defn all-declared-pipelines []
-  ;; todo should probably use vals here
-  (sort (keys exported-pipelines)))
+(defn all-declared-pipelines
+  ([] (all-declared-pipelines nil))
+  ([type]
+   (let [type? (if type
+                 #(= (keyword type) (:type %))
+                 identity)]
 
-(defn all-declared-pipes []
-  ;; todo should probably use vals here
-  ["a.fake.pipe/pipeline"])
-
-(defn all-declared-grafts []
-  ;; todo should probably use vals here
-  ["a.fake.pipe/pipeline"])
-
+     (filter type? (sort-by (comp str :var) (vals @exported-pipelines))))))
 
 (comment
   (defrecord ^{:doc "Record representing a pipeline application.  It is

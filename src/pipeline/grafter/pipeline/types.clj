@@ -104,7 +104,7 @@
   to the class instance representing the class. Throws an exception if
   the resolution fails."
   [sym]
-  (if-let [cls (ns-resolve (find-ns 'grafter-server.types) sym)]
+  (if-let [cls (ns-resolve (find-ns 'grafter.pipeline.types) sym)]
     cls
     (throw (IllegalArgumentException. (str "Failed to resolve " sym " to class")))))
 

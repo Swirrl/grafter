@@ -1,12 +1,10 @@
 (ns grafter.pipeline.plugin
   {:no-doc true}
   (:require [clojure.string :as string]
-            [grafter.pipeline :refer [all-declared-pipelines
-                                      all-declared-pipes
-                                      all-declared-grafts]]))
+            [grafter.pipeline :refer [all-declared-pipelines]]))
 
 (defn fully-qualified-name [pipeline]
-  "a.clojure.namespace.qualified/pipeline-name")
+  (.substring (str (:var pipeline)) 2))
 
 ;; NOTE
 ;;
@@ -29,19 +27,13 @@
         data (into-array Object
                          [(fully-qualified-name pipeline)
                           (name (:type pipeline))
-                          (if-let [args (:args pipeline)]
+                          (if-let [args (map :name (:args pipeline))]
                             (string/join ", " args)
                             "???")
                           (if-let [doc (collapse-whitespace (:doc pipeline))]
-                            (str ";; " doc)
-                            ";; No doc string")])]
+                            doc
+                            "No doc string")])]
     (String/format pattern data)))
 
-(defn list-pipelines []
-  (cons header-row (map format-pipeline (all-declared-pipelines))))
-
-(defn list-pipes []
-  (cons header-row (map format-pipeline (all-declared-pipes))))
-
-(defn list-grafts []
-  (cons header-row (map format-pipeline (all-declared-grafts))))
+(defn list-pipelines [type]
+  (cons header-row (map format-pipeline (all-declared-pipelines type))))
