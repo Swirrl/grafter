@@ -6,24 +6,30 @@
 
 (defn register-pipeline!
   "Registers the pipeline the exported pipelines."
-  [name description]
-  (let [pipeline (assoc description :name name)]
-    (swap! exported-pipelines #(assoc % (keyword name) pipeline))))
+  [sym description]
+  (let [pipeline (assoc description :name sym)]
+    (swap! exported-pipelines #(assoc % sym pipeline))))
 
-
-(defrecord ^{:doc "Record representing a static pipeline declaration, i.e. one
-that is declared in code."
-             } DeclaredPipeline [namespace name description type
-args])
-
+(defn qualify-symbol
+  "Returns a fully qualified name for the supplied symbol or string or nil if
+  it's not found."
+  [sym]
+  (let [resolved-symbol (resolve (symbol sym))]
+    (when resolved-symbol
+      (let [ns (->> resolved-symbol meta :ns)]
+        (if (re-find #"\/" (str sym))
+          (symbol sym)
+          (symbol (str ns "/" sym)))))))
 
 (defmacro declare-pipeline
   "Declare a pipeline function, exposing it to grafter-server etc..."
-  [var-name type-form metadata]
-  (let [def-var (resolve-var *ns* var-name)
-        decl (create-pipeline-declaration def-var type-form metadata)]
-    (register-pipeline! var-name decl)
-    nil))
+  [sym type-form metadata]
+  (if-let [sym (qualify-symbol sym)]
+    (let [decl (create-pipeline-declaration sym type-form metadata)]
+      (register-pipeline! sym decl))
+    (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:type :pipeline-declaration-error
+                                                                                :sym sym})))
+  nil)
 
 (defn all-declared-pipelines
   ([] (all-declared-pipelines nil))
@@ -35,6 +41,16 @@ args])
      (filter type? (sort-by (comp str :var) (vals @exported-pipelines))))))
 
 (comment
+
+  ;; TODO consider distinguishing between these...
+  (defrecord ^{:doc "Record representing a static pipeline declaration, i.e. one
+that is declared in code."
+               } DeclaredPipeline [namespace name description type
+                                   args])
+
+
+
+
   (defrecord ^{:doc "Record representing a pipeline application.  It is
     effectively a pipeline function with its arguments applied that should be
     executed within a specified binding."}

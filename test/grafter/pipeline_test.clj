@@ -1,6 +1,44 @@
 (ns grafter.pipeline-test
   (:require [grafter.pipeline :refer :all]
-            [clojure.test :refer :all]))
+            [clojure.test :refer :all]
+            [grafter.tabular]
+            [grafter.rdf]
+            [schema.core :as s]))
+
+(defn test-dataset-creator [rows cols]
+  (grafter.tabular/test-dataset rows cols))
+
+(declare-pipeline test-dataset-creator [Integer Integer -> Dataset]
+  {rows "The number of rows of test data you want."
+   cols "The number of columns of test data you want."})
+
+(defn convert-persons-data-to-graphs
+  [number-of-quads]
+  (->> (range number-of-quads)
+       (map #(grafter.rdf.protocols/->Quad (str "http://foo.bar/" %) "http://has-value/" %))))
+
+(declare-pipeline convert-persons-data-to-graphs [Integer -> (Seq Statement)]
+  {number-of-quads "The number of quads."})
+
+(def PipelineSchema {s/Symbol {:name s/Symbol
+                               :var clojure.lang.Var
+                               :doc s/Str
+                               :args [{:name s/Symbol :class java.lang.Class :doc s/Str}]
+                               :type s/Keyword
+                               :declared-args [s/Symbol]}
+                     })
+
+(deftest declare-pipeline-test
+  (testing "declare-pipeline"
+    (let [errors (s/check PipelineSchema
+                          @exported-pipelines)]
+
+      (testing "Creates pipelines that match our schema"
+        (is (nil? errors)))
+
+      (let [pipeline (@exported-pipelines 'grafter.pipeline-test/test-dataset-creator)]
+        (is (= 'grafter.pipeline-test/test-dataset-creator (:name pipeline))
+            "Is keyed by its :name")))))
 
 (comment
   (deftest find-pipelines-test

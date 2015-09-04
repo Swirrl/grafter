@@ -178,8 +178,9 @@
   named parameter in the pipeline function argument list. The value
   corresponding to each key in the metadata map is expected to be a
   String describing the parameter."
-  [def-var type-list metadata]
-  (let [def-meta (meta def-var)
+  [sym type-list metadata]
+  (let [def-var (resolve-var *ns* sym)
+        def-meta (meta def-var)
         arg-list (first (:arglists def-meta))
         {:keys [arg-types return-type]} (parse-type-list type-list)
         pipeline-type (pipeline-type-from-return-type-sym return-type)
