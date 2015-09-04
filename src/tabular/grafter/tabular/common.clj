@@ -232,7 +232,7 @@
   (fn [destination dataset opts]
     (when-not (dataset? dataset)
       (throw (IllegalArgumentException.
-              (str "Could not write dataset to" destination " as " (class dataset)
+              (str "Could not write dataset to " destination " as " (class dataset)
                    " is not a valid Dataset.  This error usually occurs if you try and generate tabular data from a graft"))))
     (get-format destination opts)))
 
