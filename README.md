@@ -2,11 +2,10 @@
 
     "For the hard graft of linked data processing."
 
-Grafter is a library, DSL and suite of tools for flexible, efficient,
-ETL, data transformation and processing.  Its primary use is for
-handling Linked Data conversions from tabular data formats into RDF
-linked data format, but it is equally adept at handling tabular data
-conversions.
+Grafter is a library, DSL and suite of tools for flexible, efficient, ETL, data
+transformation and processing.  Its primary use is for handling Linked Data
+conversions from tabular data formats into RDF's graph data format, but it is
+equally adept at handling tabular data conversions.
 
 See the official grafter website at [grafter.org](http://grafter.org/)
 for more details.
@@ -60,6 +59,12 @@ tagged releases.
 Additionally [grafter.org](http://grafter.org/) contains a
 [quick start guide](http://grafter.org/getting-started/index.html) and
 supplementary documentation.
+
+## Getting Started
+
+There is a comprehensive
+[getting started guide](http://grafter.org/getting-started/index.html) on the
+project website.
 
 ## License
 
