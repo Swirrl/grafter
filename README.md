@@ -34,11 +34,11 @@ suite of tools on top of it.  These tools are planned to include:
 Grafter is deployed on the standard Clojure build repository
 [Clojars](http://clojars.org/).
 
-To use the Grafter API please add the following to your Clojure
+To use the Grafter API please add the following dependency to your Clojure
 projects `project.clj` file.  For more details on how to do this see
 the [leiningen](http://leiningen.org/) build tool:
 
-[![Clojars Project](http://clojars.org/grafter/latest-version.svg)](http://clojars.org/grafter)
+`[grafter "0.5.1"]`
 
 **NOTE:** We are currently following a `MAJOR.MINOR.PATCH` versioning
 scheme, but are anticipating significant breaking API changes between
