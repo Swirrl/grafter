@@ -109,10 +109,11 @@
 
 (defn assoc-data-source-meta [output-ds data-source]
   "Adds metadata about where the dataset was loaded from to the object."
-  (cond
-    (#{String File URI URL} (class data-source)) (with-meta output-ds {:grafter.tabular/data-source data-source})
-    (instance? incanter.core.Dataset data-source) (with-meta output-ds (meta data-source))
-    :else (with-meta output-ds {:grafter.tabular/data-source :datasource-unknown})))
+  (let [source-meta (cond
+                      (#{String File URI URL} (class data-source))  {:grafter.tabular/data-source data-source}
+                      (instance? incanter.core.Dataset data-source) (meta data-source)
+                      :else {:grafter.tabular/data-source :datasource-unknown}) ]
+    (with-meta output-ds (merge (meta output-ds) source-meta))))
 
 (defmulti ^:no-doc read-dataset*
   "Multimethod for adapter implementers to hook custom dataset readers

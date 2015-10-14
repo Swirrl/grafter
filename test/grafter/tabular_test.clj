@@ -1,6 +1,7 @@
 (ns grafter.tabular-test
   (:require [clojure.test :refer :all]
             [grafter.sequences :as seqs]
+            [grafter.tabular.common :as tabc]
             [grafter.tabular :refer :all]
             [grafter.rdf.protocols :refer [->Quad]]
             [grafter.rdf.templater :refer [graph triplify]]
@@ -131,6 +132,10 @@
     (is md "There is no metadata set")
     (is (:grafter.tabular/data-source md) "There is no :data-source set.")))
 
+(defmethod tabc/read-dataset* ::test
+  [source opts]
+  (with-meta (make-dataset [[1 2 3]]) {:remember :me}))
+
 (deftest read-dataset-tests
   (testing "Open an existing Dataset"
     (let [dataset (read-dataset (with-meta (make-dataset raw-csv-data) {:other :metadata}))]
@@ -198,7 +203,10 @@
     (let [dataset (read-dataset (->file-url-string "./test/grafter/test.xls") :format :csv)]
       (testing "returns a dataset"
         (is-a-dataset? dataset)
-        (has-metadata? dataset)))))
+        (has-metadata? dataset))))
+
+  (testing "Remembers metadata returned by adapters"
+    (is (= :me (:remember (meta (read-dataset "./test/grafter/test.csv" :format ::test)))))))
 
 (deftest read-datasets-tests
   (testing "Open XLS file"
@@ -788,9 +796,4 @@
            (rename-columns ds keyword) ))
 
     (is (= (make-dataset [[0 0]] ["foo" "b"])
-           (rename-columns ds {"a" "foo"})))
-
-
-    )
-
-  )
+           (rename-columns ds {"a" "foo"})))))
