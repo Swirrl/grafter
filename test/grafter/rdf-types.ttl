@@ -1,0 +1,9 @@
+@prefix : <http://example/> .
+
+:boolean :hasValue true .
+:date :hasValue "2015-01-01T00:00:00Z"^^xsd:dateTime .
+:decimal :hasValue 0.4 .
+:double :hasValue 1.0e6 .
+:float :hasValue "0.4"^^<http://www.w3.org/2001/XMLSchema#float> .
+:integer :hasValue 10 .
+:string :hasValue "hello" .
