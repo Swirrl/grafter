@@ -24,7 +24,7 @@
                                :var clojure.lang.Var
                                (s/optional-key :display-name) s/Str
                                :doc s/Str
-                               :args [{:name s/Symbol :class java.lang.Class :doc s/Str}]
+                               :args [{:name s/Symbol :class java.lang.Class :doc s/Str (s/optional-key :meta) {s/Keyword s/Any}}]
                                :type s/Keyword
                                :declared-args [s/Symbol]}
                      })

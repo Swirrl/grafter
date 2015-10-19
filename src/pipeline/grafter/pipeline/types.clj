@@ -164,7 +164,9 @@
 
      :else
      (let [correlated-docs (correlate-pairs arg-names doc-map)]
-       (mapv (fn [n ts [doc-name doc]] (get-arg-descriptor doc-name ts doc (meta doc-name)))
+       (mapv (fn [n ts [doc-name doc]] (get-arg-descriptor doc-name ts doc (-> (meta doc-name)
+                                                                              ;; remove line number metadata inserted by clojure as its superfluous here
+                                                                              (dissoc :file :line :column))))
              arg-names
              arg-type-syms
              correlated-docs)))))
