@@ -22,6 +22,7 @@
 
 (def PipelineSchema {s/Symbol {:name s/Symbol
                                :var clojure.lang.Var
+                               (s/optional-key :display-name) s/Str
                                :doc s/Str
                                :args [{:name s/Symbol :class java.lang.Class :doc s/Str}]
                                :type s/Keyword
@@ -39,6 +40,17 @@
       (let [pipeline (@exported-pipelines 'grafter.pipeline-test/test-dataset-creator)]
         (is (= 'grafter.pipeline-test/test-dataset-creator (:name pipeline))
             "Is keyed by its :name")))))
+
+(defn display-name-pipeline [an-argument]
+  (grafter.tabular/test-dataset 2 2))
+
+(declare-pipeline display-name-pipeline
+  "Display Name Pipeline" [String -> Dataset]
+  {an-argument "A string argument"})
+
+(deftest declare-pipeline-with-display-name-test
+  (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/display-name-pipeline)]
+    (is (= "Display Name Pipeline" (:display-name pipeline)))))
 
 (comment
   (deftest find-pipelines-test

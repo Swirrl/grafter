@@ -6,8 +6,10 @@
 
 (defn register-pipeline!
   "Registers the pipeline the exported pipelines."
-  [sym description]
-  (let [pipeline (assoc description :name sym)]
+  [sym display-name description]
+  (let [pipeline (-> description
+                     (assoc :name sym)
+                     (cond-> display-name (assoc :display-name display-name)))]
     (swap! exported-pipelines #(assoc % sym pipeline))))
 
 (defn qualify-symbol
@@ -23,13 +25,17 @@
 
 (defmacro declare-pipeline
   "Declare a pipeline function, exposing it to grafter-server etc..."
-  [sym type-form metadata]
-  (if-let [sym (qualify-symbol sym)]
-    (let [decl (create-pipeline-declaration sym type-form metadata)]
-      (register-pipeline! sym decl))
-    (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:type :pipeline-declaration-error
-                                                                                :sym sym})))
-  nil)
+
+  ([sym display-name type-form metadata]
+   (if-let [sym (qualify-symbol sym)]
+     (let [decl (create-pipeline-declaration sym type-form metadata)]
+       (register-pipeline! sym display-name decl))
+     (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:type :pipeline-declaration-error
+                                                                                 :sym sym})))
+   nil)
+
+  ([sym type-form metadata]
+   `(declare-pipeline ~sym nil ~type-form ~metadata)))
 
 (defn all-declared-pipelines
   ([] (all-declared-pipelines nil))
