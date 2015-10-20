@@ -25,7 +25,7 @@
                                (s/optional-key :display-name) s/Str
                                :doc s/Str
                                :args [{:name s/Symbol :class java.lang.Class :doc s/Str (s/optional-key :meta) {s/Keyword s/Any}}]
-                               :type s/Keyword
+                               :type (s/either (s/eq :graft) (s/eq :pipe)) ;; one day maybe also :validation and a fallback of :function
                                :declared-args [s/Symbol]}
                      })
 
@@ -51,6 +51,18 @@
 (deftest declare-pipeline-with-display-name-test
   (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/display-name-pipeline)]
     (is (= "Display Name Pipeline" (:display-name pipeline)))))
+
+(defn map-pipeline-test [obj]
+  [(grafter.rdf.protocols/->Quad "http://foo.bar/1" "http://has-value/" 1 "http://some-graph/")])
+
+(declare-pipeline map-pipeline-test
+  "Test pipeline for map objects"
+  [Map -> (Seq Statement)]
+  {obj "A map of key value pairs."})
+
+(deftest declare-pipeline-with-test
+  (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/map-pipeline-test)]
+    (is (= :graft (:type pipeline)))))
 
 (comment
   (deftest find-pipelines-test

@@ -1,14 +1,14 @@
-(ns grafter.pipeline.types
-  (:require [clojure.set :as s]
-            [clojure.string :as str]
-            [clojure.data :refer [diff]]
-            [clojure.edn :as edn]
-            [grafter.tabular :as tabular]
-            [grafter.tabular.common :as tabcom])
+(ns ^:no-doc grafter.pipeline.types
+    (:require [clojure.set :as s]
+              [clojure.string :as str]
+              [clojure.data :refer [diff]]
+              [clojure.edn :as edn]
+              [grafter.tabular :as tabular]
+              [grafter.tabular.common :as tabcom])
     (:import [java.net URI]
-           [java.util UUID Date]
-           [clojure.lang Keyword]
-           [incanter.core Dataset]))
+             [java.util UUID Date Map]
+             [clojure.lang Keyword]
+             [incanter.core Dataset]))
 
 
 ;;Multipart -> Dataset
@@ -49,6 +49,7 @@
   {Boolean (reader-for-type Boolean)
    Integer (reader-for-type Integer)
    String (reader-for-type String)
+   Map (reader-for-type Map)
    URI read-uri
    incanter.core.Dataset file-part->dataset})
 

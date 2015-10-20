@@ -2,17 +2,18 @@
   (:require
    [grafter.pipeline.types :refer [resolve-var create-pipeline-declaration]]))
 
-(defonce exported-pipelines (atom {}))
+(defonce ^{:doc "Map of pipelines that have been declared and exported to the pipeline runners"} exported-pipelines (atom {}))
 
-(defn register-pipeline!
+(defn ^:no-doc register-pipeline!
   "Registers the pipeline the exported pipelines."
-  [sym display-name description]
-  (let [pipeline (-> description
-                     (assoc :name sym)
-                     (cond-> display-name (assoc :display-name display-name)))]
-    (swap! exported-pipelines #(assoc % sym pipeline))))
+  ([sym description] (register-pipeline! sym nil description))
+  ([sym display-name description]
+   (let [pipeline (-> description
+                      (assoc :name sym)
+                      (cond-> display-name (assoc :display-name display-name)))]
+     (swap! exported-pipelines #(assoc % sym pipeline)))))
 
-(defn qualify-symbol
+(defn ^:no-doc qualify-symbol
   "Returns a fully qualified name for the supplied symbol or string or nil if
   it's not found."
   [sym]
@@ -37,7 +38,8 @@
   ([sym type-form metadata]
    `(declare-pipeline ~sym nil ~type-form ~metadata)))
 
-(defn all-declared-pipelines
+(defn ^:no-doc all-declared-pipelines
+  "List all the declared pipelines"
   ([] (all-declared-pipelines nil))
   ([type]
    (let [type? (if type
@@ -45,28 +47,3 @@
                  identity)]
 
      (filter type? (sort-by (comp str :var) (vals @exported-pipelines))))))
-
-(comment
-
-  ;; TODO consider distinguishing between these...
-  (defrecord ^{:doc "Record representing a static pipeline declaration, i.e. one
-that is declared in code."
-               } DeclaredPipeline [namespace name description type
-                                   args])
-
-
-
-
-  (defrecord ^{:doc "Record representing a pipeline application.  It is
-    effectively a pipeline function with its arguments applied that should be
-    executed within a specified binding."}
-
-      Application [function parameters binding-map]
-
-      clojure.lang.IDeref
-
-      (deref [this]
-        (if binding-map
-          (with-bindings binding-map
-            (apply function parameters)
-            )))))
