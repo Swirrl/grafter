@@ -64,6 +64,18 @@
   (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/map-pipeline-test)]
     (is (= :graft (:type pipeline)))))
 
+(defn uuid-pipeline-test [uuid]
+  )
+
+(declare-pipeline uuid-pipeline-test
+  "Test pipeline for map objects"
+  [UUID -> (Seq Statement)]
+  {uuid "A UUID"})
+
+(deftest declare-pipeline-with-test
+  (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/map-pipeline-test)]
+    (is (= :graft (:type pipeline)))))
+
 (comment
   (deftest find-pipelines-test
     (let [forms-seq '((if true "true" "false")

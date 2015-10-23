@@ -10,7 +10,6 @@
              [clojure.lang Keyword]
              [incanter.core Dataset]))
 
-
 ;;Multipart -> Dataset
 (defn file-part->dataset [{:keys [tempfile filename]}]
   (if (nil? filename)
@@ -45,28 +44,57 @@
       (catch Exception ex
         (throw (IllegalArgumentException. "Invalid format for URI"))))))
 
-(def ^:private type-readers
-  {Boolean (reader-for-type Boolean)
-   Integer (reader-for-type Integer)
-   String (reader-for-type String)
-   Map (reader-for-type Map)
-   URI read-uri
-   incanter.core.Dataset file-part->dataset})
+(defmulti type-reader identity)
+
+(defmethod type-reader Boolean [this]
+  (reader-for-type this))
+
+(defmethod type-reader Number [this]
+  (reader-for-type this))
+
+(defmethod type-reader String [this]
+  (reader-for-type this))
+
+(defmethod type-reader Map [this]
+  (reader-for-type this))
+
+(defmethod type-reader URI [this]
+  read-uri)
+
+(defmethod type-reader UUID [this]
+  (fn [obj]
+    (try
+      (UUID/fromString obj)
+      (catch IllegalArgumentException ex
+        (let [uuid (edn/read-string obj)]
+          (if (instance? UUID uuid)
+            uuid
+            (throw (IllegalArgumentException. (str "Supplied object is not a valid java.net.UUID: " obj)))))))))
+
+(defmethod type-reader incanter.core.Dataset [this]
+  file-part->dataset)
+
+(defmethod type-reader :default [this]
+  (throw (ex-info (str "No grafter.pipeline.types/type-reader defined to read instances of type " this)
+                  {:type :type-reader-error})))
 
 ;;Class -> Bool
 (defn- can-parse-type?
   "Whether the given class is a supported pipeline parameter type."
   [cls]
-  (contains? type-readers cls))
+  (try
+    (type-reader cls)
+    true
+    (catch clojure.lang.ExceptionInfo ex
+      false)))
 
-;;Class[T] -> RequestPart -> T
 (defn parse-arg
-  "Parses a ring request part into an instance of the given target
-  class. Throws an exception if the conversion fails."
-  [cls request-part]
-  (if-let [parse-fn (get type-readers cls)]
-    (parse-fn request-part)
-    (throw (RuntimeException. (str "No handler found for type" cls)))))
+  "Parses a parameter into an instance of the given target class. Throws an
+  exception if the conversion fails."
+  [cls parameter]
+
+  (let [parse-fn (type-reader cls)]
+    (parse-fn parameter)))
 
 ;;[Symbol] -> {:arg-types [Symbol], :return-type Symbol]}
 (defn parse-type-list
