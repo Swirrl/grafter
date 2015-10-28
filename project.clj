@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.6.0-SNAPSHOT"
+(defproject grafter/grafter "0.6.0-beta2"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -6,10 +6,11 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.openrdf.sesame/sesame-runtime "2.7.14"
                   :exclusions [org.openrdf.sesame/sesame-repository-manager]]
+
+                 ;; [org.openrdf.sesame/sesame-runtime "2.8.6"]
                  [org.clojure/tools.logging "0.3.1"]
 
                  [org.clojure/algo.monads "0.1.5"]
