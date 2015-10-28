@@ -5,7 +5,7 @@
               [clojure.edn :as edn]
               [grafter.tabular :as tabular]
               [grafter.tabular.common :as tabcom])
-    (:import [java.net URI]
+    (:import [java.net URI URL]
              [java.util UUID Date Map]
              [clojure.lang Keyword]
              [incanter.core Dataset]))
@@ -44,6 +44,13 @@
       (catch Exception ex
         (throw (IllegalArgumentException. "Invalid format for URI"))))))
 
+(defn- read-url [part]
+  (let [s ((reader-for-type String) part)]
+    (try
+      (URL. s)
+      (catch Exception ex
+        (throw (IllegalArgumentException. "Invalid format for URI"))))))
+
 (defmulti type-reader identity)
 
 (defmethod type-reader Boolean [this]
@@ -60,6 +67,9 @@
 
 (defmethod type-reader URI [this]
   read-uri)
+
+(defmethod type-reader URL [this]
+  read-url)
 
 (defmethod type-reader UUID [this]
   (fn [obj]

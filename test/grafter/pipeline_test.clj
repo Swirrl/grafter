@@ -3,7 +3,8 @@
             [clojure.test :refer :all]
             [grafter.tabular]
             [grafter.rdf]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [java.net URI URL]))
 
 (defn test-dataset-creator [rows cols]
   (grafter.tabular/test-dataset rows cols))
@@ -72,9 +73,16 @@
   [UUID -> (Seq Statement)]
   {uuid "A UUID"})
 
-(deftest declare-pipeline-with-test
-  (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/map-pipeline-test)]
-    (is (= :graft (:type pipeline)))))
+
+(defn url-pipeline-test [url]
+  )
+
+(declare-pipeline url-pipeline-test
+  "Test pipeline for map objects"
+  [URL -> (Seq Statement)]
+  {url "A URL"})
+
+
 
 (comment
   (deftest find-pipelines-test
