@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.6.0-beta2"
+(defproject grafter/grafter "0.6.0-alpha3"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -27,7 +27,6 @@
                  [net.sf.corn/corn-cps "1.1.7"] ;; classpath scanner
                  [com.novemberain/pantomime "2.4.0"] ;; mimetypes
                  ]
-
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
