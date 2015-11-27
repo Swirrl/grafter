@@ -49,7 +49,7 @@
     (try
       (URL. s)
       (catch Exception ex
-        (throw (IllegalArgumentException. "Invalid format for URI"))))))
+        (throw (IllegalArgumentException. "Invalid format for URL"))))))
 
 (defmulti type-reader identity)
 
