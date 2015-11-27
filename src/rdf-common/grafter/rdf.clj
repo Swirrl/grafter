@@ -46,6 +46,20 @@
   [statement]
   (pr/context statement))
 
+(defn triple=
+  "Equality test for an RDF triple or quad, that checks whether the supplied RDF
+  statements are equal in terms of RDFs semantics i.e. two quads will be equal
+  regardless of their graph/context providing their subject, predicate and
+  objects are equal.
+
+  Like clojure.core/= this function can be applied to any number of statements."
+  [& quads]
+  (every? #(let [f (first quads)]
+             (and (= (pr/subject f) (pr/subject %))
+                  (= (pr/predicate f) (pr/predicate %))
+                  (= (pr/object f) (pr/object %))))
+          (next quads)))
+
 (defn add-statement
   "Add an RDF statement to the target datasink.  Datasinks must
   implement `grafter.rdf.protocols/ITripleWriteable`.
