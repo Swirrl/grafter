@@ -103,6 +103,9 @@
 (defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Literal literal]
   (s (.stringValue literal) (.getLanguage literal)))
 
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#string" [^Literal literal]
+  (s (.stringValue literal) (.getLanguage literal)))
+
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [^Literal literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
 
@@ -221,13 +224,6 @@
 
   (sesame-rdf-type->type [this]
     this)
-
-  LiteralImpl
-  (->sesame-rdf-type [this]
-    this)
-
-  (sesame-rdf-type->type [this]
-    (literal-datatype->type this))
 
   Statement
   (->sesame-rdf-type [this]
