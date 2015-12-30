@@ -53,17 +53,44 @@
   (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/display-name-pipeline)]
     (is (= "Display Name Pipeline" (:display-name pipeline)))))
 
+(def a-quad (grafter.rdf.protocols/->Quad "http://foo.bar/1" "http://has-value/" 1 "http://some-graph/"))
+
 (defn map-pipeline-test [obj]
-  [(grafter.rdf.protocols/->Quad "http://foo.bar/1" "http://has-value/" 1 "http://some-graph/")])
+  [a-quad])
 
 (declare-pipeline map-pipeline-test
   "Test pipeline for map objects"
-  [Map -> (Seq Statement)]
+  [Map -> (Seq Statement)]  ;; TODO deprecate this form
   {obj "A map of key value pairs."})
 
+(defn quads-pipeline []
+  [a-quad])
+
+(declare-pipeline quads-pipeline
+  "Test pipeline for map objects"
+  [-> Quads]
+  {})
+
+(defn seq-quad-pipeline []
+  [a-quad])
+
+(declare-pipeline seq-quad-pipeline
+  "Test pipeline for map objects"
+  [-> Quads]
+  {})
+
 (deftest declare-pipeline-with-test
-  (let [pipeline (get @exported-pipelines 'grafter.pipeline-test/map-pipeline-test)]
-    (is (= :graft (:type pipeline)))))
+  (are [pipeline-name]
+      (let [pipeline (get @exported-pipelines pipeline-name)]
+        (is (= :graft (:type pipeline))))
+
+    'grafter.pipeline-test/map-pipeline-test
+    'grafter.pipeline-test/quads-pipeline
+    'grafter.pipeline-test/seq-quad-pipeline))
+
+
+
+
 
 (defn uuid-pipeline-test [uuid]
   )

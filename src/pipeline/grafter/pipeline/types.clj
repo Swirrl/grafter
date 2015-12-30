@@ -162,7 +162,10 @@
   invalid."
   [ret-sym]
   (condp = ret-sym
-    '(Seq Statement) :graft
+    '(Seq Statement) :graft ;; deprecated
+    '(Seq Quad) :graft
+    '[Quad] :graft
+    'Quads :graft
     'Dataset :pipe
     (let [msg (str "Invalid return type " ret-sym " for pipeline function: required Dataset or (Seq Statement)")]
       (throw (IllegalArgumentException. msg)))))
