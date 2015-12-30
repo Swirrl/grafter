@@ -1,7 +1,7 @@
 (ns grafter.pipeline-test
   (:require [grafter.pipeline :refer :all]
             [clojure.test :refer :all]
-            [grafter.tabular]
+            [grafter.tabular :refer [test-dataset]]
             [grafter.rdf]
             [schema.core :as s])
   (:import [java.net URI URL]))
@@ -75,45 +75,67 @@
 
 
 (defn url-pipeline-test [url]
-  )
+  [])
 
 (declare-pipeline url-pipeline-test
   "Test pipeline for map objects"
   [URL -> (Seq Statement)]
   {url "A URL"})
 
+(defn pipeline-string-argument-coercion [dataset string number bool hashmap
+                                         uri url uuid keyword instant]
+  (is (instance? incanter.core.Dataset dataset))
+  (is (string? string))
+  (is (number? number))
+  (is (instance? Boolean bool))
+  (is (map? hashmap))
+  (is (instance? java.net.URI uri))
+  (is (instance? java.net.URL url))
+  (is (instance? java.util.UUID uuid))
+  (is (keyword? keyword))
+  (is (instance? java.util.Date instant))
+
+  (test-dataset 1 1))
+
+(declare-pipeline pipeline-string-argument-coercion
+                  "Test pipeline coerces arguments properly"
+                  [Dataset String Number Boolean Map URI URL UUID clojure.lang.Keyword java.util.Date -> Dataset]
+                  {dataset "A Dataset"
+                   string "a String"
+                   number "a Number"
+                   bool "a boolean"
+                   hashmap "A hashmap"
+                   uri "A URI"
+                   url "A URL"
+                   uuid "A UUID"
+                   keyword "A keyword"
+                   instant "A date instant"
+                   })
+
+(deftest coerce-pipeline-arguments-test
+  (apply pipeline-string-argument-coercion (coerce-pipeline-arguments 'grafter.pipeline-test/pipeline-string-argument-coercion
+                                                                      ["./test/grafter/test.csv"
+                                                                       "a string"
+                                                                       "10"
+                                                                       "true"
+                                                                       "{ \"foo\" \"bar\"}"
+                                                                       "http://localhost/a/uri"
+                                                                       "http://localhost/a/url"
+                                                                       "cabec818-df6a-4c27-b445-117163e70227"
+                                                                       ":foo"
+                                                                       "2015"])))
 
 
-(comment
-  (deftest find-pipelines-test
-    (let [forms-seq '((if true "true" "false")
-                      (defpipe invalid-pipeline)
-                      (defpipe invalid 10)
-                      (defpipe valid-pipeline [a b c])
-                      (defgraft test-graft "test graft" valid-pipeline make-graph))
-          [error another-error pipeline graft] (find-pipelines forms-seq)]
-
-      (is (instance? Exception error))
-      (is (instance? Exception another-error))
-      (is (instance? grafter.pipeline.Pipeline pipeline))
-      (is (= 'test-graft (:name graft)))
-      (is (= "test graft" (:doc graft)))
-      (is (= (:args pipeline) (:args graft))
-          "Should inherit args from earlier pipeline definition")))
-
-  (defn write-forms-to [forms dest]
-    (with-open [writer (io/writer dest)]
-      (doseq [f forms]
-        (.write writer (pr-str f)))))
-
-  (deftest find-resource-pipelines-test
-    (let [pipeline-forms '((defpipe pfirst [a b c] (println "Hello world!"))
-                           (defpipe psecond "docs" {:meta true} [d e] (println "Goodbye world!")))
-          tmp (File/createTempFile "test" "pipelines.clj")]
-      (try
-        (write-forms-to pipeline-forms tmp)
-        (let [tmp-url (.. tmp toURI toURL)
-              read-pipeline-forms (find-resource-pipelines tmp-url)]
-          (is (= (count pipeline-forms) (count read-pipeline-forms))))
-        (finally
-          (.delete tmp))))))
+(deftest execute-pipeline-with-coerced-arguments-test
+  (is (= (test-dataset 1 1)
+         (execute-pipeline-with-coerced-arguments 'grafter.pipeline-test/pipeline-string-argument-coercion
+                                                  ["./test/grafter/test.csv"
+                                                   "a string"
+                                                   "10"
+                                                   "true"
+                                                   "{ \"foo\" \"bar\"}"
+                                                   "http://localhost/a/uri"
+                                                   "http://localhost/a/url"
+                                                   "cabec818-df6a-4c27-b445-117163e70227"
+                                                   ":foo"
+                                                   "2015"]))))

@@ -3,6 +3,7 @@
               [clojure.string :as str]
               [clojure.data :refer [diff]]
               [clojure.edn :as edn]
+              [clojure.instant :refer [read-instant-date]]
               [grafter.tabular :as tabular]
               [grafter.tabular.common :as tabcom])
     (:import [java.net URI URL]
@@ -10,101 +11,89 @@
              [clojure.lang Keyword]
              [incanter.core Dataset]))
 
-;;Multipart -> Dataset
-(defn file-part->dataset [{:keys [tempfile filename]}]
-  (if (nil? filename)
-    (throw (RuntimeException. "'filename' attribute required for pipeline parameter file part"))
-    (if-let [format (tabcom/extension filename)]
-      (tabular/read-dataset tempfile :format format)
-      (throw (RuntimeException. (str "Cannot infer format for file '" filename "' as it has no extension"))))))
 
-;;(Any -> Bool) -> String -> (String -> Any)
-(defn- reader-for-predicate
-  "Returns a function which reads an input string as EDN and throws an
-  exception if the given validation predicate fails for the parsed
-  value."
-  [validate-type-fn type-name]
-  (fn [s]
-    (let [r (edn/read-string s)]
-      (if (validate-type-fn r)
-        r
-        (throw (IllegalArgumentException. (str "Cannot read " s " as a " type-name)))))))
+(defmulti type-reader (fn [target-type input-value]
+                        [target-type (type input-value)]))
 
-;;Class[T] -> (String -> T)
-(defn- reader-for-type
-  "Returns a function for parsing EDN strings into instances of the
-  given class."
-  [cls]
-  (reader-for-predicate #(instance? cls %) (.getName cls)))
+(defmulti can-parse-type? identity)
 
-(defn- read-uri [part]
-  (let [s ((reader-for-type String) part)]
-    (try
-      (URI. s)
-      (catch Exception ex
-        (throw (IllegalArgumentException. "Invalid format for URI"))))))
+(defmethod can-parse-type? :default [v]
+  false)
 
-(defn- read-url [part]
-  (let [s ((reader-for-type String) part)]
-    (try
-      (URL. s)
-      (catch Exception ex
-        (throw (IllegalArgumentException. "Invalid format for URL"))))))
+(defmacro deftype-reader
+  "Define a multimethod for reliably coercing types into a target type.
 
-(defmulti type-reader identity)
+  Additionally extends the predicate method can-parse-type? to return
+  true for the newly added type."
+  [[output-type# input-type#] [output-type-arg input-value] form]
+  `(do
+     (defmethod type-reader [~output-type# ~input-type#] [~output-type-arg ~input-value]
+       (let [output-value# ~form]
+         (if (instance? ~output-type# output-value#)
+           output-value#
+           (throw (IllegalArgumentException. (str "Could not coerce value " ~input-value " into type " (.getName ~output-type#)))))))
 
-(defmethod type-reader Boolean [this]
-  (reader-for-type this))
+     ;; Define a fall-through for already coerced types
+     (defmethod type-reader [~output-type# ~output-type#] [~output-type-arg ~input-value]
+       ~input-value)
 
-(defmethod type-reader Number [this]
-  (reader-for-type this))
+     (defmethod can-parse-type? ~output-type# [val#] true)))
 
-(defmethod type-reader String [this]
-  (reader-for-type this))
+(deftype-reader [Number String] [ov input-value]
+  (edn/read-string input-value))
 
-(defmethod type-reader Map [this]
-  (reader-for-type this))
+(deftype-reader [Byte String] [_ value]
+  (Byte/parseByte value))
 
-(defmethod type-reader URI [this]
-  read-uri)
+(deftype-reader [Integer String] [_ value]
+  (Integer/parseInt value))
 
-(defmethod type-reader URL [this]
-  read-url)
+(deftype-reader [Long String] [_ value]
+  (Long/parseLong value))
 
-(defmethod type-reader UUID [this]
-  (fn [obj]
-    (try
-      (UUID/fromString obj)
-      (catch IllegalArgumentException ex
-        (let [uuid (edn/read-string obj)]
-          (if (instance? UUID uuid)
-            uuid
-            (throw (IllegalArgumentException. (str "Supplied object is not a valid java.net.UUID: " obj)))))))))
+(deftype-reader [clojure.lang.BigInt String] [_ value]
+  (Long/parseLong value))
 
-(defmethod type-reader incanter.core.Dataset [this]
-  file-part->dataset)
 
-(defmethod type-reader :default [this]
-  (throw (ex-info (str "No grafter.pipeline.types/type-reader defined to read instances of type " this)
+(deftype-reader [Boolean String] [_ value]
+  (Boolean/parseBoolean value))
+
+(deftype-reader [String String] [_ value]
+  value)
+
+(deftype-reader [Map String] [_ value]
+  (edn/read-string value))
+
+(deftype-reader [URI String] [_ value]
+  (java.net.URI. value))
+
+(deftype-reader [URL String] [_ value]
+  (java.net.URL. value))
+
+(deftype-reader [UUID String] [_ value]
+  (UUID/fromString value))
+
+(deftype-reader [Date String] [_ value]
+  (read-instant-date value))
+
+(deftype-reader [clojure.lang.Keyword String] [_ value]
+  (keyword (if (> (.length value) 1)
+             (let [fchar (.substring value 0 1)]
+               (if (= ":" fchar)
+                 (.substring value 1)
+                 value))
+             value)))
+
+(deftype-reader [incanter.core.Dataset String] [_ value]
+  (tabular/read-dataset value))
+
+(defmethod type-reader :default [target-type input-value]
+  (throw (ex-info (str "No grafter.pipeline.types/type-reader defined to coerce values of type " (type input-value) " into " target-type)
                   {:type :type-reader-error})))
 
-;;Class -> Bool
-(defn- can-parse-type?
-  "Whether the given class is a supported pipeline parameter type."
-  [cls]
-  (try
-    (type-reader cls)
-    true
-    (catch clojure.lang.ExceptionInfo ex
-      false)))
-
-(defn parse-arg
-  "Parses a parameter into an instance of the given target class. Throws an
-  exception if the conversion fails."
-  [cls parameter]
-
-  (let [parse-fn (type-reader cls)]
-    (parse-fn parameter)))
+(defn ^:no-doc coerce-arguments [expected-types supplied-args]
+  (map (fn [et sa]
+         (type-reader (:class et) sa)) expected-types supplied-args))
 
 ;;[Symbol] -> {:arg-types [Symbol], :return-type Symbol]}
 (defn parse-type-list

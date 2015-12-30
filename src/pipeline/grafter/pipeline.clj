@@ -1,6 +1,7 @@
 (ns grafter.pipeline
   (:require
-   [grafter.pipeline.types :refer [resolve-var create-pipeline-declaration]]))
+   [grafter.pipeline.types :refer [resolve-var create-pipeline-declaration
+                                   coerce-arguments]]))
 
 (defonce ^{:doc "Map of pipelines that have been declared and exported to the pipeline runners"} exported-pipelines (atom {}))
 
@@ -47,3 +48,26 @@
                  identity)]
 
      (filter type? (sort-by (comp str :var) (vals @exported-pipelines))))))
+
+(defn ^:no-doc coerce-pipeline-arguments
+  "Coerce the arguments based on the pipelines stated types.  Receives
+  a fully qualified symbol identifying the pipeline and returns the
+  arguments as coerced values, or raise an error if a coercion isn't
+  possible.
+
+  Uses the multi-method grafter.pipeline.types/type-reader to coerce
+  values."
+  [pipeline-sym supplied-args]
+  (let [expected-types (:args (@exported-pipelines pipeline-sym))]
+    (coerce-arguments expected-types supplied-args)))
+
+(defn ^:no-doc execute-pipeline-with-coerced-arguments
+  "Execute the pipeline specified by pipeline-sym by applying it to
+  type-coerced versions of the supplied arguments.
+
+  Expects supplied-args to be either strings or already of the
+  declared data type formats."
+  [pipeline-sym supplied-args]
+  (let [coerced-args (coerce-pipeline-arguments pipeline-sym supplied-args)
+        pipeline-fn (:var (@exported-pipelines pipeline-sym))]
+    (apply pipeline-fn coerced-args)))
