@@ -7,22 +7,18 @@
   :deploy-repositories [["releases" :clojars]]
 
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.openrdf.sesame/sesame-runtime "2.7.16"
-                  :exclusions [org.openrdf.sesame/sesame-repository-manager]]
-
+                 [org.openrdf.sesame/sesame-runtime "2.7.16"]
                  [org.clojure/tools.logging "0.3.1"]
 
                  [grafter/url "0.2.1"]
 
-                 ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
-                 [commons-logging "1.1.1"]
-                 [org.clojure/data.csv "0.1.2"]
-                 [com.outpace/clj-excel "0.0.6" :exclusions [commons-codec]]
+                 [commons-logging "1.2"] ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
+                 [org.clojure/data.csv "0.1.3"]
+                 [com.outpace/clj-excel "0.0.9" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.1"]
                  [incanter/incanter-core "1.5.5" :exclusions [net.sf.opencsv/opencsv commons-codec]]
-                 [net.sf.corn/corn-cps "1.1.7"] ;; classpath scanner
-                 [com.novemberain/pantomime "2.4.0"] ;; mimetypes
+                 [com.novemberain/pantomime "2.8.0"] ;; mimetypes
                  ]
 
   :codox {:defaults {:doc "FIXME: write docs"
@@ -68,7 +64,7 @@
                                                                 org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.3"]
-                                  [prismatic/schema "0.4.3"]
+                                  [prismatic/schema "1.0.4"]
                                   [criterium "0.4.3"]]
 
                    :env {:dev true}}})
