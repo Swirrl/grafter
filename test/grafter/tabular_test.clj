@@ -735,14 +735,14 @@
     (testing "graph-fn"
       (testing "destructuring"
         (are [name column-names binding-form body]
-          (testing name
-            (let [ds (make-dataset test-data
-                                   column-names)
-                  f (graph-fn [binding-form]
-                              body)]
+             (testing name
+               (let [ds (make-dataset test-data
+                                      column-names)
+                     f (graph-fn [binding-form]
+                                 body)]
 
-              (is (= first-quad
-                     (first (f ds))))))
+                 (is (= first-quad
+                        (first (f ds))))))
 
           "by :keys"
           [:a :b :c :d] {:keys [a b c d]}
@@ -779,16 +779,13 @@
                                           [a
                                            [b c]]))
               ds (make-dataset [["http://one/" "http://two/" "http://three/"]])
-              quad-meta (meta (first (my-graphfn ds)))]
+              quad-meta (meta (first (my-graphfn ds)))] (is (= {:grafter.tabular/row {"a" "http://one/" "b" "http://two/" "c" "http://three/"}}
+                                                               quad-meta)
+                                                            "Adds the row that yielded each Quad as metadata")
 
-
-          (is (= {:grafter.tabular/row {"a" "http://one/" "b" "http://two/" "c" "http://three/"}}
-                 quad-meta)
-              "Adds the row that yielded each Quad as metadata")
-
-          (is (= {"a" "http://one/" "b" "http://two/" "c" "http://three/"}
-                 (:grafter.tabular/row quad-meta))
-              "Adds the row that yielded each Quad as metadata"))))))
+             (is (= {"a" "http://one/" "b" "http://two/" "c" "http://three/"}
+                    (:grafter.tabular/row quad-meta))
+                 "Adds the row that yielded each Quad as metadata"))))))
 
 (deftest rename-test
   (let [ds (test-dataset 1 2)]
