@@ -12,7 +12,7 @@
                  ;; [org.openrdf.sesame/sesame-runtime "2.8.6"]
                  [org.clojure/tools.logging "0.3.1"]
 
-                 [grafter/url "0.2.0"]
+                 [grafter/url "0.2.1"]
 
                  ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
                  [commons-logging "1.1.1"]
