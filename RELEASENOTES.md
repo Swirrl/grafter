@@ -2,6 +2,20 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
+## XXXX-XX-XX
+
+`VERSION: 0.6.0`
+
+- Remove `defpipe` & `defgraft`, instead use `declare-pipeline`
+- Support many more types as arguments in pipelines / `lein-grafter`
+  plugin, Numbers, URIs, URLs, UUIDs, Maps etc...
+- Fix #47 preserve metadata set by adapters
+- Updated dependencies (Sesame 2.7.16, Clojure 1.7.0, and others...)
+- Bug fix: Coerce xsd:strings
+- Use only quads - remove Triple record and add `triple=` function for comparing quads as triples
+- Don't treat vectors as quads
+- Fix bug with 1 arity `make-dataset`
+
 ## 2015-08-03
 `VERSION: 0.5.1`
 
