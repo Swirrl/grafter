@@ -6,8 +6,7 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-  :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.openrdf.sesame/sesame-runtime "2.7.14"
+  :dependencies [[org.clojure/clojure "1.7.0"]
                   :exclusions [org.openrdf.sesame/sesame-repository-manager]]
 
                  ;; [org.openrdf.sesame/sesame-runtime "2.8.6"]
