@@ -1,5 +1,7 @@
 (ns grafter.rdf.protocols
-  "Grafter protocols and types for RDF processing")
+  "Grafter protocols and types for RDF processing"
+  (:import [java.net URI]
+           [org.openrdf.model Literal]))
 
 (defprotocol IStatement
   "An RDF triple or quad"
@@ -70,6 +72,58 @@
 
 (defprotocol ISPARQLUpdateable
   (update! [this sparql-string]))
+
+;; TODO add literals and strings...
+
+(defprotocol IRDFString
+  (language [this]))
+
+(defprotocol IRDFLiteral
+  (raw-value [this])
+  (data-type-uri [this]))
+
+(def xsd:string (java.net.URI. "http://www.w3.org/2001/XMLSchema#string"))
+
+(def rdf:langString (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
+
+(defrecord RDFString [string language]
+  IRDFString
+  (language [this]
+    (:language this))
+
+  Object
+  (toString [this]
+    (:string this))
+
+  IRDFLiteral
+
+  (raw-value [this]
+    (.toString this))
+
+  (data-type-uri [this]
+    (if (language this)
+      rdf:langString
+      xsd:string)))
+
+(extend-type Literal
+  IRDFString
+  (language [this]
+    (keyword (.getLanguage this)))
+
+  IRDFLiteral
+  (raw-value [this]
+    (.stringValue this))
+
+  (data-type-uri [this]
+    (URI. (str (.getDatatype this)))))
+
+(defrecord RDFLiteral [raw-value data-type-uri]
+  IRDFLiteral
+  (raw-value [this]
+    (:value this))
+
+  (data-type-uri [this]
+    (:data-type-uri this)))
 
 (defn- destructure-quad [quad i default]
   (case i
