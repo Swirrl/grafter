@@ -32,7 +32,7 @@
    (if-let [sym (qualify-symbol sym)]
      (let [decl (create-pipeline-declaration sym type-form metadata)]
        (register-pipeline! sym display-name decl))
-     (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:type :pipeline-declaration-error
+     (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:error :pipeline-declaration-error
                                                                                  :sym sym})))
    nil)
 

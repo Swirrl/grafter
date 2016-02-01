@@ -89,7 +89,7 @@
 
 (defmethod type-reader :default [target-type input-value]
   (throw (ex-info (str "No grafter.pipeline.types/type-reader defined to coerce values of type " (type input-value) " into " target-type)
-                  {:type :type-reader-error})))
+                  {:error :type-reader-error})))
 
 (defn ^:no-doc coerce-arguments [expected-types supplied-args]
   (map (fn [et sa]

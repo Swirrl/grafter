@@ -18,7 +18,7 @@
                                    (slurp source))]
     (if (instance? Dataset edn-value)
       edn-value
-      (throw (ex-info (str "Unexpected object found in edn file.  Expected a Dataset, and got a " edn-value) {:type :file-format-error})))))
+      (throw (ex-info (str "Unexpected object found in edn file.  Expected a Dataset, and got a " edn-value) {:error :file-format-error})))))
 
 ;; TODO read-datasets*
 

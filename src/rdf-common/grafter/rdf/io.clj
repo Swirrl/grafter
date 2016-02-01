@@ -437,7 +437,7 @@
                }
         ^Class parser-class (table format)]
     (if-not parser-class
-      (throw (ex-info (str "Unsupported format: " (pr-str format)) {:type :unsupported-format})))
+      (throw (ex-info (str "Unsupported format: " (pr-str format)) {:error :unsupported-format})))
     (let [^RDFParserFactory factory (.newInstance parser-class)]
       (.getParser factory))))
 
@@ -502,7 +502,7 @@
   ;; TODO: consider how to support proper resource cleanup.
   (pr/to-statements [reader {:keys [format buffer-size] :or {buffer-size 32} :as options}]
     (if-not format
-      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:type :no-format-supplied}))
+      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:error :no-format-supplied}))
       (let [[statements put!] (pipe buffer-size)]
         (future
           (let [parser (doto (format->parser format)
@@ -524,7 +524,7 @@
                            ;; if the other thread puts an Exception on
                            ;; the pipe, raise it here.
                            (throw (ex-info "Reading triples aborted."
-                                           {:type :reading-aborted} msg))
+                                           {:error :reading-aborted} msg))
                            (sesame-statement->IStatement msg)))]
           (map read-rdf statements))))))
 
