@@ -2,7 +2,15 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
-## XXXX-XX-XX
+`VERSION: 0.6.1`
+
+## 2016-02-01
+
+- Make grafter `ex-info` exceptions consistently have an `:error` key
+  to identify them.  Prior to this we used bother `:error` and `:type`
+  keys in `ex-data`
+
+## 2016-01-22
 
 `VERSION: 0.6.0`
 
