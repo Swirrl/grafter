@@ -35,6 +35,10 @@
     (doseq [[xsd type number] types]
       (is (= number (.stringValue (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd))))))))))
 
+(deftest round-trip-literal-test
+  (let [lit (literal "10" "http://www.w3.org/2001/XMLSchema#byte")]
+    (is (= (byte 10) (sesame-rdf-type->type (->sesame-rdf-type lit))))))
+
 (deftest round-trip-quad-test
   (let [quad (->Quad "http://example.org/test/subject"
                      "http://example.org/test/predicate"

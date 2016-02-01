@@ -93,6 +93,9 @@
 
   Object
   (toString [this]
+    ;; TODO consider making this output the same as .toString on a sesame
+    ;; Literal.  Advantage is its more consistent with sesame etc... The
+    ;; disadvantage is that this implementation makes using str more intuitive
     (:string this))
 
   IRDFLiteral
@@ -101,7 +104,7 @@
     (.toString this))
 
   (data-type-uri [this]
-    (if (language this)
+    (if (:language this)
       rdf:langString
       xsd:string)))
 
@@ -120,7 +123,7 @@
 (defrecord RDFLiteral [raw-value data-type-uri]
   IRDFLiteral
   (raw-value [this]
-    (:value this))
+    (:raw-value this))
 
   (data-type-uri [this]
     (:data-type-uri this)))

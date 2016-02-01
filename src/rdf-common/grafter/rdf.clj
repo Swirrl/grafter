@@ -11,20 +11,8 @@
 
 (import-vars
  [grafter.rdf.io
-  s])
-
-(defn prefixer
-  "Takes the base prefix of a URI string and returns a function that
-  concatenates its argument onto the end of it e.g.
-
-`((prefixer \"http://example.org/\") \"foo\") ;; => \"http://example.org/foo\"`
-
-  This function is being deprecated and will be replaced with functions for
-  generating URIs in a later release"
-  { :deprecated "0.4.0" }
-  [uri-prefix]
-  (fn [value]
-    (str uri-prefix value)))
+  s
+  literal])
 
 (defn subject
   "Return the RDF subject from a statement."

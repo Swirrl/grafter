@@ -31,17 +31,18 @@
 
         :en (language en)
         "Hello" (raw-value en)
+        "Hello" (str en)
         rdf:langString (data-type-uri en)
+
 
         nil (language nolang)
         "Yo" (raw-value nolang)
+        "Yo" (str nolang)
         xsd:string (data-type-uri nolang)
 
         :fr (language sesame-fr)
         "Bonjour" (raw-value sesame-fr)
-        rdf:langString (data-type-uri sesame-fr)
-        ))))
 
-
-(deftest literals-test
-  )
+        ;; NOTE we're currently inconsistent with sesame here...
+        "\"Bonjour\"@fr" (str sesame-fr)
+        rdf:langString (data-type-uri sesame-fr)))))

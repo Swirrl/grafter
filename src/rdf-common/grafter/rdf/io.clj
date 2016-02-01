@@ -7,8 +7,8 @@
             [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [pantomime.media :as mime]
-            [grafter.url :refer [->url ->grafter-url IURIable ToGrafterURL]])
-  (:import (grafter.rdf.protocols IStatement Quad)
+            [grafter.url :refer [->url ->grafter-url ->java-uri IURIable ToGrafterURL]])
+  (:import (grafter.rdf.protocols IStatement Quad RDFLiteral)
            (grafter.url GrafterURL)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -67,6 +67,15 @@
            (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
            (let [^String t (and lang-or-uri (name lang-or-uri))]
              (LiteralImpl. str t)))))))
+;;todo
+(defn literal
+  "You can use this to declare an RDF typed literal value along with
+  its URI.  Note that there are implicit coercions already defined for
+  many core clojure/java datatypes, so for common datatypes you
+  shounld't need this."
+  [val data-type-uri]
+  ;; todo
+  (pr/->RDFLiteral val data-type-uri))
 
 (defmulti literal-datatype->type
   "A multimethod to convert an RDF literal into a corresponding
@@ -121,6 +130,13 @@
 
 (extend-protocol ISesameRDFConverter
   ;; Numeric Types
+
+  RDFLiteral
+  (->sesame-rdf-type [this]
+    (LiteralImpl. (pr/raw-value this) (URIImpl. (pr/data-type-uri this))))
+
+  (sesame-rdf-type->type [this]
+    this)
 
   java.lang.Byte
   (->sesame-rdf-type [this]
