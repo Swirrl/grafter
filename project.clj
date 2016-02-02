@@ -17,7 +17,7 @@
                  [com.outpace/clj-excel "0.0.9" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.1"]
-                 [incanter/incanter-core "1.5.5" :exclusions [net.sf.opencsv/opencsv commons-codec]]
+                 [incanter/incanter-core "1.5.7" :exclusions [net.sf.opencsv/opencsv commons-codec]]
                  [com.novemberain/pantomime "2.8.0"] ;; mimetypes
                  ]
 
