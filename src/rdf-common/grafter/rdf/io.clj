@@ -66,7 +66,10 @@
          (if (instance? URI lang-or-uri)
            (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
            (let [^String t (and lang-or-uri (name lang-or-uri))]
-             (LiteralImpl. str t)))))))
+             (if t
+               ;; LiteralImpl since sesame 2.8.x can't be constructed with a nil language tag
+               (LiteralImpl. str t)
+               (LiteralImpl. str))))))))
 
 (defmulti literal-datatype->type
   "A multimethod to convert an RDF literal into a corresponding

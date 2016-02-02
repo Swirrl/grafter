@@ -81,6 +81,26 @@
         (is (= {:foo :bar} (:quad-meta ex))
             "Metadata from quads is reported in exception data")))))
 
+(deftest s-test
+  (let [hello (s "Hello")
+        sesame (->sesame-rdf-type hello)]
+    (is (= "Hello" (str (s "Hello"))))
+    (is (= "Hello" (.stringValue sesame)))
+    (is (= nil (.getLanguage sesame))))
+
+  (let [hello (s "Hello" nil)
+        sesame (->sesame-rdf-type hello)]
+    (is (= "Hello" (.stringValue sesame)))
+    (is (= nil (.getLanguage sesame))))
+
+  (let [bonjour (s "Bonjour" :fr)
+        sesame (->sesame-rdf-type bonjour)]
+    (is (= "Bonjour" (str bonjour)))
+    (is (= "Bonjour" (.stringValue sesame)))
+    (is (= "fr" (.getLanguage sesame)))))
+
+
+
 (deftest to-grafter-url-protocol-test
   (testing "extends RDF Model URI"
     (let [uri (URIImpl. "http://www.tokyo-3.com:777/ayanami?geofront=retracted")
