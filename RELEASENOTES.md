@@ -2,6 +2,13 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
+`VERSION: 0.7.0`
+
+## 2016-02-02
+
+- Update Sesame to 2.8.9 for RDF 1.1 support.
+- Update Incanter to 1.5.7 to improve compatability with Clojure 1.7.0
+
 `VERSION: 0.6.1`
 
 ## 2016-02-01
