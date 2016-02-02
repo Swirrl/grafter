@@ -2,16 +2,16 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
-`VERSION: 0.7.0`
-
 ## 2016-02-02
+
+`VERSION: 0.7.0`
 
 - Update Sesame to 2.8.9 for RDF 1.1 support.
 - Update Incanter to 1.5.7 to improve compatability with Clojure 1.7.0
 
-`VERSION: 0.6.1`
-
 ## 2016-02-01
+
+`VERSION: 0.6.1`
 
 - Make grafter `ex-info` exceptions consistently have an `:error` key
   to identify them.  Prior to this we used bother `:error` and `:type`
@@ -38,6 +38,7 @@ Copyright © 2014 Swirrl IT Ltd.
 - Support mime-types as :format parameters to read-dataset, read-datasets and write-dataset.
 
 ## 2015-06-26
+
 `VERSION: 0.5.0`
 
 - grafter-url library for building URLs
@@ -54,6 +55,7 @@ Copyright © 2014 Swirrl IT Ltd.
 - Add support for previewing pretty printed graph templates
 
 ## 2015-03-05
+
 `VERSION: 0.4.0`
 
 - improved melt functions
@@ -61,9 +63,11 @@ Copyright © 2014 Swirrl IT Ltd.
 - setAutoCommit to false
 
 ## 2014-01-26
+
 `VERSION 0.3`
 
 ## 2014-08-22
+
 `VERSION: 0.2-SNAPSHOT (v0.2-rc1)`
 
 A release candidate and Grafter's first external release.
@@ -74,6 +78,7 @@ A release candidate and Grafter's first external release.
 - API documentation api.grafter.org
 
 ## 2014-07-23
+
 `VERSION: 0.1.1-SNAPSHOT`
 
 An internal release.  Used for some client work.
