@@ -412,13 +412,16 @@
 
   (pr/add
     ([this triples]
-       (if (seq triples)
-         (do
-           (.startRDF this)
-           (doseq [t triples]
-             (pr/add-statement this t))
-           (.endRDF this))
-         (throw (IllegalArgumentException. "This serializer does not support writing a single statement.  It should be passed a sequence of statements."))))
+     (cond
+       (seq triples)
+       (do
+         (.startRDF this)
+         (doseq [t triples]
+           (pr/add-statement this t))
+         (.endRDF this))
+       (nil? (seq triples)) (do (.startRDF this)
+                                (.endRDF this))
+       :else (throw (IllegalArgumentException. "This serializer was given an unknown type it must be passed a sequence of Statements."))))
 
     ([this graph triples]
      (if (format-supports-graphs (.getRDFFormat this))
