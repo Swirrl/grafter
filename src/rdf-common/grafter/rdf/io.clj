@@ -526,7 +526,7 @@
               (catch Exception ex
                 (put! ex)))))
         (let [read-rdf (fn read-rdf [msg]
-                         (if (instance? Exception msg)
+                         (if (instance? Throwable msg)
                            ;; if the other thread puts an Exception on
                            ;; the pipe, raise it here.
                            (throw (ex-info "Reading triples aborted."
