@@ -94,3 +94,25 @@
                              "www.tokyo-3.com" (host grafter-url)
                              "http" (scheme grafter-url)
                              ["ayanami"] (path-segments grafter-url)))))
+
+(deftest literal-and-literal-datatype->type-test
+  (are [clj-val uri klass]
+      (let [ret-val (literal-datatype->type (literal clj-val uri))]
+        (is (= clj-val ret-val))
+        (is (= klass (class clj-val))))
+
+    true           "http://www.w3.org/2001/XMLSchema#boolean" Boolean
+    (byte 10)      "http://www.w3.org/2001/XMLSchema#byte" Byte
+    (short 12)     "http://www.w3.org/2001/XMLSchema#short" Short
+    (bigint 9)     "http://www.w3.org/2001/XMLSchema#decimal" clojure.lang.BigInt
+    (double 33.33) "http://www.w3.org/2001/XMLSchema#double" Double
+    (float 23.8)   "http://www.w3.org/2001/XMLSchema#float" Float
+
+    ;; Yes this is correct according to the XSD spec. #integer is
+    ;; unbounded whereas #int is bounded
+    (bigint 3)     "http://www.w3.org/2001/XMLSchema#integer" clojure.lang.BigInt
+    (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
+    (s "hello")        "http://www.w3.org/2001/XMLSchema#string" grafter.rdf.protocols.RDFString
+    (s "hi")          "http://www.w3.org/TR/xmlschema11-2/#string" grafter.rdf.protocols.RDFString
+    )
+  )

@@ -1,6 +1,6 @@
 (ns grafter.rdf-test
   (:require [grafter.rdf :refer :all]
-            [grafter.rdf.protocols :refer [->Quad raw-value data-type-uri]]
+            [grafter.rdf.protocols :refer [->Quad raw-value datatype-uri]]
             [clojure.test :refer :all])
   (:import [java.net URI]))
 
@@ -17,5 +17,5 @@
 
 (deftest literal-test
   (let [lit (literal "10" "http://www.w3.org/2001/XMLSchema#byte")]
-    (is (= (URI. "http://www.w3.org/2001/XMLSchema#byte") (data-type-uri lit)))
+    (is (= (URI. "http://www.w3.org/2001/XMLSchema#byte") (datatype-uri lit)))
     (is (= "10" (raw-value lit)))))

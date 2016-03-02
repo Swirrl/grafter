@@ -45,83 +45,91 @@
   (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
   (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
+
+;; TODO fix this to create language strings etc...  See
+;; https://www.w3.org/TR/rdf11-new/#literals
+;; and https://github.com/Swirrl/grafter/issues/24#issuecomment-173909600
 (defn s
   "Cast a string to an RDF literal.  The second optional argument can
   either be a keyword corresponding to an RDF language tag
   e.g. :en, :en-gb, or :fr or a string or URI in which case it is
   assumed to be a URI identifying the RDF type of the literal."
   ([str]
-     {:pre [(string? str)]}
-     (reify Object
-       (toString [_] str)
-       ISesameRDFConverter
-       (->sesame-rdf-type [this]
-         (LiteralImpl. str))))
+   {:pre [(string? str)]}
+   (reify Object
+     (toString [_] str)
+     ISesameRDFConverter
+     (->sesame-rdf-type [this]
+       (LiteralImpl. str))))
   ([^String str lang-or-uri]
-     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (nil? lang-or-uri) (instance? URI lang-or-uri))]}
-     (reify Object
-       (toString [_] str)
-       ISesameRDFConverter
-       (->sesame-rdf-type [this]
-         (if (instance? URI lang-or-uri)
-           (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
-           (let [^String t (and lang-or-uri (name lang-or-uri))]
-             (LiteralImpl. str t)))))))
+   {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (nil? lang-or-uri) (instance? URI lang-or-uri))]}
+   (reify Object
+     (toString [_] str)
+     ISesameRDFConverter
+     (->sesame-rdf-type [this]
+       (if (instance? URI lang-or-uri)
+         (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
+         (let [^String t (and lang-or-uri (name lang-or-uri))]
+           (if t
+             (LiteralImpl. str t)
+             (LiteralImpl. str))))))))
 ;;todo
 (defn literal
   "You can use this to declare an RDF typed literal value along with
   its URI.  Note that there are implicit coercions already defined for
   many core clojure/java datatypes, so for common datatypes you
   shounld't need this."
-  [val data-type-uri]
-  ;; todo
-  (pr/->RDFLiteral val data-type-uri))
+
+  [val datatype-uri]
+  (pr/->RDFLiteral (str val) datatype-uri))
 
 (defmulti literal-datatype->type
   "A multimethod to convert an RDF literal into a corresponding
   Clojure type.  This method can be extended to provide custom
   conversions."
-  (fn [^Literal literal]
-    (when-let [datatype (-> literal .getDatatype)]
+  (fn [lit]
+    (when-let [datatype (pr/datatype-uri lit)]
       (str datatype))))
 
-(defmethod literal-datatype->type nil [^Literal literal]
-  (s (.stringValue literal) (.getLanguage literal)))
+(defmethod literal-datatype->type nil [literal]
+  (s (pr/raw-value literal) (pr/language literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#boolean" [^Literal literal]
-  (.booleanValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#boolean" [literal]
+  (Boolean/parseBoolean (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [^Literal literal]
-  (.byteValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [literal]
+  (Byte/parseByte (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#short" [^Literal literal]
-  (.shortValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#short" [literal]
+  (Short/parseShort (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [^Literal literal]
-  (.decimalValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [literal]
+  ;; Prefer clj's big integer over java's because of hash code issue:
+  ;; http://stackoverflow.com/questions/18021902/use-cases-for-bigint-versus-biginteger-in-clojure
+  (bigint (java.math.BigInteger. (pr/raw-value literal))))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [^Literal literal]
-  (.doubleValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [literal]
+  (Double/parseDouble (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [^Literal literal]
-  (.floatValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [literal]
+  (Float/parseFloat (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [^Literal literal]
-  (.integerValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [literal]
+  (bigint (java.math.BigInteger. (pr/raw-value literal))))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [^Literal literal]
-  (.intValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [literal]
+  (java.lang.Integer/parseInt (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Literal literal]
-  (s (.stringValue literal) (.getLanguage literal)))
+(defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
+  (s (pr/raw-value literal) (pr/language literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#string" [^Literal literal]
-  (s (.stringValue literal) (.getLanguage literal)))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#string" [literal]
+  (s (pr/raw-value literal) (pr/language literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [^Literal literal]
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
 
-(defmethod literal-datatype->type :default [^Literal literal]
+(defmethod literal-datatype->type :default [literal]
   ;; If we don't have a type conversion for it, let the sesame type
   ;; through, as it's not really up to grafter to fail the processing,
   ;; as they might just want to pass data through rather than
@@ -133,7 +141,7 @@
 
   RDFLiteral
   (->sesame-rdf-type [this]
-    (LiteralImpl. (pr/raw-value this) (URIImpl. (pr/data-type-uri this))))
+    (LiteralImpl. (pr/raw-value this) (URIImpl. (pr/datatype-uri this))))
 
   (sesame-rdf-type->type [this]
     this)

@@ -80,11 +80,29 @@
 
 (defprotocol IRDFLiteral
   (raw-value [this])
-  (data-type-uri [this]))
+  (datatype-uri [this]))
 
 (def xsd:string (java.net.URI. "http://www.w3.org/2001/XMLSchema#string"))
 
 (def rdf:langString (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
+
+;; TODO add tests to ensure that datatype-uri's etc are right
+;; everywhere we do string coercions.
+;;
+;; https://www.w3.org/TR/rdf11-new/#literals
+
+(extend-type String
+  IRDFString
+  (language [this]
+    nil)
+
+  IRDFLiteral
+
+  (raw-value [this]
+    this)
+
+  (datatype-uri [this]
+    xsd:string))
 
 (defrecord RDFString [string language]
   IRDFString
@@ -103,10 +121,8 @@
   (raw-value [this]
     (.toString this))
 
-  (data-type-uri [this]
-    (if (:language this)
-      rdf:langString
-      xsd:string)))
+  (datatype-uri [this]
+    rdf:langString))
 
 (extend-type Literal
   IRDFString
@@ -117,16 +133,20 @@
   (raw-value [this]
     (.stringValue this))
 
-  (data-type-uri [this]
+  (datatype-uri [this]
     (URI. (str (.getDatatype this)))))
 
-(defrecord RDFLiteral [raw-value data-type-uri]
+(defrecord RDFLiteral [raw-value datatype-uri]
   IRDFLiteral
   (raw-value [this]
     (:raw-value this))
 
-  (data-type-uri [this]
-    (:data-type-uri this)))
+  (datatype-uri [this]
+    (:datatype-uri this))
+
+  IRDFString
+  (language [this]
+    nil))
 
 (defn- destructure-quad [quad i default]
   (case i
