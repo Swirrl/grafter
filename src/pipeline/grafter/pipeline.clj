@@ -27,7 +27,7 @@
 
 (defmacro declare-pipeline
   "Declare a pipeline function, exposing it to grafter-server etc..."
-
+  {:style/indent :defn}
   ([sym display-name type-form metadata]
    (if-let [sym (qualify-symbol sym)]
      (let [decl (create-pipeline-declaration sym type-form metadata)]
