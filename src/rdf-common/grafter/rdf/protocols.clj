@@ -1,6 +1,9 @@
 (ns grafter.rdf.protocols
   "Grafter protocols and types for RDF processing"
+  (:require [grafter.vocabularies.xsd :refer :all]
+            [grafter.url :refer [->java-uri]])
   (:import [java.net URI]
+           [java.util Date]
            [org.openrdf.model Literal]))
 
 (defprotocol IStatement
@@ -82,8 +85,6 @@
   (raw-value [this])
   (datatype-uri [this]))
 
-(def xsd:string (java.net.URI. "http://www.w3.org/2001/XMLSchema#string"))
-
 (def rdf:langString (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
 
 ;; TODO add tests to ensure that datatype-uri's etc are right
@@ -146,6 +147,88 @@
 
   IRDFString
   (language [this]
+    nil))
+
+(extend-protocol IRDFLiteral
+
+  java.math.BigInteger
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:integer))
+
+  java.math.BigDecimal
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:decimal))
+
+  Boolean
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:boolean))
+
+  Byte
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:byte))
+
+  Date
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:dateTime))
+
+  Double
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:double))
+
+  Float
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:float))
+
+  Integer
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:integer))
+
+  Long
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:integer))
+
+  Short
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:short))
+
+  String
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:string))
+
+  (language [t]
     nil))
 
 (defn- destructure-quad [quad i default]
