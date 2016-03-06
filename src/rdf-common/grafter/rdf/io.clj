@@ -75,7 +75,7 @@
       (str datatype))))
 
 (defmethod literal-datatype->type nil [literal]
-  (s (pr/raw-value literal) (pr/lang literal)))
+  (language (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#boolean" [literal]
   (Boolean/parseBoolean (pr/raw-value literal)))
