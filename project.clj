@@ -6,7 +6,7 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.openrdf.sesame/sesame-runtime "2.8.8"]
                  [org.clojure/tools.logging "0.3.1"]
 
