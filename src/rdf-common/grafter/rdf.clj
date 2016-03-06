@@ -11,7 +11,7 @@
 
 (import-vars
  [grafter.rdf.io
-  s
+  language
   literal])
 
 (defn subject

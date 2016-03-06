@@ -3,6 +3,7 @@
   any Linked Data format supported by Sesame."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
+            [grafter.url :refer [->java-uri]]
             [grafter.rdf.protocols :refer [->Quad]]
             [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
@@ -46,34 +47,16 @@
   (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
 
-;; TODO fix this to create language strings etc...  See
-;; https://www.w3.org/TR/rdf11-new/#literals
-;; and https://github.com/Swirrl/grafter/issues/24#issuecomment-173909600
-(defn s
-  "Cast a string to an RDF literal.  The second optional argument can
-  either be a keyword corresponding to an RDF language tag
-  e.g. :en, :en-gb, or :fr or a string or URI in which case it is
-  assumed to be a URI identifying the RDF type of the literal."
-  ([str]
-   {:pre [(string? str)]}
-   (reify Object
-     (toString [_] str)
-     ISesameRDFConverter
-     (->sesame-rdf-type [this]
-       (LiteralImpl. str))))
-  ([^String str lang-or-uri]
-   {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (nil? lang-or-uri) (instance? URI lang-or-uri))]}
-   (reify Object
-     (toString [_] str)
-     ISesameRDFConverter
-     (->sesame-rdf-type [this]
-       (if (instance? URI lang-or-uri)
-         (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
-         (let [^String t (and lang-or-uri (name lang-or-uri))]
-           (if t
-             (LiteralImpl. str t)
-             (LiteralImpl. str))))))))
-;;todo
+(defn language
+  "Create an RDF langauge string out of a value string and a given
+  language tag.  Language tags should be keywords representing the
+  country code, e.g.
+
+  (language \"Bonsoir\" :fr)"
+  [s lang]
+  {:pre [(string? s) (keyword? lang)]}
+  (pr/->RDFString s lang))
+
 (defn literal
   "You can use this to declare an RDF typed literal value along with
   its URI.  Note that there are implicit coercions already defined for
@@ -81,7 +64,7 @@
   shounld't need this."
 
   [val datatype-uri]
-  (pr/->RDFLiteral (str val) datatype-uri))
+  (pr/->RDFLiteral (str val) (->java-uri datatype-uri)))
 
 (defmulti literal-datatype->type
   "A multimethod to convert an RDF literal into a corresponding
@@ -92,7 +75,7 @@
       (str datatype))))
 
 (defmethod literal-datatype->type nil [literal]
-  (s (pr/raw-value literal) (pr/language literal)))
+  (s (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#boolean" [literal]
   (Boolean/parseBoolean (pr/raw-value literal)))
@@ -115,16 +98,22 @@
   (Float/parseFloat (pr/raw-value literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [literal]
-  (bigint (java.math.BigInteger. (pr/raw-value literal))))
+  (bigint (pr/raw-value literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [literal]
   (java.lang.Integer/parseInt (pr/raw-value literal)))
 
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#long" [literal]
+  (java.lang.Long/parseLong (pr/raw-value literal)))
+
 (defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
-  (s (pr/raw-value literal) (pr/language literal)))
+  (language (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#string" [literal]
-  (s (pr/raw-value literal) (pr/language literal)))
+  (pr/raw-value literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [literal]
+  (language (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
@@ -197,15 +186,13 @@
 
   java.lang.Long
   (->sesame-rdf-type [this]
-    ;; hacky and probably a little slow but works for now
-    (IntegerLiteralImpl. (BigInteger. (str this))))
+    (NumericLiteralImpl. (long this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   clojure.lang.BigInt
   (->sesame-rdf-type [this]
-    ;; hacky and probably a little slow but works for now
     (IntegerLiteralImpl. (BigInteger. (str this))))
 
   (sesame-rdf-type->type [this]
@@ -241,14 +228,6 @@
   (->sesame-rdf-type [this]
     this)
 
-  java.lang.String
-  ;; Assume URI's are the norm not strings
-  (->sesame-rdf-type [this]
-    (URIImpl. this))
-
-  (sesame-rdf-type->type [this]
-    this)
-
   Statement
   (->sesame-rdf-type [this]
     this)
@@ -280,7 +259,7 @@
     this)
 
   (sesame-rdf-type->type [this]
-    (str this))
+    (->java-uri this))
 
   java.net.URI
   (->sesame-rdf-type [this]
@@ -314,7 +293,22 @@
 
   clojure.lang.Keyword
   (->sesame-rdf-type [this]
-    (BNodeImpl. (name this))))
+    (BNodeImpl. (name this)))
+
+  String
+  ;; Assume URI's are the norm not strings
+  (->sesame-rdf-type [this]
+    (LiteralImpl. this))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  grafter.rdf.protocols.RDFString
+  (->sesame-rdf-type [t]
+    (LiteralImpl. (pr/raw-value t) (name (pr/lang t))))
+
+  (sesame-rdf-type->type [t]
+    t))
 
 (extend-protocol ISesameRDFConverter
   GrafterURL
@@ -339,8 +333,8 @@
   ;; TODO fix this to work properly with object & context.
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
-  (->Quad (str (.getSubject st))
-          (str (.getPredicate st))
+  (->Quad (->java-uri (.getSubject st))
+          (->java-uri (.getPredicate st))
           (sesame-rdf-type->type (.getObject st))
           (when-let [graph (.getContext st)]
             (sesame-rdf-type->type graph))))
@@ -480,7 +474,6 @@
     [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
-
   String
   (pr/to-statements [this options]
     (try
@@ -553,7 +546,6 @@
           (map read-rdf statements))))))
 
 (extend-protocol ToGrafterURL
-
   URI
   (->grafter-url [uri]
     (-> uri

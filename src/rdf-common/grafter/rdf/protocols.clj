@@ -79,13 +79,13 @@
 ;; TODO add literals and strings...
 
 (defprotocol IRDFString
-  (language [this]))
+  (lang [this]))
 
 (defprotocol IRDFLiteral
   (raw-value [this])
   (datatype-uri [this]))
 
-(def rdf:langString (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
+(def rdf:langString (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
 
 ;; TODO add tests to ensure that datatype-uri's etc are right
 ;; everywhere we do string coercions.
@@ -94,7 +94,7 @@
 
 (extend-type String
   IRDFString
-  (language [this]
+  (lang [this]
     nil)
 
   IRDFLiteral
@@ -105,10 +105,10 @@
   (datatype-uri [this]
     xsd:string))
 
-(defrecord RDFString [string language]
+(defrecord RDFString [string lang]
   IRDFString
-  (language [this]
-    (:language this))
+  (lang [this]
+    (:lang this))
 
   Object
   (toString [this]
@@ -127,7 +127,7 @@
 
 (extend-type Literal
   IRDFString
-  (language [this]
+  (lang [this]
     (keyword (.getLanguage this)))
 
   IRDFLiteral
@@ -146,7 +146,7 @@
     (:datatype-uri this))
 
   IRDFString
-  (language [this]
+  (lang [this]
     nil))
 
 (extend-protocol IRDFLiteral
@@ -228,7 +228,7 @@
   (datatype-uri [t]
     (->java-uri xsd:string))
 
-  (language [t]
+  (lang [t]
     nil))
 
 (defn- destructure-quad [quad i default]
