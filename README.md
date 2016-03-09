@@ -53,7 +53,7 @@ Releases will be tagged with an appropriate tag indicating their
 We are currently producing API docs for the master branch and all
 tagged releases.
 
-- [API docs (master branch)](http://api.grafter.org/master)
+- [API docs (master branch)](http://api.grafter.org/docs/master)
 - [API docs (all releases)](http://api.grafter.org/)
 
 Additionally [grafter.org](http://grafter.org/) contains a
