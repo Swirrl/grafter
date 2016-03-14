@@ -211,6 +211,17 @@
                         new-columns)
           (with-meta (meta dataset))))))
 
+(defn reorder-columns [{:keys [column-names] :as ds} cols]
+  (let [ds-cols (set column-names)
+        supplied-cols (map (partial tabc/resolve-column-id ds) cols)]
+
+    (when (= ds-cols (set supplied-cols))
+      (throw (ex-info (str "The set of supplied column names " supplied-cols " must be equal to those in the dataset " ds-cols " to reorder.")
+                      {:type :reorder-columns-error
+                       :dataset-columns column-names
+                       :supplied-columns supplied-cols})))
+    (assoc ds :column-names supplied-cols)))
+
 (defn drop-rows
   "Drops the first n rows from the dataset, retaining the rest."
   [dataset n]
