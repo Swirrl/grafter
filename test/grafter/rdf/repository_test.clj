@@ -2,7 +2,7 @@
   (:require [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.repository :refer :all]
-            [grafter.rdf :refer [statements s]]
+            [grafter.rdf :refer [statements]]
             [grafter.url :refer [->GrafterURL]]
             [grafter.rdf.formats :refer :all]
             [clojure.test :refer :all])
