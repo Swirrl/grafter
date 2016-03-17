@@ -211,7 +211,11 @@
                         new-columns)
           (with-meta (meta dataset))))))
 
-(defn reorder-columns [{:keys [column-names] :as ds} cols]
+(defn reorder-columns
+  "Reorder the columns in a dataset to the supplied order.  An error
+  will be raised if the supplied set of columns are different to the
+  set of columns in the dataset."
+  [{:keys [column-names] :as ds} cols]
   (let [ds-cols (set column-names)
         supplied-cols (map (partial tabc/resolve-column-id ds) cols)]
 
