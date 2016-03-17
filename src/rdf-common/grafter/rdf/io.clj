@@ -377,6 +377,20 @@
           File   (filename->rdf-format (str dest)))
         (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object dest})))))
 
+(def default-prefixes
+  {
+   "dcat" "http://www.w3.org/ns/dcat#"
+   "dcterms" "http://purl.org/dc/terms/"
+   "owl" "http://www.w3.org/2002/07/owl#"
+   "qb" "http://purl.org/linked-data/cube#"
+   "rdf" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   "rdfs" "http://www.w3.org/2000/01/rdf-schema#"
+   "sdmx" "http://purl.org/linked-data/sdmx/2009/concept#"
+   "skos" "http://www.w3.org/2004/02/skos/core#"
+   "void" "http://rdfs.org/ns/void#"
+   "xsd" "http://www.w3.org/2001/XMLSchema#"
+   })
+
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
   clojure.java.io/writer and returns an RDFSerializer.
@@ -391,15 +405,21 @@
                    the file extension).  This should be a sesame RDFFormat
                    object.
 
-  - :encoding      The character encoding to be used (default: UTF-8)"
+  - :encoding      The character encoding to be used (default: UTF-8)
 
-  ([destination & {:keys [append format encoding] :or {append false
-                                                       encoding "UTF-8"}}]
-   (let [^RDFFormat format (resolve-format-preference destination format)]
-     (Rio/createWriter format
-                       (io/writer destination
-                                  :append append
-                                  :encoding encoding)))))
+  - :prefixes      A map of RDF prefix names to URI prefixes."
+
+  ([destination & {:keys [append format encoding prefixes] :or {append false
+                                                                encoding "UTF-8"
+                                                                prefixes default-prefixes}}]
+   (let [^RDFFormat format (resolve-format-preference destination format)
+         writer (Rio/createWriter format
+                                  (io/writer destination
+                                             :append append
+                                             :encoding encoding))]
+     (reduce (fn [acc [name prefix]]
+               (doto writer
+                 (.handleNamespace name prefix))) prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
