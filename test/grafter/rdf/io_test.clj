@@ -24,7 +24,7 @@
                  (mimetype->rdf-format nil))
         "throws on nil mime type")))
 
-(deftest round-trip-integer-types-test
+(deftest round-trip-numeric-types-test
   (are [xsd type number]
       (is (= number (pr/raw-value (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd)))))))
 
