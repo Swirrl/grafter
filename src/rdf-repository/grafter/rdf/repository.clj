@@ -333,7 +333,7 @@
                                QueryLanguage/SPARQL
                                sparql-string)]
 
-         (when dataset (.setDataset pq restriction))
+         (when restriction (.setDataset pq restriction))
          pq))))
 
 (defn prepare-update
