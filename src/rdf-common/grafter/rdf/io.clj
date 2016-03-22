@@ -91,7 +91,7 @@
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [literal]
   ;; Prefer clj's big integer over java's because of hash code issue:
   ;; http://stackoverflow.com/questions/18021902/use-cases-for-bigint-versus-biginteger-in-clojure
-  (bigint (java.math.BigInteger. (pr/raw-value literal))))
+  (bigdec (pr/raw-value literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [literal]
   (Double/parseDouble (pr/raw-value literal)))

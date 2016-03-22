@@ -45,7 +45,7 @@
     true           "http://www.w3.org/2001/XMLSchema#boolean" Boolean
     (byte 10)      "http://www.w3.org/2001/XMLSchema#byte" Byte
     (short 12)     "http://www.w3.org/2001/XMLSchema#short" Short
-    (bigint 9)     "http://www.w3.org/2001/XMLSchema#decimal" clojure.lang.BigInt
+    (bigdec 9)     "http://www.w3.org/2001/XMLSchema#decimal" java.math.BigDecimal
     (double 33.33) "http://www.w3.org/2001/XMLSchema#double" Double
     (float 23.8)   "http://www.w3.org/2001/XMLSchema#float" Float
     10             "http://www.w3.org/2001/XMLSchema#long" Long
