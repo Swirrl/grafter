@@ -54,8 +54,10 @@
 
   (language \"Bonsoir\" :fr)"
   [s lang]
-  {:pre [(string? s) (keyword? lang)]}
-  (pr/->RDFString s lang))
+  {:pre [(string? s)
+         lang
+         (keyword? lang)]}
+  (pr/->LangString s lang))
 
 (defn literal
   "You can use this to declare an RDF typed literal value along with
@@ -303,7 +305,7 @@
   (sesame-rdf-type->type [this]
     this)
 
-  grafter.rdf.protocols.RDFString
+  grafter.rdf.protocols.LangString
   (->sesame-rdf-type [t]
     (LiteralImpl. (pr/raw-value t) (name (pr/lang t))))
 

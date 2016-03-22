@@ -19,3 +19,7 @@
   (let [lit (literal "10" "http://www.w3.org/2001/XMLSchema#byte")]
     (is (= (URI. "http://www.w3.org/2001/XMLSchema#byte") (datatype-uri lit)))
     (is (= "10" (raw-value lit)))))
+
+(deftest language-test
+  (is (thrown? AssertionError
+               (language "foo" nil))))

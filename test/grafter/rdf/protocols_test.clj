@@ -1,6 +1,7 @@
 (ns grafter.rdf.protocols-test
   (:require [clojure.test :refer :all]
             [grafter.rdf.protocols :refer :all]
+            [grafter.rdf :refer [language]]
             [grafter.vocabularies.xsd :refer :all]))
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
@@ -23,8 +24,7 @@
 
 (deftest rdf-strings-test
   (testing "RDF Strings"
-    (let [en (->RDFString "Hello" :en)
-          nolang (->RDFString "Yo" nil)
+    (let [en (language "Hello" :en)
           sesame-fr (org.openrdf.model.impl.LiteralImpl. "Bonjour" "fr")
           sesame-nolang (org.openrdf.model.impl.LiteralImpl. "Bonjour")]
       (are [expected test-val]
@@ -34,12 +34,6 @@
         "Hello" (raw-value en)
         "Hello" (str en)
         rdf:langString (datatype-uri en)
-
-
-        nil (lang nolang)
-        "Yo" (raw-value nolang)
-        "Yo" (str nolang)
-        xsd:string (datatype-uri nolang)
 
         :fr (lang sesame-fr)
         "Bonjour" (raw-value sesame-fr)

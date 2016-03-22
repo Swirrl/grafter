@@ -105,7 +105,7 @@
   (datatype-uri [this]
     xsd:string))
 
-(defrecord RDFString [string lang]
+(defrecord LangString [string lang]
   IRDFString
   (lang [this]
     (:lang this))
