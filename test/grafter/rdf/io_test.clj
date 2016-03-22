@@ -5,7 +5,8 @@
             [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.io :refer :all]
             [grafter.rdf.formats :refer :all]
-            [grafter.url :refer :all])
+            [grafter.url :refer :all]
+            [schema.core :as s])
   (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]))
 
 (deftest mimetype->rdf-format-test
@@ -99,8 +100,6 @@
     (is (= "Bonjour" (.stringValue sesame)))
     (is (= "fr" (.getLanguage sesame)))))
 
-
-
 (deftest to-grafter-url-protocol-test
   (testing "extends RDF Model URI"
     (let [uri (URIImpl. "http://www.tokyo-3.com:777/ayanami?geofront=retracted")
@@ -110,3 +109,13 @@
                              "www.tokyo-3.com" (host grafter-url)
                              "http" (scheme grafter-url)
                              ["ayanami"] (path-segments grafter-url)))))
+
+(def BlankObjectNode {:s s/Str :p s/Str :o s/Keyword :c (s/eq nil)})
+
+(def BlankSubjectNode {:s s/Keyword :p s/Str :o s/Str :c (s/eq nil) })
+
+
+(deftest blank-nodes-load-test
+  (let [[btriple1 btriple2] (statements "./test/grafter/bnodes.nt")]
+    (is (s/validate BlankObjectNode btriple1))
+    (is (s/validate BlankSubjectNode btriple2))))

@@ -318,8 +318,8 @@
   ;; TODO fix this to work properly with object & context.
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
-  (->Quad (str (.getSubject st))
-          (str (.getPredicate st))
+  (->Quad (sesame-rdf-type->type (.getSubject st))
+          (sesame-rdf-type->type (.getPredicate st))
           (sesame-rdf-type->type (.getObject st))
           (when-let [graph (.getContext st)]
             (sesame-rdf-type->type graph))))
