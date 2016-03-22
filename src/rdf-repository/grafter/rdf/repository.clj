@@ -373,12 +373,7 @@
       (let [c (.getConnection repo)]
         c)))
 
-  SailRepository
-  (->connection
-    [^Repository repo]
-    (.getConnection repo))
-
-  SPARQLRepository
+  Repository
   (->connection
     [^Repository repo]
     (.getConnection repo)))
