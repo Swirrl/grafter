@@ -78,8 +78,8 @@
              (sesame-statement->IStatement (IStatement->sesame-statement quad)))))))
 
 (deftest round-trip-quad-serialize-deserialize-test
-  (let [quad (graph "http://example.org/test/graph"
-                    ["http://test/subj" ["http://test/pred" "http://test/obj"]])
+  (let [quad (graph (->java-uri "http://example.org/test/graph")
+                    [(->java-uri "http://test/subj") [(->java-uri "http://test/pred") (->java-uri "http://test/obj")]])
         string-wtr (java.io.StringWriter.)
         serializer (rdf-serializer string-wtr :format rdf-nquads)]
     (add serializer quad)
@@ -89,7 +89,7 @@
 
 (deftest IStatement->sesame-statement-test
   (testing "IStatement->sesame-statement"
-    (is (= (IStatement->sesame-statement (->Quad "http://foo.com/" "http://bar.com/" "a string" "http://blah.com/"))
+    (is (= (IStatement->sesame-statement (->Quad (->java-uri "http://foo.com/") (->java-uri "http://bar.com/") "a string" (->java-uri "http://blah.com/")))
            (ContextStatementImpl. (URIImpl. "http://foo.com/") (URIImpl. "http://bar.com/") (LiteralImpl. "a string") (URIImpl. "http://blah.com/"))))
 
     (testing "Raising Exceptions"

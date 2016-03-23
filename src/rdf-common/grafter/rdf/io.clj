@@ -212,6 +212,14 @@
       (StatementImpl. (->sesame-rdf-type (pr/subject is))
                       (->sesame-rdf-type (pr/predicate is))
                       (->sesame-rdf-type (pr/object is))))
+    (catch ClassCastException cce
+      ;; We could really make do with just letting the ClassCastException raise,
+      ;; but improve the message a little to nudge developers in the right
+      ;; direction, about what is likely to be wrong.
+      (throw (ex-info "Error outputing Quad.  It looks like you have an incorrect data type inside a quad.  Check your URI's are not strings."
+                      {:error :statement-conversion-error
+                       :quad is
+                       :quad-meta (meta is)} cce)))
     (catch Exception ex
       (throw (ex-info "Error outputing Quad" {:error :statement-conversion-error
                                               :quad is

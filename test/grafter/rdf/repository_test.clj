@@ -7,13 +7,17 @@
             [grafter.rdf.formats :refer :all]
             [clojure.test :refer :all])
   (:import org.openrdf.model.impl.GraphImpl
-           org.openrdf.repository.sparql.SPARQLRepository))
+           org.openrdf.repository.sparql.SPARQLRepository
+           java.net.URI))
 
 (deftest reading-writing-to-Graph
-  (let [g (GraphImpl.)]
-    (grafter.rdf/add-statement g (pr/->Quad "http://s" "http://p" "http://o" nil))
+  (let [g (GraphImpl.)
+        s (URI. "http://s")
+        p (URI. "http://p")
+        o (URI. "http://o")]
+    (grafter.rdf/add-statement g (pr/->Quad s p o nil))
 
-    (is (= (pr/->Quad "http://s" "http://p" "http://o" nil)
+    (is (= (pr/->Quad s p o nil)
            (first (grafter.rdf/statements g))))))
 
 (deftest with-transaction-test
@@ -23,8 +27,8 @@
                              :return-value))))
     (testing "Adding values in a transaction are visible after the transaction commits."
       (with-transaction test-db
-        (pr/add test-db (graph "http://example.org/test/graph"
-                               ["http://test/subj" ["http://test/pred" "http://test/obj"]])))
+        (pr/add test-db (graph (URI. "http://example.org/test/graph")
+                               [(URI. "http://test/subj") [(URI. "http://test/pred") (URI. "http://test/obj")]])))
 
       (is (query test-db "ASK WHERE { <http://test/subj> ?p ?o }")))))
 
