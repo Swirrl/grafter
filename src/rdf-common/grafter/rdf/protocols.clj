@@ -74,16 +74,23 @@
   (query-dataset [this sparql-string model]))
 
 (defprotocol ISPARQLUpdateable
-  (update! [this sparql-string]))
+  (update! [this sparql-string]
+    "Issue a SPARQL Update statement against the repository"))
 
 ;; TODO add literals and strings...
 
 (defprotocol IRDFString
-  (lang [this]))
+  (lang [this]
+    "Return the strings language tag (as a clojure Keyword)"))
 
 (defprotocol IRDFLiteral
-  (raw-value [this])
-  (datatype-uri [this]))
+  (raw-value [this]
+    "Returns the naked value of a literal.  For native primitve values this will
+    return the supplied value (like identity).  However for more complex types
+    such as LangString's it will coerce the value into a more natural primitive
+    type.")
+  (datatype-uri [this]
+    "Returns the RDF literals datatype URI as a java.net.URI."))
 
 (def rdf:langString (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
 

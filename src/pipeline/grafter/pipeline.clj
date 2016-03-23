@@ -1,4 +1,7 @@
 (ns grafter.pipeline
+  "Functions to declare the presence of Grafter pipeline functions to
+  external processes and programs such as lein-grafter and Grafter
+  server."
   (:require
    [grafter.pipeline.types :refer [resolve-var create-pipeline-declaration
                                    coerce-arguments]]))
