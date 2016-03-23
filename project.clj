@@ -16,8 +16,8 @@
                  [org.clojure/data.csv "0.1.3"]
                  [com.outpace/clj-excel "0.0.9" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.6"]
-                 [potemkin "0.4.1"]
-                 [incanter/incanter-core "1.5.5" :exclusions [net.sf.opencsv/opencsv commons-codec]]
+                 [potemkin "0.4.3"]
+                 [incanter/incanter-core "1.5.7" :exclusions [net.sf.opencsv/opencsv commons-codec]]
                  [com.novemberain/pantomime "2.8.0"] ;; mimetypes
                  ]
 
@@ -64,7 +64,7 @@
                                                                 org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.3"]
-                                  [prismatic/schema "1.0.4"]
-                                  [criterium "0.4.3"]]
+                                  [prismatic/schema "1.0.5"]
+                                  [criterium "0.4.4"]]
 
                    :env {:dev true}}})
