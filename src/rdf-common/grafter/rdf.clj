@@ -2,7 +2,6 @@
   "Functions and macros for creating RDF data.  Includes a small
   DSL for creating turtle-like templated forms."
   (:require [grafter.rdf.protocols :as pr]
-            [grafter.rdf.protocols :refer [->Quad]]
             [potemkin.namespaces :refer [import-vars]]))
 
 ;; Force loading the required protocol implementations.  Keep separate from ns
@@ -12,7 +11,11 @@
 (import-vars
  [grafter.rdf.io
   language
-  literal])
+  literal]
+ [grafter.rdf.protocols
+  ->Quad
+  ->Triple
+  triple?])
 
 (defn subject
   "Return the RDF subject from a statement."
