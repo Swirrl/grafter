@@ -138,7 +138,7 @@
   [dataset row-numbers]
   (let [original-meta (meta dataset)
         original-columns (column-names dataset)
-        rows (indexed (inc/to-list dataset))
+        rows (indexed (tabc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
 
     (-> (make-dataset filtered-rows
@@ -205,13 +205,13 @@
              (ifn? col-map-or-fn))]}
 
   (if (map? col-map-or-fn)
-    (inc/rename-cols col-map-or-fn dataset)
+    (rename-columns dataset (fn [col] (col-map-or-fn col col)))
     (let [original-meta (meta dataset)
           old-key->new-key (partial map-keys col-map-or-fn)
           new-columns (map col-map-or-fn
                            (column-names dataset))]
 
-      (-> (make-dataset (inc/to-list dataset)
+      (-> (make-dataset (tabc/to-list dataset)
                         new-columns)
           (with-meta original-meta)))))
 
