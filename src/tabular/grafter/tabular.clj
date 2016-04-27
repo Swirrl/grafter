@@ -62,6 +62,9 @@
                              (map first))]
     not-found-items))
 
+(defn- resolve-all-col-ids [dataset source-cols]
+  (map (partial resolve-column-id dataset) source-cols))
+
 (defn- all-columns
   "Takes a dataset and a finite sequence of column identifiers.
 
@@ -78,10 +81,9 @@
         not-found-items (invalid-column-keys dataset cols)]
     (if (and (empty? not-found-items)
              (some identity cols))
-      (let [inc-ds (inc/$ cols dataset)]
-        (if (inc/dataset? inc-ds)
-          (with-meta inc-ds original-meta)
-          (with-meta (make-dataset [inc-ds] cols) original-meta)))
+      (let [resolved-cols (resolve-all-col-ids dataset cols)
+            rows (->> dataset :rows (map #(select-keys % resolved-cols)))]
+        (with-meta (make-dataset rows resolved-cols) original-meta))
       (throw (IndexOutOfBoundsException. (str "The columns: "
                                               (str/join ", " not-found-items)
                                               " are not currently defined."))))))
@@ -236,9 +238,6 @@
         new-col-val (apply f args-from-cols)
         new-column-hash (resolve-keys new-header new-col-val)]
     (merge row new-column-hash)))
-
-(defn- resolve-all-col-ids [dataset source-cols]
-  (map (partial resolve-column-id dataset) source-cols))
 
 (defn derive-column
   "Adds a new column to the end of the row which is derived from
