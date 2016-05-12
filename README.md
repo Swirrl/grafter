@@ -38,7 +38,7 @@ To use the Grafter API please add the following dependency to your Clojure
 projects `project.clj` file.  For more details on how to do this see
 the [leiningen](http://leiningen.org/) build tool:
 
-`[grafter "0.5.1"]`
+[![Clojars Project](https://img.shields.io/clojars/v/grafter.svg)](https://clojars.org/grafter)
 
 **NOTE:** We are currently following a `MAJOR.MINOR.PATCH` versioning
 scheme, but are anticipating significant breaking API changes between
@@ -53,7 +53,7 @@ Releases will be tagged with an appropriate tag indicating their
 We are currently producing API docs for the master branch and all
 tagged releases.
 
-- [API docs (master branch)](http://api.grafter.org/master)
+- [API docs (master branch)](http://api.grafter.org/docs/master)
 - [API docs (all releases)](http://api.grafter.org/)
 
 Additionally [grafter.org](http://grafter.org/) contains a

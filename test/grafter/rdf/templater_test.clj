@@ -1,7 +1,7 @@
 (ns grafter.rdf.templater-test
   (:require [clojure.test :refer :all]
             [grafter.rdf :refer :all]
-            [grafter.rdf.protocols :refer [->Quad ->Triple]]
+            ;[grafter.rdf.protocols :refer [->Triple]]
             [grafter.tabular :refer [make-dataset graph-fn]]
             [grafter.rdf.templater :refer [graph triplify]]))
 

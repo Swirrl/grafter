@@ -6,8 +6,10 @@
             [grafter.rdf.io :refer :all]
             [grafter.rdf.formats :refer :all]
             [grafter.url :refer :all]
-            [grafter.rdf.protocols :as pr])
-  (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]))
+            [grafter.rdf.protocols :as pr]
+            [schema.core :as s])
+  (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]
+           [java.net URI]))
 
 (deftest mimetype->rdf-format-test
   (testing "mimetype->rdf-format"
@@ -116,3 +118,15 @@
                              "www.tokyo-3.com" (host grafter-url)
                              "http" (scheme grafter-url)
                              ["ayanami"] (path-segments grafter-url)))))
+
+(def BlankObjectNode {:s URI :p URI :o s/Keyword :c (s/eq nil)})
+
+(def BlankSubjectNode {:s s/Keyword :p URI :o URI :c (s/eq nil) })
+
+
+(deftest blank-nodes-load-test
+  (let [[btriple1 btriple2] (statements "./test/grafter/bnodes.nt")]
+    (println btriple1 btriple2
+             )
+    (is (s/validate BlankObjectNode btriple1))
+    (is (s/validate BlankSubjectNode btriple2))))

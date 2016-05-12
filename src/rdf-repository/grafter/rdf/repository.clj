@@ -327,13 +327,13 @@
 
   Prepared queries still need to be evaluated with evaluate."
   ([repo sparql-string] (prepare-query repo sparql-string nil))
-  ([repo sparql-string dataset]
+  ([repo sparql-string restriction]
      (let [conn (->connection repo)]
        (let [pq (.prepareQuery conn
                                QueryLanguage/SPARQL
                                sparql-string)]
 
-         (when dataset (.setDataset pq dataset))
+         (when restriction (.setDataset pq restriction))
          pq))))
 
 (defn prepare-update
@@ -373,12 +373,7 @@
       (let [c (.getConnection repo)]
         c)))
 
-  SailRepository
-  (->connection
-    [^Repository repo]
-    (.getConnection repo))
-
-  SPARQLRepository
+  Repository
   (->connection
     [^Repository repo]
     (.getConnection repo)))

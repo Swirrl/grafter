@@ -29,13 +29,24 @@
           (symbol (str ns "/" sym)))))))
 
 (defmacro declare-pipeline
-  "Declare a pipeline function, exposing it to grafter-server etc..."
+  "Declare a pipeline function and expose it to other services such as
+  the grafter leiningen plugin and grafter-server.
+
+  declare-pipeline takes a symbol identifying the function to expose,
+  an optional human friendly title string a type-form describing the
+  pipelines arguments and return type and a map of metadata describing
+  each argument.
+
+  (defn my-pipeline [a] [(->Quad a a a a)])
+
+  (declare-pipeline my-pipeline \"My example pipeline\" [URI -> Quads]
+                    {a \"Argument a\"})"
   {:style/indent :defn}
   ([sym display-name type-form metadata]
    (if-let [sym (qualify-symbol sym)]
      (let [decl (create-pipeline-declaration sym type-form metadata)]
        (register-pipeline! sym display-name decl))
-     (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:type :pipeline-declaration-error
+     (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:error :pipeline-declaration-error
                                                                                  :sym sym})))
    nil)
 

@@ -1,6 +1,6 @@
 (ns grafter.rdf-test
   (:require [grafter.rdf :refer :all]
-            [grafter.rdf.protocols :refer [->Quad raw-value datatype-uri]]
+            [grafter.rdf.protocols :refer [raw-value datatype-uri]]
             [clojure.test :refer :all])
   (:import [java.net URI]))
 

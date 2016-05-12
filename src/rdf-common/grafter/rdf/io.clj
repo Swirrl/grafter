@@ -46,7 +46,6 @@
   (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
   (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
-
 (defn language
   "Create an RDF langauge string out of a value string and a given
   language tag.  Language tags should be keywords representing the
@@ -343,7 +342,7 @@
   ;; TODO fix this to work properly with object & context.
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
-  (->Quad (->java-uri (.getSubject st))
+  (->Quad (sesame-rdf-type->type (.getSubject st))
           (->java-uri (.getPredicate st))
           (sesame-rdf-type->type (.getObject st))
           (when-let [graph (.getContext st)]
@@ -402,6 +401,22 @@
           File   (filename->rdf-format (str dest)))
         (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object dest})))))
 
+(def default-prefixes
+  {
+   "dcat" "http://www.w3.org/ns/dcat#"
+   "dcterms" "http://purl.org/dc/terms/"
+   "owl" "http://www.w3.org/2002/07/owl#"
+   "qb" "http://purl.org/linked-data/cube#"
+   "rdf" "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   "rdfs" "http://www.w3.org/2000/01/rdf-schema#"
+   "sdmx-attribute" "http://purl.org/linked-data/sdmx/2009/attribute#"
+   "sdmx-concept" "http://purl.org/linked-data/sdmx/2009/concept#"
+   "sdmx-dimension" "http://purl.org/linked-data/sdmx/2009/dimension#"
+   "skos" "http://www.w3.org/2004/02/skos/core#"
+   "void" "http://rdfs.org/ns/void#"
+   "xsd" "http://www.w3.org/2001/XMLSchema#"
+   })
+
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
   clojure.java.io/writer and returns an RDFSerializer.
@@ -416,15 +431,21 @@
                    the file extension).  This should be a sesame RDFFormat
                    object.
 
-  - :encoding      The character encoding to be used (default: UTF-8)"
+  - :encoding      The character encoding to be used (default: UTF-8)
 
-  ([destination & {:keys [append format encoding] :or {append false
-                                                       encoding "UTF-8"}}]
-   (let [^RDFFormat format (resolve-format-preference destination format)]
-     (Rio/createWriter format
-                       (io/writer destination
-                                  :append append
-                                  :encoding encoding)))))
+  - :prefixes      A map of RDF prefix names to URI prefixes."
+
+  ([destination & {:keys [append format encoding prefixes] :or {append false
+                                                                encoding "UTF-8"
+                                                                prefixes default-prefixes}}]
+   (let [^RDFFormat format (resolve-format-preference destination format)
+         writer (Rio/createWriter format
+                                  (io/writer destination
+                                             :append append
+                                             :encoding encoding))]
+     (reduce (fn [acc [name prefix]]
+               (doto writer
+                 (.handleNamespace name prefix))) prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
@@ -437,13 +458,16 @@
 
   (pr/add
     ([this triples]
-       (if (seq triples)
-         (do
-           (.startRDF this)
-           (doseq [t triples]
-             (pr/add-statement this t))
-           (.endRDF this))
-         (throw (IllegalArgumentException. "This serializer does not support writing a single statement.  It should be passed a sequence of statements."))))
+     (cond
+       (seq triples)
+       (do
+         (.startRDF this)
+         (doseq [t triples]
+           (pr/add-statement this t))
+         (.endRDF this))
+       (nil? (seq triples)) (do (.startRDF this)
+                                (.endRDF this))
+       :else (throw (IllegalArgumentException. "This serializer was given an unknown type it must be passed a sequence of Statements."))))
 
     ([this graph triples]
      (if (format-supports-graphs (.getRDFFormat this))
@@ -465,7 +489,7 @@
                }
         ^Class parser-class (table format)]
     (if-not parser-class
-      (throw (ex-info (str "Unsupported format: " (pr-str format)) {:type :unsupported-format})))
+      (throw (ex-info (str "Unsupported format: " (pr-str format)) {:error :unsupported-format})))
     (let [^RDFParserFactory factory (.newInstance parser-class)]
       (.getParser factory))))
 
@@ -529,7 +553,7 @@
   ;; TODO: consider how to support proper resource cleanup.
   (pr/to-statements [reader {:keys [format buffer-size] :or {buffer-size 32} :as options}]
     (if-not format
-      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:type :no-format-supplied}))
+      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:error :no-format-supplied}))
       (let [[statements put!] (pipe buffer-size)]
         (future
           (let [parser (doto (format->parser format)
@@ -547,11 +571,11 @@
               (catch Exception ex
                 (put! ex)))))
         (let [read-rdf (fn read-rdf [msg]
-                         (if (instance? Exception msg)
+                         (if (instance? Throwable msg)
                            ;; if the other thread puts an Exception on
                            ;; the pipe, raise it here.
                            (throw (ex-info "Reading triples aborted."
-                                           {:type :reading-aborted} msg))
+                                           {:error :reading-aborted} msg))
                            (sesame-statement->IStatement msg)))]
           (map read-rdf statements))))))
 
