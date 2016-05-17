@@ -618,19 +618,21 @@ the specified column being cloned."
   (let [row-sym (gensym "row")
         ds-sym (gensym "ds")]
     `(with-meta (fn graphify-dataset [~ds-sym]
-                  (letfn [(graphify-row# [~row-sym]
-                            (let ~(if (vector? row-bindings)
-                                    (generate-vector-bindings ds-sym row-sym row-bindings)
-                                    (splice-supplied-bindings row-sym row-bindings))
-                              (->> (concat ~@forms)
-                                   (map (fn with-row-meta [triple#]
-                                          (let [meta# {::row ~row-sym}
-                                                meta# (if (meta ~ds-sym)
-                                                        (assoc meta# ::dataset (meta ~ds-sym))
-                                                        meta#)]
-                                            (with-meta triple# meta#)))))))]
+                  (let [ds-rows# (:rows ~ds-sym)
+                        ds-meta# (meta ~ds-sym)]
+                    (letfn [(graphify-row# [~row-sym]
+                              (let ~(if (vector? row-bindings)
+                                      (generate-vector-bindings ds-sym row-sym row-bindings)
+                                      (splice-supplied-bindings row-sym row-bindings))
+                                (->> (concat ~@forms)
+                                     (map (fn with-row-meta [triple#]
+                                            (let [meta# {::row ~row-sym}
+                                                  meta# (if ds-meta#
+                                                          (assoc meta# ::dataset ds-meta#)
+                                                          meta#)]
+                                              (with-meta triple# meta#)))))))]
 
-                    (mapcat graphify-row# (:rows ~ds-sym))))
+                      (mapcat graphify-row# ds-rows#))))
        ;; Add metadata to function definition to support
        ;; grafter.rdf.preview/graph-preview functionality.
        ;;
