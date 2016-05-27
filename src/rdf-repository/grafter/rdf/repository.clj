@@ -58,8 +58,8 @@
   (pr/add
     ([this triples]
        {:pre [(or (nil? triples)
-                (sequential? triples)
-                (instance? IStatement triples))]}
+                  (seq triples)
+                  (instance? IStatement triples))]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
                (let [^Iterable stmts (map IStatement->sesame-statement triples)]
@@ -69,8 +69,8 @@
 
     ([this graph triples]
        {:pre [(or (nil? triples)
-                (sequential? triples)
-                (instance? IStatement triples))]}
+                  (seq triples)
+                  (instance? IStatement triples))]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
              (let [^Iterable stmts (map IStatement->sesame-statement triples)]
