@@ -20,10 +20,15 @@
 
 (deftest repo=test
   (testing "repo-like things coerce for equality checks"
-    (repo= (repo "./test/grafter/rdf-types.trig")
-           (grafter.rdf/statements "./test/grafter/rdf-types.trig")
-           "./test/grafter/rdf-types.trig"
-           (file "./test/grafter/rdf-types.trig")))
+    (is (repo= (repo "./test/grafter/rdf-types.trig")
+               (grafter.rdf/statements "./test/grafter/rdf-types.trig")
+               "./test/grafter/rdf-types.trig"
+               (file "./test/grafter/rdf-types.trig"))))
+
+  (testing "Inequality"
+    (is (not (repo= "./test/grafter/rdf-types.trig"
+                    "./test/grafter/rdf-types.ttl"))
+        "Should not be equal because the trig file are quads and the ttl file are triples."))
 
   (testing "An empty repo is equal to an empty repo"
     (is (repo= (repo (MemoryStore.))
