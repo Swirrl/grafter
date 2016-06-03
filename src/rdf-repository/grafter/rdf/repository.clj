@@ -24,6 +24,7 @@
            (org.openrdf.repository.http HTTPRepository)
            (org.openrdf.repository.sail SailRepository)
            (org.openrdf.repository.sparql SPARQLRepository)
+           (org.openrdf.sail Sail)
            (org.openrdf.sail.memory MemoryStore)
            (org.openrdf.sail.nativerdf NativeStore)
            (info.aduna.iteration CloseableIteration)
@@ -187,11 +188,32 @@
    (CustomGraphQueryInferencer. notifying-sail QueryLanguage/SPARQL query-text matcher-text)))
 
 (defn repo
-  "Given a sesame Store of some type, return a sesame SailRepository."
+  "Given a sesame Store of some type, return a sesame SailRepository.
+
+  This function also supports initialising the repository with some
+  data that can be loaded from anything grafter.rdf/statements can
+  coerce.  Additionally the data can also be a sequence of
+  grafter.rdf.protocols/Quad's.
+
+  Finally you can also optionally supply a sesame sail to wrap the
+  repository, which can be used to configure a sesame NativeStore.
+
+  By default this function will return a repository initialised with a
+  Sesame MemoryStore."
   ([] (repo (MemoryStore.)))
-  ([store]
-     (doto (SailRepository. store)
-       (.initialize))))
+  ([sail-or-rdf-file]
+   (if (instance? Sail sail-or-rdf-file)
+     (repo nil sail-or-rdf-file)
+     (repo sail-or-rdf-file (MemoryStore.))))
+
+  ([rdf-data sail]
+   (let [r (doto (SailRepository. sail)
+             (.initialize))]
+     (pr/add r (cond
+                 (and rdf-data (satisfies? io/Coercions rdf-data)) (pr/to-statements rdf-data {})
+                 (or (seq rdf-data) (nil? rdf-data)) rdf-data))
+
+     r)))
 
 (defn- query-bindings->map [^BindingSet qbs]
   (let [boundvars (.getBindingNames qbs)]
