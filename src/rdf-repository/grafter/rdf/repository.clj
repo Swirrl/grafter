@@ -447,15 +447,12 @@
 
   pr/ITripleReadable
   (pr/to-statements [this _]
-    (map
-     (fn [{:strs [s p o c]}]
-       (Quad. s p o c))
-
-     (query this "SELECT ?s ?p ?o ?c WHERE {
-               GRAPH ?c {
-                 ?s ?p ?o .
-               }
-            }"))))
+    (let[f (fn next-item [i]
+             (when (.hasNext i)
+               (let [v (.next i)]
+                 (lazy-seq (cons (sesame-statement->IStatement v) (next-item i))))))]
+      (let [iter (.getStatements this nil nil nil true (into-array Resource []))]
+        (f iter)))))
 
 (defn shutdown
   "Cleanly shutsdown the repository."

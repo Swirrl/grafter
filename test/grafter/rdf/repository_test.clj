@@ -41,13 +41,14 @@
     (let [repo (sparql-repo (->GrafterURL "http" "localhost" 3001 ["sparql" "state"] nil nil))]
       (is (instance? SPARQLRepository repo)))))
 
-(defn load-rdf-types-data []
-  (let [db (repo)]
-    (pr/add db (statements "./test/grafter/rdf-types.ttl" :format rdf-turtle))
-    db))
+(defn load-rdf-types-data
+  ([file]
+   (let [db (repo)]
+     (pr/add db (statements file))
+     db)))
 
 (deftest query-test
-  (let [test-db (load-rdf-types-data)]
+  (let [test-db (load-rdf-types-data "./test/grafter/rdf-types.ttl")]
     (are [type f?]
         (is (f? (let [o (-> (query test-db (str "PREFIX : <http://example/> SELECT ?o WHERE {" type " :hasValue ?o . }"))
                             first
@@ -61,3 +62,17 @@
       :float float?
       :double (partial instance? java.lang.Double)
       :boolean (fn [v] (#{true false} v)))))
+
+(deftest round-tripping-data-and-queries
+  (testing "When loading triples from a file and round-tripping througb a SPARQL
+  repo it should be identical to the one read in."
+
+    (testing "roundtripping ttl file"
+      (let [file "./test/grafter/rdf-types.ttl"]
+        (is (= (set (statements (load-rdf-types-data file)))
+               (set (statements file))))))
+
+    (testing "roundtripping trig file"
+      (let [file "./test/grafter/rdf-types.trig"]
+        (is (= (set (statements (load-rdf-types-data file)))
+               (set (statements file))))))))
