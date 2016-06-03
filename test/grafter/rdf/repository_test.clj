@@ -12,23 +12,33 @@
            org.openrdf.repository.sparql.SPARQLRepository
            java.net.URI))
 
+(def quad-fixture-file-path "./test/grafter/rdf-types.trig")
+
+(def triple-fixture-file-path "./test/grafter/rdf-types.ttl")
+
 (deftest repo-test
-  (is (repo= (grafter.rdf/statements "./test/grafter/rdf-types.trig")
-             (repo "./test/grafter/rdf-types.trig")
-             (repo "./test/grafter/rdf-types.trig" (MemoryStore.))
-             (repo (file "./test/grafter/rdf-types.trig")))))
+  (is (repo= (grafter.rdf/statements quad-fixture-file-path)
+             (repo quad-fixture-file-path)
+             (repo quad-fixture-file-path)
+             (repo quad-fixture-file-path (MemoryStore.))
+             (repo (file quad-fixture-file-path)))))
 
 (deftest repo=test
   (testing "repo-like things coerce for equality checks"
-    (is (repo= (repo "./test/grafter/rdf-types.trig")
-               (grafter.rdf/statements "./test/grafter/rdf-types.trig")
-               "./test/grafter/rdf-types.trig"
-               (file "./test/grafter/rdf-types.trig"))))
+    (is (repo= (repo quad-fixture-file-path)
+               (grafter.rdf/statements quad-fixture-file-path)
+               quad-fixture-file-path
+               (file quad-fixture-file-path))))
 
   (testing "Inequality"
-    (is (not (repo= "./test/grafter/rdf-types.trig"
-                    "./test/grafter/rdf-types.ttl"))
+    (is (not (repo= quad-fixture-file-path
+                    triple-fixture-file-path))
         "Should not be equal because the trig file are quads and the ttl file are triples."))
+
+  (testing "Equivalence between triple file, repo and CONSTRUCT of the same data"
+    (repo= triple-fixture-file-path
+           (query (repo triple-fixture-file-path)
+                  "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")))
 
   (testing "An empty repo is equal to an empty repo"
     (is (repo= (repo (MemoryStore.))
@@ -75,7 +85,7 @@
      db)))
 
 (deftest query-test
-  (let [test-db (load-rdf-types-data "./test/grafter/rdf-types.ttl")]
+  (let [test-db (load-rdf-types-data triple-fixture-file-path)]
     (are [type f?]
         (is (f? (let [o (-> (query test-db (str "PREFIX : <http://example/> SELECT ?o WHERE {" type " :hasValue ?o . }"))
                             first
@@ -95,11 +105,11 @@
   repo it should be identical to the one read in."
 
     (testing "roundtripping ttl file"
-      (let [file "./test/grafter/rdf-types.ttl"]
+      (let [file triple-fixture-file-path]
         (is (= (set (statements (load-rdf-types-data file)))
                (set (statements file))))))
 
     (testing "roundtripping trig file"
-      (let [file "./test/grafter/rdf-types.trig"]
+      (let [file quad-fixture-file-path]
         (is (= (set (statements (load-rdf-types-data file)))
                (set (statements file))))))))
