@@ -215,6 +215,20 @@
 
      r)))
 
+(defn repo=
+  "Tests whether the supplied repositories all contain the same set of
+  Quads.  Use caution as this function will eagerly load all the
+  supplied repositories into memory in order to perform the
+  comparison.
+
+  This is intended primarily for use in unit tests."
+  [& repos]
+  (apply = (->> repos
+                (map #(set (cond
+                             (satisfies? pr/ITripleReadable %) (grafter.rdf/statements %)
+                             (or (nil? %) (sequential? %)) %
+                             :else (throw (ClassCastException. (str "Cannot cast " % " into a set of RDF Statements")))))))))
+
 (defn- query-bindings->map [^BindingSet qbs]
   (let [boundvars (.getBindingNames qbs)]
     (->> boundvars

@@ -1,5 +1,6 @@
 (ns grafter.rdf.repository-test
   (:require [grafter.rdf.templater :refer [graph]]
+            [clojure.java.io :refer [file]]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.repository :refer :all]
             [grafter.rdf :refer [statements]]
@@ -7,8 +8,29 @@
             [grafter.rdf.formats :refer :all]
             [clojure.test :refer :all])
   (:import org.openrdf.model.impl.GraphImpl
+           org.openrdf.sail.memory.MemoryStore
            org.openrdf.repository.sparql.SPARQLRepository
            java.net.URI))
+
+(deftest repo-test
+  (is (repo= (grafter.rdf/statements "./test/grafter/rdf-types.trig")
+             (repo "./test/grafter/rdf-types.trig")
+             (repo "./test/grafter/rdf-types.trig" (MemoryStore.))
+             (repo (file "./test/grafter/rdf-types.trig")))))
+
+(deftest repo=test
+  (testing "repo-like things coerce for equality checks"
+    (repo= (repo "./test/grafter/rdf-types.trig")
+           (grafter.rdf/statements "./test/grafter/rdf-types.trig")
+           "./test/grafter/rdf-types.trig"
+           (file "./test/grafter/rdf-types.trig")))
+
+  (testing "An empty repo is equal to an empty repo"
+    (is (repo= (repo (MemoryStore.))
+               (repo nil)
+               (repo [])
+               []
+               nil))))
 
 (deftest reading-writing-to-Graph
   (let [g (GraphImpl.)
