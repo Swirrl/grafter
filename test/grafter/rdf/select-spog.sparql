@@ -1,0 +1,7 @@
+## -- Some Header and Doc String like in yessparql
+
+SELECT * WHERE {
+  GRAPH ?g {
+    ?s ?p ?o .
+  }
+}
