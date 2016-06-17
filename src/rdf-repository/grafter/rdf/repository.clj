@@ -233,7 +233,7 @@
   (let [boundvars (.getBindingNames qbs)]
     (->> boundvars
          (mapcat (fn [k]
-                   [k (-> qbs (.getBinding k) .getValue sesame-rdf-type->type)]))
+                   [(keyword k) (-> qbs (.getBinding k) .getValue sesame-rdf-type->type)]))
          (apply hash-map))))
 
 (extend-protocol pr/ITransactable

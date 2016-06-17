@@ -9,22 +9,17 @@
   (let [sparql-query (slurp (resource sparql-file))
         preped-query (repo/prepare-query repo sparql-query)]
     (reduce (fn [pq [unbound-var val]]
-              (.setBinding pq unbound-var (->sesame-rdf-type val))
+              (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
               pq) preped-query bindings)
-    ;; TODO consider using keywords
 
     (repo/evaluate preped-query)))
 
 (comment
 
 
-  (def r (repo))
+  (def r (repo "/Users/rick/repos/grafter/test/grafter/rdf/sparql-data.trig"))
 
-  (query "grafter/rdf/sparql-data.trig"
-         (->connection grafter.rdf.sparql-test/r)
-         "SELECT * WHERE { ?s ?p ?o . limit 10}")
-
-  (query "./grafter/rdf/select-spog.sparql" (->connection grafter.rdf.sparql-test/r) {"s" (java.net.URI. "http://example.org/data/a-triple")})
+  (query "grafter/rdf/select-spog.sparql" (->connection r) {"s" (java.net.URI. "http://example.org/data/a-triple")})
 
 
 
