@@ -14,6 +14,6 @@ data:baz a data:Baz .
 
 data:a-triple a data:Quad .
 data:another-triple a data:Quad .
-data:another-triple a data:Quad .
+data:another-triple a data:Triple .
 
 }

@@ -5,14 +5,17 @@
             [grafter.rdf.io :refer [->sesame-rdf-type]]
             [clojure.java.io :refer [resource]]))
 
-(defn query [sparql-file repo bindings]
-  (let [sparql-query (slurp (resource sparql-file))
-        preped-query (repo/prepare-query repo sparql-query)]
-    (reduce (fn [pq [unbound-var val]]
-              (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
-              pq) preped-query bindings)
+(defn query
+  ([sparql-file repo]
+   (query sparql-file repo {}))
+  ([sparql-file repo bindings]
+   (let [sparql-query (slurp (resource sparql-file))
+         preped-query (repo/prepare-query repo sparql-query)]
+     (reduce (fn [pq [unbound-var val]]
+               (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
+               pq) preped-query bindings)
 
-    (repo/evaluate preped-query)))
+     (repo/evaluate preped-query))))
 
 (comment
 

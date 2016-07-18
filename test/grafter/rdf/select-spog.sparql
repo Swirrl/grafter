@@ -4,4 +4,4 @@ SELECT * WHERE {
   GRAPH ?g {
     ?s ?p ?o .
   }
-}
+} LIMIT 1 OFFSET 0
