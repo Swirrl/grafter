@@ -438,14 +438,16 @@
   ([destination & {:keys [append format encoding prefixes] :or {append false
                                                                 encoding "UTF-8"
                                                                 prefixes default-prefixes}}]
+
    (let [^RDFFormat format (resolve-format-preference destination format)
          writer (Rio/createWriter format
                                   (io/writer destination
                                              :append append
                                              :encoding encoding))]
      (reduce (fn [acc [name prefix]]
+               (println name prefix)
                (doto writer
-                 (.handleNamespace name prefix))) prefixes))))
+                 (.handleNamespace name prefix))) writer prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
