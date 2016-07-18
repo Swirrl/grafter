@@ -445,7 +445,6 @@
                                              :append append
                                              :encoding encoding))]
      (reduce (fn [acc [name prefix]]
-               (println name prefix)
                (doto writer
                  (.handleNamespace name prefix))) writer prefixes))))
 
