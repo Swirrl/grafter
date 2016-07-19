@@ -52,7 +52,7 @@
     ([this graph statement]
        {:pre [(instance? IStatement statement)]}
        (let [^Statement stm (IStatement->sesame-statement statement)
-             resources (resource-array (URIImpl. graph))]
+             resources (resource-array (->sesame-uri graph))]
          (doto this
            (.add stm resources)))))
 
@@ -65,24 +65,28 @@
          (when (seq triples)
                (let [^Iterable stmts (map IStatement->sesame-statement triples)]
                  (.add this stmts (resource-array))))
-         (pr/add-statement this triples)))
+         (pr/add-statement this triples))
+     this)
 
 
     ([this graph triples]
-       {:pre [(or (nil? triples)
+     {:pre [(or (nil? triples)
                 (sequential? triples)
                 (instance? IStatement triples))]}
-       (if (not (instance? IStatement triples))
-         (when (seq triples)
-             (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-               (.add this stmts (resource-array (URIImpl. graph)))))
-         (pr/add-statement this triples)))
+     (if (not (instance? IStatement triples))
+       (when (seq triples)
+         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+           (.add this stmts (resource-array (->sesame-uri graph)))))
+       (pr/add-statement this triples))
+     this)
 
     ([this graph format triple-stream]
-       (.add this triple-stream nil format (resource-array (URIImpl. graph))))
+     (doto this
+       (.add triple-stream nil format (resource-array (->sesame-uri graph)))))
 
     ([this graph base-uri format triple-stream]
-     (.add this triple-stream base-uri format (resource-array (URIImpl. graph))))))
+     (doto this
+       (.add triple-stream base-uri format (resource-array (->sesame-uri graph)))))))
 
 (extend-type Repository
   pr/ITripleWriteable
@@ -92,34 +96,49 @@
        (with-open [connection (.getConnection this)]
          (log/debug "Opening connection" connection "on repo" this)
          (pr/add-statement connection statement)
-         (log/debug "Closing connection" connection "on repo" this)))
+         (log/debug "Closing connection" connection "on repo" this)
+         this))
 
     ([this graph statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement (.getConnection this) graph statement)
-         (log/debug "Closing connection" connection "on repo" this))))
+     (with-open [connection (.getConnection this)]
+       (log/debug "Opening connection" connection "on repo" this)
+       (pr/add-statement (.getConnection this) graph statement)
+       (log/debug "Closing connection" connection "on repo" this)
+       this)))
 
   (pr/add
     ([this triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection triples)
-         (log/debug "Closing connection" connection "on repo" this)))
+     (with-open [connection (.getConnection this)]
+       (log/debug "Opening connection" connection "on repo" this)
+       (pr/add connection triples)
+       (log/debug "Closing connection" connection "on repo" this))
+     this)
 
     ([this graph triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection graph triples)
-         (log/debug "Closing connection" connection "on repo" this)))
+     (with-open [connection (.getConnection this)]
+       (log/debug "Opening connection" connection "on repo" this)
+       (pr/add connection graph triples)
+       (log/debug "Closing connection" connection "on repo" this)
+       this))
 
     ([this graph format triple-stream]
-       (with-open [^RepositoryConnection connection (.getConnection this)]
-         (pr/add connection graph format triple-stream)))
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/add connection graph format triple-stream))
+     this)
 
     ([this graph base-uri format triple-stream]
-       (with-open [^RepositoryConnection connection (.getConnection this)]
-         (pr/add connection graph base-uri format triple-stream)))))
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/add connection graph base-uri format triple-stream))
+     this))
+
+  pr/ITripleDeleteable
+  (pr/delete
+    ([this quads]
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/delete connection quads)))
+    ([this graph quads]
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/delete connection graph quads)))))
 
 
 (defn memory-store
@@ -292,15 +311,12 @@
   pr/ITripleWriteable
 
   (pr/add-statement
-    ([this statement]
-     (pr/add-statement this nil statement))
-
     ([this graph statement]
      (.add this
            (->sesame-rdf-type (pr/subject statement))
            (->sesame-rdf-type (pr/predicate statement))
            (->sesame-rdf-type (pr/object statement))
-           (resource-array graph))))
+           (resource-array (->sesame-uri graph)))))
 
   (pr/add
     ([this triples]
@@ -398,7 +414,45 @@
     (let [prepared-query (.prepareUpdate this
                                          QueryLanguage/SPARQL
                                          sparql-string)]
-      (.execute prepared-query))))
+      (.execute prepared-query)))
+
+  pr/ITripleDeleteable
+
+  (pr/delete-statement
+    ([this statement]
+       {:pre [(instance? IStatement statement)]}
+       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
+             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
+         (doto this (.remove sesame-statement resources))))
+
+    ([this graph statement]
+       {:pre [(instance? IStatement statement)]}
+       (let [^Statement stm (IStatement->sesame-statement statement)
+             resources (resource-array (->sesame-uri graph))]
+         (doto this
+           (.remove stm resources)))))
+
+  (pr/delete
+    ([this triples]
+       {:pre [(or (nil? triples)
+                  (sequential? triples)
+                  (instance? IStatement triples))]}
+     (if (not (instance? IStatement triples))
+         (when (seq triples)
+               (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+                 (.remove this stmts (resource-array))))
+         (pr/delete-statement this triples)))
+
+
+    ([this graph triples]
+       {:pre [(or (nil? triples)
+                (sequential? triples)
+                (instance? IStatement triples))]}
+       (if (not (instance? IStatement triples))
+         (when (seq triples)
+             (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+               (.remove this stmts (resource-array (->sesame-uri graph)))))
+         (pr/delete-statement this triples)))))
 
 (extend-protocol ToConnection
   RepositoryConnection

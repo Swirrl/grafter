@@ -586,3 +586,20 @@
     (-> uri
         str
         ->grafter-url)))
+
+(defprotocol ToSesameURI
+  (->sesame-uri [this] "Coerce an object into a sesame URIImpl"))
+
+(extend-protocol ToSesameURI
+  String
+  (->sesame-uri [this] (URIImpl. this))
+  URL
+  (->sesame-uri [this] (URIImpl. (str this)))
+  java.net.URI
+  (->sesame-uri [this] (URIImpl. (str this)))
+  org.openrdf.model.URI
+  (->sesame-uri [this] this)
+  GrafterURL
+  (->sesame-uri [this] (URIImpl. (str this)))
+  org.openrdf.model.Graph
+  (->sesame-uri [this] (URIImpl. (str this))))

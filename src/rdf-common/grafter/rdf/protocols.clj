@@ -29,6 +29,18 @@
     "Add a seq of triples or quads to a destination.  Works with a
     sequence of IStatements an InputStream, File or Reader"))
 
+(defprotocol ITripleDeleteable
+  "This protocol can be implemented by anything which you can delete
+  statements from.  For example a SPARQL Update Endpoint."
+
+  (delete-statement [this statement]
+    [this graph statement])
+
+  (delete
+    [this quads]
+    [this graph triples]
+    "Delete the supplied triples or quads from the destination."))
+
 (defprotocol ITripleReadable
   "Use the higher level wrapper function statements if you just wish to read in some RDF.
 
