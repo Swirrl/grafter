@@ -399,8 +399,8 @@
 (extend-type RepositoryConnection
   clojure.core.protocols/CollReduce
   (coll-reduce
-    #_([this f]
-     (clojure.core.protocols/coll-reduce f init this))
+    ([this f]
+     (reduce f (f) (pr/to-statements this {})))
     ([this f val]
      (reduce f val (pr/to-statements this {}))))
 
