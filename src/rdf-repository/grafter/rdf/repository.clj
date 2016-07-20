@@ -46,7 +46,7 @@
     ([this statement]
        {:pre [(instance? IStatement statement)]}
        (let [^Statement sesame-statement (IStatement->sesame-statement statement)
-             resources (if-let [graph (pr/context statement)] (resource-array (URIImpl. graph)) (resource-array))]
+             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
          (doto this (.add sesame-statement resources))))
 
     ([this graph statement]
