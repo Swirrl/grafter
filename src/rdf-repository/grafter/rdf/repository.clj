@@ -231,22 +231,7 @@
      (pr/add r (cond
                  (and rdf-data (satisfies? io/Coercions rdf-data)) (pr/to-statements rdf-data {})
                  (or (seq rdf-data) (nil? rdf-data)) rdf-data))
-
      r)))
-
-(defn repo=
-  "Tests whether the supplied repositories all contain the same set of
-  Quads.  Use caution as this function will eagerly load all the
-  supplied repositories into memory in order to perform the
-  comparison.
-
-  This is intended primarily for use in unit tests."
-  [& repos]
-  (apply = (->> repos
-                (map #(set (cond
-                             (satisfies? pr/ITripleReadable %) (grafter.rdf/statements %)
-                             (or (nil? %) (sequential? %)) %
-                             :else (throw (ClassCastException. (str "Cannot cast " % " into a set of RDF Statements")))))))))
 
 (defn- query-bindings->map [^BindingSet qbs]
   (let [boundvars (.getBindingNames qbs)]
@@ -290,6 +275,14 @@
       (throw e#))))
 
 (extend-type Repository
+  clojure.core.protocols/CollReduce
+  (coll-reduce
+    ([this f]
+     (reduce f (f) this))
+    ([this f val]
+     (with-open [c (.getConnection this)]
+       (reduce f val c))))
+
   pr/ISPARQLable
   (pr/query-dataset [this query-str model]
     (pr/query-dataset (.getConnection this) query-str model))
@@ -404,6 +397,16 @@
          pu))))
 
 (extend-type RepositoryConnection
+  clojure.core.protocols/CollReduce
+  (coll-reduce
+    #_([this f]
+     (clojure.core.protocols/coll-reduce f init this))
+    ([this f val]
+     (println "init " val)
+     (reduce f val (pr/to-statements this {}))
+     ))
+
+
   pr/ISPARQLable
   (pr/query-dataset [this sparql-string dataset]
     (let [preped-query (prepare-query this sparql-string dataset)]
@@ -433,15 +436,15 @@
            (.remove stm resources)))))
 
   (pr/delete
-    ([this triples]
-       {:pre [(or (nil? triples)
-                  (sequential? triples)
-                  (instance? IStatement triples))]}
-     (if (not (instance? IStatement triples))
-         (when (seq triples)
-               (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+    ([this quads]
+       {:pre [(or (nil? quads)
+                  (sequential? quads)
+                  (instance? IStatement quads))]}
+     (if (not (instance? IStatement quads))
+         (when (seq quads)
+               (let [^Iterable stmts (map IStatement->sesame-statement quads)]
                  (.remove this stmts (resource-array))))
-         (pr/delete-statement this triples)))
+         (pr/delete-statement this quads)))
 
 
     ([this graph triples]
@@ -537,10 +540,10 @@
 
   pr/ITripleReadable
   (pr/to-statements [this _]
-    (let[f (fn next-item [i]
-             (when (.hasNext i)
-               (let [v (.next i)]
-                 (lazy-seq (cons (sesame-statement->IStatement v) (next-item i))))))]
+    (let [f (fn next-item [i]
+              (when (.hasNext i)
+                (let [v (.next i)]
+                  (lazy-seq (cons (sesame-statement->IStatement v) (next-item i))))))]
       (let [iter (.getStatements this nil nil nil true (into-array Resource []))]
         (f iter)))))
 
