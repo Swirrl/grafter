@@ -89,6 +89,21 @@
    (pr/add target graph base-uri format triple-stream)
    target))
 
+(defn delete
+  "Deletes a sequence of statements from the specified repository.
+
+  Takes an optional string/URI to use as a graph.
+
+  Returns target."
+
+  ([target quads]
+   (pr/delete target quads)
+   target)
+
+  ([target graph triples]
+   (pr/delete target graph triples)
+   target))
+
 (defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a
   sequence of grafter Statements.
