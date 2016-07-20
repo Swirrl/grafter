@@ -21,7 +21,7 @@
     [this graph statement])
 
   (add
-    [this triples]
+    [this quads]
     [this graph triples]
     ;; A more efficient way to add an InputStream/Reader of RDF data to the destination.
     [this graph format triple-stream]
