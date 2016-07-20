@@ -402,10 +402,7 @@
     #_([this f]
      (clojure.core.protocols/coll-reduce f init this))
     ([this f val]
-     (println "init " val)
-     (reduce f val (pr/to-statements this {}))
-     ))
-
+     (reduce f val (pr/to-statements this {}))))
 
   pr/ISPARQLable
   (pr/query-dataset [this sparql-string dataset]
