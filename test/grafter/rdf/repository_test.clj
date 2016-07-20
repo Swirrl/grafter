@@ -119,6 +119,6 @@
          #{}))
 
   (is (= (into #{} (repo "./test/grafter/1.nt"))
-         #{(->Triple (URL. "http://one")
-                    (URL. "http://lonely")
-                    (URL. "http://triple"))})))
+         #{(->Triple (URI. "http://one")
+                     (URI. "http://lonely")
+                     (URI. "http://triple"))})))
