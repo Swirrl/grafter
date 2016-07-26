@@ -216,7 +216,7 @@
 
   By default this function will return a repository initialised with a
   Sesame MemoryStore."
-  ([] (repo (MemoryStore.)))
+  ([] (sail-repo (MemoryStore.)))
   ([sail]
    (doto (SailRepository. sail)
      (.initialize))))
@@ -229,6 +229,11 @@
      acc
      (rdf/add acc v))))
 
+(defn- coerce-into-repo [repo-or-data]
+  (if (instance? Repository repo-or-data)
+                    repo-or-data
+                    (rdf/add (sail-repo) (rdf/statements repo-or-data))))
+
 (defn fixture-repo
   "Adds the specified data to a SPARQL repository.  If the first
   argument is a Repository that object is used, otherwise the first
@@ -240,12 +245,9 @@
 
   (fixture-repo \"test-data.trig\" \"more-test-data.trig\")"
   ([] (sail-repo))
-  ([repo-or-data] repo-or-data)
+  ([repo-or-data] (coerce-into-repo repo-or-data))
   ([repo-or-data & data]
-   (let [repo (if (instance? Repository repo-or-data)
-                repo-or-data
-                (rdf/add (sail-repo) (rdf/statements repo-or-data)))]
-
+   (let [repo (coerce-into-repo repo-or-data)]
      (let [xf (mapcat (fn [d]
                         (cond
                           (satisfies? pr/ITripleReadable d) (rdf/statements d)
