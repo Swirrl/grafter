@@ -444,6 +444,8 @@
                                   (io/writer destination
                                              :append append
                                              :encoding encoding))]
+
+
      (reduce (fn [acc [name prefix]]
                (doto writer
                  (.handleNamespace name prefix))) writer prefixes))))
@@ -451,6 +453,17 @@
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
                                        RDFFormat/TRIG})
+
+(defn- write-namespaces
+  "Signal to the writer that we're about to send RDF data.  This will
+  also trigger any buffered prefixes to be written to the stream."
+  [target]
+  (.startRDF target))
+
+(defn- end-rdf
+  "Signal to the writer that we've finished sending RDF data."
+  [target]
+  (.endRDF target))
 
 (extend-protocol pr/ITripleWriteable
   RDFWriter
@@ -462,10 +475,10 @@
      (cond
        (seq triples)
        (do
-         (.startRDF this)
+         (write-namespaces this)
          (doseq [t triples]
            (pr/add-statement this t))
-         (.endRDF this))
+         (end-rdf this))
        (nil? (seq triples)) (do (.startRDF this)
                                 (.endRDF this))
        :else (throw (IllegalArgumentException. "This serializer was given an unknown type it must be passed a sequence of Statements."))))
