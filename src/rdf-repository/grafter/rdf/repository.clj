@@ -3,7 +3,8 @@
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.io :refer :all]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [grafter.rdf :as rdf])
   (:import (grafter.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -206,8 +207,55 @@
   ([notifying-sail query-text matcher-text]
    (CustomGraphQueryInferencer. notifying-sail QueryLanguage/SPARQL query-text matcher-text)))
 
+
+(defn sail-repo
+  "Given a sesame Sail of some type, return a sesame SailRepository.
+
+  Finally you can also optionally supply a sesame sail to wrap the
+  repository, which can be used to configure a sesame NativeStore.
+
+  By default this function will return a repository initialised with a
+  Sesame MemoryStore."
+  ([] (repo (MemoryStore.)))
+  ([sail]
+   (doto (SailRepository. sail)
+     (.initialize))))
+
+(defn add->repo
+  ([] (sail-repo))
+  ([acc] acc)
+  ([acc v]
+   (if (reduced? acc)
+     acc
+     (rdf/add acc v))))
+
+(defn fixture-repo
+  "Adds the specified data to a SPARQL repository.  If the first
+  argument is a Repository that object is used, otherwise the first
+  and remaining arguments are assumed to be
+  grafter.rdf.protocols/ITripleReadable and are loaded into a sesame
+  MemoryStore sail-repo.
+
+  This function is most useful for loading fixture data from files e.g.
+
+  (fixture-repo \"test-data.trig\" \"more-test-data.trig\")"
+  ([] (sail-repo))
+  ([repo-or-data] repo-or-data)
+  ([repo-or-data & data]
+   (let [repo (if (instance? Repository repo-or-data)
+                repo-or-data
+                (rdf/add (sail-repo) (rdf/statements repo-or-data)))]
+
+     (let [xf (mapcat (fn [d]
+                        (cond
+                          (satisfies? pr/ITripleReadable d) (rdf/statements d)
+                          (seq d) d)))]
+       (transduce xf add->repo repo data)))))
+
 (defn repo
-  "Given a sesame Store of some type, return a sesame SailRepository.
+  "DEPRECATED: Use sail-repo or fixture-repo instead.
+
+  Given a sesame Sail of some type, return a sesame SailRepository.
 
   This function also supports initialising the repository with some
   data that can be loaded from anything grafter.rdf/statements can
@@ -219,7 +267,8 @@
 
   By default this function will return a repository initialised with a
   Sesame MemoryStore."
-  ([] (repo (MemoryStore.)))
+  {:deprecated "0.8.0"}
+  ([] (sail-repo))
   ([sail-or-rdf-file]
    (if (instance? Sail sail-or-rdf-file)
      (repo nil sail-or-rdf-file)
@@ -426,8 +475,8 @@
          (doto this (.remove sesame-statement resources))))
 
     ([this graph statement]
-       {:pre [(instance? IStatement statement)]}
-       (let [^Statement stm (IStatement->sesame-statement statement)
+     {:pre [(instance? IStatement statement)]}
+     (let [^Statement stm (IStatement->sesame-statement statement)
              resources (resource-array (->sesame-uri graph))]
          (doto this
            (.remove stm resources)))))
@@ -438,8 +487,8 @@
                   (sequential? quads)
                   (instance? IStatement quads))]}
      (if (not (instance? IStatement quads))
-         (when (seq quads)
-               (let [^Iterable stmts (map IStatement->sesame-statement quads)]
+       (when (seq quads)
+         (let [^Iterable stmts (map IStatement->sesame-statement quads)]
                  (.remove this stmts (resource-array))))
          (pr/delete-statement this quads)))
 

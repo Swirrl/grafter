@@ -72,6 +72,9 @@
 
   Takes an optional string/URI to use as a graph.
 
+  Depending on the target, this function will also write any prefixes
+  associated with the rdf-serialiser to the target.
+
   Returns target."
   ([target triples]
    (pr/add target triples)
@@ -88,6 +91,8 @@
   ([target graph base-uri format triple-stream]
    (pr/add target graph base-uri format triple-stream)
    target))
+
+
 
 (defn delete
   "Deletes a sequence of statements from the specified repository.

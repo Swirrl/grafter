@@ -122,3 +122,17 @@
          #{(->Triple (URI. "http://one")
                      (URI. "http://lonely")
                      (URI. "http://triple"))})))
+
+(deftest fixture-repo-test
+  (is (= (into #{} (fixture-repo))
+         #{}))
+
+  (is (= (into #{} (fixture-repo "./test/grafter/1.nt"))
+         #{(->Triple (URI. "http://one")
+                     (URI. "http://lonely")
+                     (URI. "http://triple"))})))
+
+(deftest sail-repo-test
+  (is (instance? org.openrdf.repository.Repository (sail-repo)))
+  (is (= (into #{} (sail-repo))
+         #{})))
