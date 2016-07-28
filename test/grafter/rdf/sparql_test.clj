@@ -9,14 +9,11 @@
   (let [r (repo "./test/grafter/rdf/sparql-data.trig")
         spog (partial query "./grafter/rdf/select-spog.sparql")
 
-        query-result (first (spog r {"s" (URI. "http://example.org/data/a-triple")}))]
+        query-result (first (spog r {:s (URI. "http://example.org/data/a-triple")}))]
 
-    (prn query-result)
-
-    (is (= (grafter.rdf.protocols/map->Quad query-result)
-           {"s" (URI. "http://example.org/data/a-triple")
-            "p" (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-            "o" (URI. "http://example.org/data/Quad")
-            "c" (URI. "http://example.org/graph/more-quads")})
-        )
-    ))
+    (is (= query-result
+           {:s (URI. "http://example.org/data/a-triple")
+            :p (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+            :o (URI. "http://example.org/data/Quad")
+            :g (URI. "http://example.org/graph/more-quads")})
+        )))
