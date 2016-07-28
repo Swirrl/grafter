@@ -387,7 +387,7 @@
                                                 (converter-f (.next results))
                                                 (catch Exception e
                                                   (.close results)
-                                                  (throw e)))]
+                                                  (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
                            (lazy-cat
                             [current-result]
                             (pull-query)))
