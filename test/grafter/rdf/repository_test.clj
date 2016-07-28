@@ -89,7 +89,7 @@
     (are [type f?]
         (is (f? (let [o (-> (query test-db (str "PREFIX : <http://example/> SELECT ?o WHERE {" type " :hasValue ?o . }"))
                             first
-                            (get "o"))]
+                            (get :o))]
                   o)))
 
       :integer integer?
