@@ -2,7 +2,7 @@
   (:require [grafter.rdf.sparql :refer :all]
             [clojure.test :refer :all]
             [clojure.java.io :refer [resource]]
-            [grafter.rdf.repository :refer [repo]])
+            [grafter.rdf.repository :as repo])
   (:import java.net.URI))
 
 (deftest pre-process-limit-clauses-test
@@ -14,7 +14,7 @@
            processed-sparql-file))))
 
 (deftest query-test
-  (let [r (repo "./test/grafter/rdf/sparql-data.trig")
+  (let [r (repo/fixture-repo "./test/grafter/rdf/sparql-data.trig")
         spog (partial query "./grafter/rdf/select-spog-unprocessed.sparql")
         query-result (first (spog r {:s (URI. "http://example.org/data/a-triple")
                                      :limits {"myLimitVar" 349

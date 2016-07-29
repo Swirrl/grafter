@@ -41,7 +41,7 @@
      (repo/evaluate prepped-query))))
 
 (comment
-  (def r (repo "/Users/rick/repos/grafter/test/grafter/rdf/sparql-data.trig"))
+  (def r (repo/fixture-repo "/Users/rick/repos/grafter/test/grafter/rdf/sparql-data.trig"))
 
   (query "grafter/rdf/select-spog.sparql" (->connection r) {"s" (java.net.URI. "http://example.org/data/a-triple")})
   )
