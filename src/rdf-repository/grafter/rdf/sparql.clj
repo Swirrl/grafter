@@ -25,9 +25,24 @@
           limits))
 
 (defn query
+  "Takes a string reference to a sparql-file on the resource path and
+  optionally a map of bindings that should map SPARQL variables from
+  your query to concrete values, allowing you to restrict and
+  customise your query.
+
+  The bindings map is optional, and if it's not provided then the
+  query in the file is run as is.
+
+  Additionally if your sparql query specifies a LIMIT or OFFSET the
+  bindings map supports the special keys ::limits and ::offstets.
+  Which should be maps binding identifiable limits/offsets from your
+  query to new values.
+
+  The final argument should be the repository to query.
+  "
   ([sparql-file repo]
-   (query sparql-file repo {}))
-  ([sparql-file repo bindings]
+   (query sparql-file {} repo))
+  ([sparql-file bindings repo]
    (let [sparql-query (slurp (resource sparql-file))
          pre-processed-qry (pre-process-limit-clauses sparql-query
                                                       (or (:limits bindings) []))
@@ -41,7 +56,24 @@
      (repo/evaluate prepped-query))))
 
 (comment
-  (def r (repo/fixture-repo "/Users/rick/repos/grafter/test/grafter/rdf/sparql-data.trig"))
+  (def r (repo/fixture-repo "test/grafter/rdf/sparql-data.trig"))
 
-  (query "grafter/rdf/select-spog.sparql" (->connection r) {"s" (java.net.URI. "http://example.org/data/a-triple")})
+  (query "grafter/rdf/select-spog-pre-processed.sparql" {:p (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")} (->connection r))
+
+  (query "grafter/rdf/select-spog.sparql" {:p (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")} (->connection r))
+
+  (query "grafter/rdf/select-spog-pre-processed.sparql" r)
+
+  ;; partial application
+
+  (def spog (partial query "grafter/rdf/select-spog.sparql"))
+
+  (spog r)
+
+  (def pog (partial spog {:s (java.net.URI. "http://example.org/data/a-triple")}))
+
+  (pog r)
+
+
+
   )

@@ -16,9 +16,9 @@
 (deftest query-test
   (let [r (repo/fixture-repo "./test/grafter/rdf/sparql-data.trig")
         spog (partial query "./grafter/rdf/select-spog-unprocessed.sparql")
-        query-result (first (spog r {:s (URI. "http://example.org/data/a-triple")
-                                     :limits {"myLimitVar" 349
-                                              1 2}}))]
+        query-result (first (spog {:s (URI. "http://example.org/data/a-triple")
+                                   :limits {"myLimitVar" 349
+                                            1 2}} r))]
     (is (= query-result
            {:s (URI. "http://example.org/data/a-triple")
             :p (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
