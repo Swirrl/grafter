@@ -1,7 +1,7 @@
 (ns grafter.rdf.repository-test
   (:require [grafter.rdf.templater :refer [graph]]
             [clojure.java.io :refer [file]]
-            [grafter.rdf.protocols :as pr]
+            [grafter.rdf.protocols :as pr :refer [->Triple]]
             [grafter.rdf.repository :refer :all]
             [grafter.rdf :refer [statements]]
             [grafter.url :refer [->GrafterURL]]
@@ -10,52 +10,23 @@
   (:import org.openrdf.model.impl.GraphImpl
            org.openrdf.sail.memory.MemoryStore
            org.openrdf.repository.sparql.SPARQLRepository
-           java.net.URI))
+           java.net.URI
+           java.net.URL))
 
 (def quad-fixture-file-path "./test/grafter/rdf-types.trig")
 
 (def triple-fixture-file-path "./test/grafter/rdf-types.ttl")
 
-(deftest repo-test
-  (is (repo= (grafter.rdf/statements quad-fixture-file-path)
-             (repo quad-fixture-file-path)
-             (repo quad-fixture-file-path)
-             (repo quad-fixture-file-path (MemoryStore.))
-             (repo (file quad-fixture-file-path)))))
-
-(deftest repo=test
-  (testing "repo-like things coerce for equality checks"
-    (is (repo= (repo quad-fixture-file-path)
-               (grafter.rdf/statements quad-fixture-file-path)
-               quad-fixture-file-path
-               (file quad-fixture-file-path))))
-
-  (testing "Inequality"
-    (is (not (repo= quad-fixture-file-path
-                    triple-fixture-file-path))
-        "Should not be equal because the trig file are quads and the ttl file are triples."))
-
-  (testing "Equivalence between triple file, repo and CONSTRUCT of the same data"
-    (repo= triple-fixture-file-path
-           (query (repo triple-fixture-file-path)
-                  "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")))
-
-  (testing "An empty repo is equal to an empty repo"
-    (is (repo= (repo (MemoryStore.))
-               (repo nil)
-               (repo [])
-               []
-               nil))))
-
 (deftest reading-writing-to-Graph
-  (let [g (GraphImpl.)
+  (let [graph (GraphImpl.)
+        g (URI. "http://foo")
         s (URI. "http://s")
         p (URI. "http://p")
         o (URI. "http://o")]
-    (grafter.rdf/add-statement g (pr/->Quad s p o nil))
+    (grafter.rdf/add-statement graph "http://foo" (pr/->Quad s p o nil))
 
-    (is (= (pr/->Quad s p o nil)
-           (first (grafter.rdf/statements g))))))
+    (is (= (pr/->Quad s p o g)
+           (first (grafter.rdf/statements graph))))))
 
 (deftest with-transaction-test
   (let [test-db (repo)]
@@ -113,3 +84,55 @@
       (let [file quad-fixture-file-path]
         (is (= (set (statements (load-rdf-types-data file)))
                (set (statements file))))))))
+
+(deftest delete-statement-test
+  (testing "arity 2 delete"
+    (are [initial-data delete-form]
+        (let [test-db (load-rdf-types-data initial-data)
+              quads-to-delete (statements test-db)]
+          delete-form
+          (is (not (query test-db "ASK { ?s ?p ?o } LIMIT 1"))
+              "Should be deleted"))
+
+        (load-rdf-types-data triple-fixture-file-path) (pr/delete test-db quads-to-delete)
+        (load-rdf-types-data quad-fixture-file-path) (pr/delete test-db quads-to-delete)))
+
+  (testing "arity 3 delete"
+    (let [test-db (-> (repo)
+                      (pr/add
+                       (URL. "http://a")
+                       (statements triple-fixture-file-path))
+                      (pr/add
+                       (URL. "http://b")
+                       (statements triple-fixture-file-path)))]
+      (pr/delete test-db
+                 (URL. "http://a")
+                 (statements triple-fixture-file-path))
+      (is (not (query test-db "ASK { GRAPH <http://a> { ?s ?p ?o } } LIMIT 1"))
+          "Should be deleted")
+
+      (is (query test-db "ASK { GRAPH <http://b> { ?s ?p ?o } } LIMIT 1")
+          "Should not be deleted"))))
+
+(deftest col-reduce-repo-test
+  (is (= (into #{} (repo))
+         #{}))
+
+  (is (= (into #{} (repo "./test/grafter/1.nt"))
+         #{(->Triple (URI. "http://one")
+                     (URI. "http://lonely")
+                     (URI. "http://triple"))})))
+
+(deftest fixture-repo-test
+  (is (= (into #{} (fixture-repo))
+         #{}))
+
+  (is (= (into #{} (fixture-repo "./test/grafter/1.nt"))
+         #{(->Triple (URI. "http://one")
+                     (URI. "http://lonely")
+                     (URI. "http://triple"))})))
+
+(deftest sail-repo-test
+  (is (instance? org.openrdf.repository.Repository (sail-repo)))
+  (is (= (into #{} (sail-repo))
+         #{})))

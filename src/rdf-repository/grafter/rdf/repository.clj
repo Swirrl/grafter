@@ -4,7 +4,8 @@
             [grafter.rdf]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.io :refer :all]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [grafter.rdf :as rdf])
   (:import (grafter.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -47,13 +48,13 @@
     ([this statement]
        {:pre [(instance? IStatement statement)]}
        (let [^Statement sesame-statement (IStatement->sesame-statement statement)
-             resources (if-let [graph (pr/context statement)] (resource-array (URIImpl. graph)) (resource-array))]
+             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
          (doto this (.add sesame-statement resources))))
 
     ([this graph statement]
        {:pre [(instance? IStatement statement)]}
        (let [^Statement stm (IStatement->sesame-statement statement)
-             resources (resource-array (URIImpl. graph))]
+             resources (resource-array (->sesame-uri graph))]
          (doto this
            (.add stm resources)))))
 
@@ -66,24 +67,28 @@
          (when (seq triples)
                (let [^Iterable stmts (map IStatement->sesame-statement triples)]
                  (.add this stmts (resource-array))))
-         (pr/add-statement this triples)))
+         (pr/add-statement this triples))
+     this)
 
 
     ([this graph triples]
-       {:pre [(or (nil? triples)
+     {:pre [(or (nil? triples)
                 (sequential? triples)
                 (instance? IStatement triples))]}
-       (if (not (instance? IStatement triples))
-         (when (seq triples)
-             (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-               (.add this stmts (resource-array (URIImpl. graph)))))
-         (pr/add-statement this triples)))
+     (if (not (instance? IStatement triples))
+       (when (seq triples)
+         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+           (.add this stmts (resource-array (->sesame-uri graph)))))
+       (pr/add-statement this triples))
+     this)
 
     ([this graph format triple-stream]
-       (.add this triple-stream nil format (resource-array (URIImpl. graph))))
+     (doto this
+       (.add triple-stream nil format (resource-array (->sesame-uri graph)))))
 
     ([this graph base-uri format triple-stream]
-     (.add this triple-stream base-uri format (resource-array (URIImpl. graph))))))
+     (doto this
+       (.add triple-stream base-uri format (resource-array (->sesame-uri graph)))))))
 
 (extend-type Repository
   pr/ITripleWriteable
@@ -93,34 +98,49 @@
        (with-open [connection (.getConnection this)]
          (log/debug "Opening connection" connection "on repo" this)
          (pr/add-statement connection statement)
-         (log/debug "Closing connection" connection "on repo" this)))
+         (log/debug "Closing connection" connection "on repo" this)
+         this))
 
     ([this graph statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement (.getConnection this) graph statement)
-         (log/debug "Closing connection" connection "on repo" this))))
+     (with-open [connection (.getConnection this)]
+       (log/debug "Opening connection" connection "on repo" this)
+       (pr/add-statement (.getConnection this) graph statement)
+       (log/debug "Closing connection" connection "on repo" this)
+       this)))
 
   (pr/add
     ([this triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection triples)
-         (log/debug "Closing connection" connection "on repo" this)))
+     (with-open [connection (.getConnection this)]
+       (log/debug "Opening connection" connection "on repo" this)
+       (pr/add connection triples)
+       (log/debug "Closing connection" connection "on repo" this))
+     this)
 
     ([this graph triples]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add connection graph triples)
-         (log/debug "Closing connection" connection "on repo" this)))
+     (with-open [connection (.getConnection this)]
+       (log/debug "Opening connection" connection "on repo" this)
+       (pr/add connection graph triples)
+       (log/debug "Closing connection" connection "on repo" this)
+       this))
 
     ([this graph format triple-stream]
-       (with-open [^RepositoryConnection connection (.getConnection this)]
-         (pr/add connection graph format triple-stream)))
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/add connection graph format triple-stream))
+     this)
 
     ([this graph base-uri format triple-stream]
-       (with-open [^RepositoryConnection connection (.getConnection this)]
-         (pr/add connection graph base-uri format triple-stream)))))
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/add connection graph base-uri format triple-stream))
+     this))
+
+  pr/ITripleDeleteable
+  (pr/delete
+    ([this quads]
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/delete connection quads)))
+    ([this graph quads]
+     (with-open [^RepositoryConnection connection (.getConnection this)]
+       (pr/delete connection graph quads)))))
 
 
 (defn memory-store
@@ -188,8 +208,57 @@
   ([notifying-sail query-text matcher-text]
    (CustomGraphQueryInferencer. notifying-sail QueryLanguage/SPARQL query-text matcher-text)))
 
+
+(defn sail-repo
+  "Given a sesame Sail of some type, return a sesame SailRepository.
+
+  Finally you can also optionally supply a sesame sail to wrap the
+  repository, which can be used to configure a sesame NativeStore.
+
+  By default this function will return a repository initialised with a
+  Sesame MemoryStore."
+  ([] (sail-repo (MemoryStore.)))
+  ([sail]
+   (doto (SailRepository. sail)
+     (.initialize))))
+
+(defn add->repo
+  ([] (sail-repo))
+  ([acc] acc)
+  ([acc v]
+   (if (reduced? acc)
+     acc
+     (rdf/add acc v))))
+
+(defn- coerce-into-repo [repo-or-data]
+  (if (instance? Repository repo-or-data)
+                    repo-or-data
+                    (rdf/add (sail-repo) (rdf/statements repo-or-data))))
+
+(defn fixture-repo
+  "Adds the specified data to a SPARQL repository.  If the first
+  argument is a Repository that object is used, otherwise the first
+  and remaining arguments are assumed to be
+  grafter.rdf.protocols/ITripleReadable and are loaded into a sesame
+  MemoryStore sail-repo.
+
+  This function is most useful for loading fixture data from files e.g.
+
+  (fixture-repo \"test-data.trig\" \"more-test-data.trig\")"
+  ([] (sail-repo))
+  ([repo-or-data] (coerce-into-repo repo-or-data))
+  ([repo-or-data & data]
+   (let [repo (coerce-into-repo repo-or-data)]
+     (let [xf (mapcat (fn [d]
+                        (cond
+                          (satisfies? pr/ITripleReadable d) (rdf/statements d)
+                          (seq d) d)))]
+       (transduce xf add->repo repo data)))))
+
 (defn repo
-  "Given a sesame Store of some type, return a sesame SailRepository.
+  "DEPRECATED: Use sail-repo or fixture-repo instead.
+
+  Given a sesame Sail of some type, return a sesame SailRepository.
 
   This function also supports initialising the repository with some
   data that can be loaded from anything grafter.rdf/statements can
@@ -201,7 +270,8 @@
 
   By default this function will return a repository initialised with a
   Sesame MemoryStore."
-  ([] (repo (MemoryStore.)))
+  {:deprecated "0.8.0"}
+  ([] (sail-repo))
   ([sail-or-rdf-file]
    (if (instance? Sail sail-or-rdf-file)
      (repo nil sail-or-rdf-file)
@@ -213,22 +283,7 @@
      (pr/add r (cond
                  (and rdf-data (satisfies? io/Coercions rdf-data)) (pr/to-statements rdf-data {})
                  (or (seq rdf-data) (nil? rdf-data)) rdf-data))
-
      r)))
-
-(defn repo=
-  "Tests whether the supplied repositories all contain the same set of
-  Quads.  Use caution as this function will eagerly load all the
-  supplied repositories into memory in order to perform the
-  comparison.
-
-  This is intended primarily for use in unit tests."
-  [& repos]
-  (apply = (->> repos
-                (map #(set (cond
-                             (satisfies? pr/ITripleReadable %) (grafter.rdf/statements %)
-                             (or (nil? %) (sequential? %)) %
-                             :else (throw (ClassCastException. (str "Cannot cast " % " into a set of RDF Statements")))))))))
 
 (defn- query-bindings->map [^BindingSet qbs]
   (let [boundvars (.getBindingNames qbs)]
@@ -272,6 +327,14 @@
       (throw e#))))
 
 (extend-type Repository
+  clojure.core.protocols/CollReduce
+  (coll-reduce
+    ([this f]
+     (reduce f (f) this))
+    ([this f val]
+     (with-open [c (.getConnection this)]
+       (reduce f val c))))
+
   pr/ISPARQLable
   (pr/query-dataset [this query-str model]
     (pr/query-dataset (.getConnection this) query-str model))
@@ -293,15 +356,12 @@
   pr/ITripleWriteable
 
   (pr/add-statement
-    ([this statement]
-     (pr/add-statement this nil statement))
-
     ([this graph statement]
      (.add this
            (->sesame-rdf-type (pr/subject statement))
            (->sesame-rdf-type (pr/predicate statement))
            (->sesame-rdf-type (pr/object statement))
-           (resource-array graph))))
+           (resource-array (->sesame-uri graph)))))
 
   (pr/add
     ([this triples]
@@ -328,7 +388,7 @@
                                                 (converter-f (.next results))
                                                 (catch Exception e
                                                   (.close results)
-                                                  (throw e)))]
+                                                  (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
                            (lazy-cat
                             [current-result]
                             (pull-query)))
@@ -389,6 +449,13 @@
          pu))))
 
 (extend-type RepositoryConnection
+  clojure.core.protocols/CollReduce
+  (coll-reduce
+    ([this f]
+     (reduce f (f) (pr/to-statements this {})))
+    ([this f val]
+     (reduce f val (pr/to-statements this {}))))
+
   pr/ISPARQLable
   (pr/query-dataset [this sparql-string dataset]
     (let [preped-query (prepare-query this sparql-string dataset)]
@@ -399,7 +466,45 @@
     (let [prepared-query (.prepareUpdate this
                                          QueryLanguage/SPARQL
                                          sparql-string)]
-      (.execute prepared-query))))
+      (.execute prepared-query)))
+
+  pr/ITripleDeleteable
+
+  (pr/delete-statement
+    ([this statement]
+       {:pre [(instance? IStatement statement)]}
+       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
+             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
+         (doto this (.remove sesame-statement resources))))
+
+    ([this graph statement]
+     {:pre [(instance? IStatement statement)]}
+     (let [^Statement stm (IStatement->sesame-statement statement)
+             resources (resource-array (->sesame-uri graph))]
+         (doto this
+           (.remove stm resources)))))
+
+  (pr/delete
+    ([this quads]
+       {:pre [(or (nil? quads)
+                  (sequential? quads)
+                  (instance? IStatement quads))]}
+     (if (not (instance? IStatement quads))
+       (when (seq quads)
+         (let [^Iterable stmts (map IStatement->sesame-statement quads)]
+                 (.remove this stmts (resource-array))))
+         (pr/delete-statement this quads)))
+
+
+    ([this graph triples]
+       {:pre [(or (nil? triples)
+                (sequential? triples)
+                (instance? IStatement triples))]}
+       (if (not (instance? IStatement triples))
+         (when (seq triples)
+             (let [^Iterable stmts (map IStatement->sesame-statement triples)]
+               (.remove this stmts (resource-array (->sesame-uri graph)))))
+         (pr/delete-statement this triples)))))
 
 (extend-protocol ToConnection
   RepositoryConnection
@@ -484,10 +589,10 @@
 
   pr/ITripleReadable
   (pr/to-statements [this _]
-    (let[f (fn next-item [i]
-             (when (.hasNext i)
-               (let [v (.next i)]
-                 (lazy-seq (cons (sesame-statement->IStatement v) (next-item i))))))]
+    (let [f (fn next-item [i]
+              (when (.hasNext i)
+                (let [v (.next i)]
+                  (lazy-seq (cons (sesame-statement->IStatement v) (next-item i))))))]
       (let [iter (.getStatements this nil nil nil true (into-array Resource []))]
         (f iter)))))
 
