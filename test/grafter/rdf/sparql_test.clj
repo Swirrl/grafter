@@ -8,7 +8,7 @@
 (deftest pre-process-limit-clauses-test
   (let [sparql-file (slurp (resource "./grafter/rdf/select-spog-unprocessed.sparql"))
         processed-sparql-file (slurp (resource "./grafter/rdf/select-spog-pre-processed.sparql"))]
-    (is (= (pre-process-limit-clauses sparql-file
+    (is (= (#'grafter.rdf.sparql/pre-process-limit-clauses sparql-file
                                       {:myLimitVar 55
                                        7 39})
            processed-sparql-file))))

@@ -6,7 +6,7 @@
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]))
 
-(defn pre-process-limit-clauses
+(defn- pre-process-limit-clauses
   "look through a query string and replaces limit clauses with values supplied
   as maps against matching SPARQL ?variable names or a limit integer"
   [sparl-query limits]
