@@ -45,13 +45,13 @@
   ([sparql-file bindings repo]
    (let [sparql-query (slurp (resource sparql-file))
          pre-processed-qry (pre-process-limit-clauses sparql-query
-                                                      (or (:limits bindings) []))
+                                                      (or (::limits bindings) []))
          prepped-query (repo/prepare-query repo pre-processed-qry)]
      (reduce (fn [pq [unbound-var val]]
                (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
                pq)
              prepped-query
-             (dissoc bindings :limits))
+             (dissoc bindings ::limits))
 
      (repo/evaluate prepped-query))))
 

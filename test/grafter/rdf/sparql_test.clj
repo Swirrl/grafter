@@ -1,5 +1,5 @@
 (ns grafter.rdf.sparql-test
-  (:require [grafter.rdf.sparql :refer :all]
+  (:require [grafter.rdf.sparql :refer :all :as sparql]
             [clojure.test :refer :all]
             [clojure.java.io :refer [resource]]
             [grafter.rdf.repository :as repo])
@@ -17,8 +17,8 @@
   (let [r (repo/fixture-repo "./test/grafter/rdf/sparql-data.trig")
         spog (partial query "./grafter/rdf/select-spog-unprocessed.sparql")
         query-result (first (spog {:s (URI. "http://example.org/data/a-triple")
-                                   :limits {"myLimitVar" 349
-                                            1 2}} r))]
+                                   ::sparql/limits {"myLimitVar" 349
+                                                    1 2}} r))]
     (is (= query-result
            {:s (URI. "http://example.org/data/a-triple")
             :p (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
