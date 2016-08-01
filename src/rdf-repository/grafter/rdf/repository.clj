@@ -286,16 +286,19 @@
   ([^Query prepared-query converter-f]
      (let [^CloseableIteration results (.evaluate prepared-query)
            run-query (fn pull-query []
-                       (if (.hasNext results)
-                         (let [current-result (try
-                                                (converter-f (.next results))
-                                                (catch Exception e
-                                                  (.close results)
-                                                  (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
-                           (lazy-cat
-                            [current-result]
-                            (pull-query)))
-                         (.close results)))]
+                       (try
+                         (if (.hasNext results)
+                           (let [current-result (try
+                                                  (converter-f (.next results))
+                                                  (catch Exception e
+                                                    (.close results)
+                                                    (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
+                             (lazy-cat
+                              [current-result]
+                              (pull-query)))
+                           (.close results))
+                         (catch Exception e
+                           (throw (ex-info "Error waiting on results" {:prepared-query prepared-query} e)))))]
        (run-query))))
 
 (defprotocol IQueryEvaluator
