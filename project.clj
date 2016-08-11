@@ -28,8 +28,10 @@
           :sources ["src/common" "src/rdf-repository" "src/tabular"
                    "src/templater" "src/rdf-common" "src/pipeline"
                    ;; Include docs from grafter-url project too
-                   "../grafter-url/src"]
-          :src-dir-uri "http://github.com/Swirrl/grafter/blob/master/"
+                    "../grafter-url/src"]
+
+          ;; TODO change this when we merge back to master
+          :src-dir-uri "http://github.com/Swirrl/grafter/blob/0.8.x-SNAPSHOT/"
           :src-linenum-anchor-prefix "L"}
 
   :source-paths ["src/common" "src/rdf-repository" "src/tabular"
