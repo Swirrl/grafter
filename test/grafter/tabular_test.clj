@@ -411,6 +411,19 @@
         (is (= md
                (meta (drop-rows ds 1)))))))
 
+(deftest reorder-columns-test
+  (testing "reorder-columns"
+    (is (= (-> (reorder-columns (test-dataset 3 4)
+                                ["a" "c" "b" "d"])
+               :column-names)
+           ["a" "c" "b" "d"])))
+
+  (testing "preserves metadata"
+    (let [md {:foo :bar}
+          ds (with-meta (test-dataset 3 4) md)]
+      (is (= md
+             (meta (reorder-columns ds ["b" "c" "a" "d"])))))))
+
 (deftest grep-test
   (let [dataset (make-dataset [["one" "two" "bar"]
                                ["foo" "bar" "b2az"]

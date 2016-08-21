@@ -218,15 +218,17 @@
           (with-meta original-meta)))))
 
 (defn reorder-columns
-  "Reorder the columns in a dataset to the supplied order.  An error
+  "Reorder the columns in a dataset to the supplied order. An error
   will be raised if the supplied set of columns are different to the
   set of columns in the dataset."
   [{:keys [column-names] :as ds} cols]
   (let [ds-cols (set column-names)
         supplied-cols (map (partial tabc/resolve-column-id ds) cols)]
 
-    (when (= ds-cols (set supplied-cols))
-      (throw (ex-info (str "The set of supplied column names " supplied-cols " must be equal to those in the dataset " ds-cols " to reorder.")
+    (when (not= ds-cols (set supplied-cols))
+      (throw (ex-info (str "The set of supplied column names " supplied-cols
+                           " must be equal to those in the dataset " ds-cols
+                           " to reorder.")
                       {:type :reorder-columns-error
                        :dataset-columns column-names
                        :supplied-columns supplied-cols})))
