@@ -6,23 +6,36 @@
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]))
 
-(defn- pre-process-limit-clauses
-  "look through a query string and replaces limit clauses with values supplied
-  as maps against matching SPARQL ?variable names or a limit integer"
-  [sparl-query limits]
-  (reduce (fn [memo [key val]]
-            (if-let [pattern (cond
-                               (integer? key)
-                               (str "(?i)LIMIT\\s+" key)
+(defn- get-clause-pattern [clause-name key]
+  (cond
+    (integer? key)
+    (str "(?i)" clause-name "\\s+" key)
 
-                               (or (string? key) (keyword? key))
-                               (str "(?i)LIMIT\\s+\\?" (name key)))]
+    (or (string? key) (keyword? key))
+    (str "(?i)" clause-name "\\s+\\?" (name key))
+
+    :else nil))
+
+(defn- rewrite-clauses
+  "Rewrites each instance of CLAUSE (literal | ?varname) with CLAUSE
+  value with the given mappings."
+  [sparl-query clause-name mappings]
+  (reduce (fn [memo [key val]]
+            (if-let [pattern (get-clause-pattern clause-name key)]
               (str/replace memo
                            (re-pattern pattern)
-                           (str "LIMIT " val))
+                           (str clause-name " " val))
               memo))
           sparl-query
-          limits))
+          mappings))
+
+(defn rewrite-limit-and-offset-clauses
+  "Replaces limit and offset clauses with values supplied as maps
+  against matching SPARQL ?variable names or a limit integer"
+  [query-str bindings]
+  (-> query-str
+      (rewrite-clauses "LIMIT" (::limits bindings))
+      (rewrite-clauses "OFFSET" (::offsets bindings))))
 
 (defn query
   "Takes a string reference to a sparql-file on the resource path and
@@ -44,14 +57,13 @@
    (query sparql-file {} repo))
   ([sparql-file bindings repo]
    (let [sparql-query (slurp (resource sparql-file))
-         pre-processed-qry (pre-process-limit-clauses sparql-query
-                                                      (or (::limits bindings) []))
+         pre-processed-qry (rewrite-limit-and-offset-clauses sparql-query bindings)
          prepped-query (repo/prepare-query repo pre-processed-qry)]
      (reduce (fn [pq [unbound-var val]]
                (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
                pq)
              prepped-query
-             (dissoc bindings ::limits))
+             (dissoc bindings ::limits ::offsets))
 
      (repo/evaluate prepped-query))))
 
