@@ -51,8 +51,7 @@
   Which should be maps binding identifiable limits/offsets from your
   query to new values.
 
-  The final argument should be the repository to query.
-  "
+  The final argument should be the repository to query. "
   ([sparql-file repo]
    (query sparql-file {} repo))
   ([sparql-file bindings repo]
