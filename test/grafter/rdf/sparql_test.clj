@@ -23,12 +23,14 @@
 
 (deftest query-test
   (let [r (repo/fixture-repo "./test/grafter/rdf/sparql-data.trig")
-        spog (partial query "./grafter/rdf/select-spog-unprocessed.sparql")
-        query-result (first (spog {:s (URI. "http://example.org/data/a-triple")
-                                   ::sparql/limits {"myLimitVar" 349
-                                                    1 2}} r))]
-    (is (= query-result
-           {:s (URI. "http://example.org/data/a-triple")
-            :p (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-            :o (URI. "http://example.org/data/Quad")
-            :g (URI. "http://example.org/graph/more-quads")}))))
+        total-quads (count (into #{} r))
+        spog (partial query "./grafter/rdf/select-spog.sparql")]
+    (testing "limits"
+      (let [num-results (count (spog {:s (URI. "http://example.org/data/another-triple")
+                                       ::sparql/limits {99999 2}} r))]
+        (is (= 2 num-results))))
+
+    (testing "offsets"
+      (is (= 2 (count (spog {:s (URI. "http://example.org/data/another-triple")
+                             ::sparql/offsets {0 1}}
+                            r)))))))
