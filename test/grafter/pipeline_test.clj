@@ -4,7 +4,9 @@
             [grafter.tabular :refer [test-dataset]]
             [grafter.rdf]
             [schema.core :as s])
-  (:import [java.net URI URL]))
+  (:import [java.net URI URL]
+           [java.util Map UUID]
+           [incanter.core Dataset]))
 
 (defn test-dataset-creator [rows cols]
   (grafter.tabular/test-dataset rows cols))
