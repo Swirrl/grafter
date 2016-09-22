@@ -10,7 +10,7 @@
         processed-sparql-file (slurp (resource "./grafter/rdf/select-spog-pre-processed.sparql"))]
 
     (are [limitsoffsets]
-        (let [rewritten (rewrite-limit-and-offset-clauses sparql-file limitsoffsets)]
+        (let [rewritten (#'grafter.rdf.sparql/rewrite-limit-and-offset-clauses sparql-file limitsoffsets)]
           (is (= rewritten processed-sparql-file)))
 
       {::sparql/limits {:myLimitVar 55

@@ -29,7 +29,7 @@
           sparl-query
           mappings))
 
-(defn rewrite-limit-and-offset-clauses
+(defn- rewrite-limit-and-offset-clauses
   "Replaces limit and offset clauses with values supplied as maps
   against matching SPARQL ?variable names or a limit integer"
   [query-str bindings]
