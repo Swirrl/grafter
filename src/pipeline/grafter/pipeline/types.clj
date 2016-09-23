@@ -1,16 +1,11 @@
 (ns ^:no-doc grafter.pipeline.types
-    (:require [clojure.set :as s]
-              [clojure.string :as str]
-              [clojure.data :refer [diff]]
+    (:require [clojure.data :refer [diff]]
               [clojure.edn :as edn]
               [clojure.instant :refer [read-instant-date]]
-              [grafter.tabular :as tabular]
-              [grafter.tabular.common :as tabcom])
+              [grafter.tabular :as tabular])
     (:import [java.net URI URL]
              [java.util UUID Date Map]
-             [clojure.lang Keyword]
              [incanter.core Dataset]))
-
 
 (defmulti type-reader (fn [target-type input-value]
                         [target-type (type input-value)]))
@@ -133,7 +128,7 @@
   to the class instance representing the class. Throws an exception if
   the resolution fails."
   [sym]
-  (if-let [cls (ns-resolve (find-ns 'grafter.pipeline.types) sym)]
+  (if-let [cls (resolve sym)]
     cls
     (throw (IllegalArgumentException. (str "Failed to resolve " sym " to class")))))
 
