@@ -55,6 +55,12 @@
 (deftype-reader [Number String] [ov input-value]
   (edn/read-string input-value))
 
+(deftype-reader [Float String] [ov input-value]
+  (Float/parseFloat input-value))
+
+(deftype-reader [Double String] [ov input-value]
+  (Double/parseDouble input-value))
+
 (deftype-reader [Byte String] [_ value]
   (Byte/parseByte value))
 
@@ -66,7 +72,6 @@
 
 (deftype-reader [clojure.lang.BigInt String] [_ value]
   (Long/parseLong value))
-
 
 (deftype-reader [Boolean String] [_ value]
   (Boolean/parseBoolean value))
