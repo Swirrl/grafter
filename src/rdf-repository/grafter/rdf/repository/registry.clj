@@ -13,8 +13,7 @@
   altering them may have unintended consequences."
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log])
-  (:import [drafter.rdf DrafterSPARQLRepository]
-           [java.nio.charset Charset]
+  (:import [java.nio.charset Charset]
            [org.openrdf.rio RDFParserRegistry RDFFormat]
            [org.openrdf.query.resultio TupleQueryResultFormat BooleanQueryResultFormat
             TupleQueryResultParserRegistry
