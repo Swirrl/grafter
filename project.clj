@@ -66,6 +66,7 @@
                                                                 org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.3"]
+                                  [org.slf4j/slf4j-simple "1.7.21"]
                                   [prismatic/schema "1.0.5"]
                                   [criterium "0.4.4"]]
 
