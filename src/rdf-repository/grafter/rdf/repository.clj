@@ -61,8 +61,8 @@
   (pr/add
     ([this triples]
        {:pre [(or (nil? triples)
-                (sequential? triples)
-                (instance? IStatement triples))]}
+                  (seq triples)
+                  (instance? IStatement triples))]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
                (let [^Iterable stmts (map IStatement->sesame-statement triples)]
@@ -70,10 +70,9 @@
          (pr/add-statement this triples))
      this)
 
-
     ([this graph triples]
      {:pre [(or (nil? triples)
-                (sequential? triples)
+                (seq triples)
                 (instance? IStatement triples))]}
      (if (not (instance? IStatement triples))
        (when (seq triples)
@@ -383,16 +382,19 @@
   ([^Query prepared-query converter-f]
      (let [^CloseableIteration results (.evaluate prepared-query)
            run-query (fn pull-query []
-                       (if (.hasNext results)
-                         (let [current-result (try
-                                                (converter-f (.next results))
-                                                (catch Exception e
-                                                  (.close results)
-                                                  (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
-                           (lazy-cat
-                            [current-result]
-                            (pull-query)))
-                         (.close results)))]
+                       (try
+                         (if (.hasNext results)
+                           (let [current-result (try
+                                                  (converter-f (.next results))
+                                                  (catch Exception e
+                                                    (.close results)
+                                                    (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
+                             (lazy-cat
+                              [current-result]
+                              (pull-query)))
+                           (.close results))
+                         (catch Exception e
+                           (throw (ex-info "Error waiting on results" {:prepared-query prepared-query} e)))))]
        (run-query))))
 
 (defprotocol IQueryEvaluator
@@ -584,6 +586,33 @@
   [repo sparql & {:as options}]
   (let [dataset (mapply make-restricted-dataset (or options {}))]
     (pr/query-dataset repo sparql dataset)))
+
+(def ^:private batched-results-size 10000)
+
+(defn- wrap-limit-offset
+  "Wraps a query string with a limit/offset batching"
+  ([qstr] (let [limit batched-results-size]
+            (wrap-limit-offset qstr limit 0)))
+  ([qstr limit offset]
+   (str "SELECT * WHERE {"
+        qstr
+        "} LIMIT " limit " OFFSET " offset)))
+
+(defn batched-query
+  "Like query, but queries are batched from the server by wrapping
+  them in a SPARQL SELECT query with a limit/offset.
+
+  NOTE: Though this function returns a lazy sequence, it is intended
+  to be used eagerly, perhaps inside something that eagerly loads the
+  results and manages the connection resources inside a with-open."
+  ([qstr conn] (batched-query qstr conn batched-results-size))
+  ([qstr conn limit] (batched-query qstr conn limit 0))
+  ([qstr conn limit offset]
+   (let [res (query conn (wrap-limit-offset qstr limit offset))]
+     (when (seq res)
+       (lazy-cat
+        res
+        (batched-query qstr conn limit (+ limit offset)))))))
 
 (extend-type RepositoryConnection
 

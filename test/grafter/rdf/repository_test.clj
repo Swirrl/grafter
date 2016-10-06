@@ -49,6 +49,7 @@
     (let [repo (sparql-repo (->GrafterURL "http" "localhost" 3001 ["sparql" "state"] nil nil))]
       (is (instance? SPARQLRepository repo)))))
 
+
 (defn load-rdf-types-data
   ([file]
    (let [db (repo)]
@@ -136,3 +137,15 @@
   (is (instance? org.openrdf.repository.Repository (sail-repo)))
   (is (= (into #{} (sail-repo))
          #{})))
+
+
+(deftest batched-query-test
+  (let [repo (let [r (repo)]
+               (grafter.rdf/add r
+                                (grafter.rdf/statements "test/grafter/triples.nt"))
+               r)]
+    (with-open [c (->connection repo)]
+      (is (= 3 (count (batched-query "SELECT * WHERE { ?s ?p ?o .}"
+                                     c
+                                     1
+                                     0)))))))

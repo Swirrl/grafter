@@ -2,6 +2,48 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
+## 2016-08-31
+
+`VERSION 0.7.6`
+
+- Add a convenience function for batch-query's to help avoid query
+  timeouts etc...
+
+## 2016-08-22
+
+`VERSION 0.7.5`
+
+- Add API's to help users configure the global registry of parsers
+  used by sparql-repo.
+
+## 2016-08-02
+
+`VERSION 0.7.4`
+
+- Improve error reporting (raising exceptions) when consuming SPARQL results.
+
+## 2016-07-29
+
+`VERSION 0.7.3`
+
+- Don't swallow some exceptions when consuming SPARQL results.
+
+## 2016-05-31
+
+`VERSION 0.7.2`
+
+- Use grafter/excel-clj for better numeric coercion
+- Allow `grafter.rdf/add` to work on anything implementing seq
+
+## 2016-05-24
+
+`VERSION 0.7.1`
+
+- Fix serialisation of empty sequences (as no RDF is valid RDF).
+- Support for configurable prefixes in serialisations
+- Generalise ToConnection to Repository interface
+- Coerce blank nodes to correct clojure type
+
 ## 2016-02-02
 
 `VERSION: 0.7.0`

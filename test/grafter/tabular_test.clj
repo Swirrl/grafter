@@ -110,7 +110,7 @@
                    ["4" "5" "6"]])
 
 (def raw-excel-data [["one" "two" "three"]
-                     [1.0 2.0 3.0]])
+                     [1 2 3]])
 
 (def csv-sheet (make-dataset raw-csv-data move-first-row-to-header))
 
@@ -167,6 +167,7 @@
     (let [dataset (read-dataset "./test/grafter/test.xlsx")]
       (testing "returns a dataset"
         (is-a-dataset? dataset)
+        (is-first-sheet? dataset)
         (has-metadata? dataset))))
 
   (testing "Open the second sheet of an XLS file"
