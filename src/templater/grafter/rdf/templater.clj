@@ -34,8 +34,11 @@
                                    (valid-object? o)))
        (= 1 (count object)) (valid-object? (first object))))))
 
+(defn- blank-node? [node]
+  (vector? node))
+
 (defn- make-triples [subject predicate object-or-nested-subject]
-  (if (vector? object-or-nested-subject)
+  (if (blank-node? object-or-nested-subject)
     (let [bnode-resource (keyword (gensym "bnode"))
           nested-pairs object-or-nested-subject]
 

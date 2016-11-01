@@ -1,0 +1,5 @@
+SELECT * WHERE {
+  GRAPH ?g {
+    ?s ?p ?o .
+  }
+} LIMIT 99999 OFFSET 0

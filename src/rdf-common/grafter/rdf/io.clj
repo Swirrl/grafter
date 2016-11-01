@@ -3,12 +3,13 @@
   any Linked Data format supported by Sesame."
   (:require [clojure.java.io :as io]
             [grafter.rdf.protocols :as pr]
+            [grafter.url :refer [->java-uri]]
             [grafter.rdf.protocols :refer [->Quad]]
             [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [pantomime.media :as mime]
-            [grafter.url :refer [->url ->grafter-url IURIable ToGrafterURL]])
-  (:import (grafter.rdf.protocols IStatement Quad)
+            [grafter.url :refer [->url ->grafter-url ->java-uri IURIable ToGrafterURL]])
+  (:import (grafter.rdf.protocols IStatement Quad RDFLiteral)
            (grafter.url GrafterURL)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -45,74 +46,80 @@
   (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
   (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
-(defn s
-  "Cast a string to an RDF literal.  The second optional argument can
-  either be a keyword corresponding to an RDF language tag
-  e.g. :en, :en-gb, or :fr or a string or URI in which case it is
-  assumed to be a URI identifying the RDF type of the literal."
-  ([str]
-     {:pre [(string? str)]}
-     (reify Object
-       (toString [_] str)
-       ISesameRDFConverter
-       (->sesame-rdf-type [this]
-         (LiteralImpl. str))))
-  ([^String str lang-or-uri]
-     {:pre [(string? str) (or (string? lang-or-uri) (keyword? lang-or-uri) (nil? lang-or-uri) (instance? URI lang-or-uri))]}
-     (reify Object
-       (toString [_] str)
-       ISesameRDFConverter
-       (->sesame-rdf-type [this]
-         (if (instance? URI lang-or-uri)
-           (let [^URI uri lang-or-uri] (LiteralImpl. str uri))
-           (let [^String t (and lang-or-uri (name lang-or-uri))]
-             (if t
-               ;; LiteralImpl since sesame 2.8.x can't be constructed with a nil language tag
-               (LiteralImpl. str t)
-               (LiteralImpl. str))))))))
+(defn language
+  "Create an RDF langauge string out of a value string and a given
+  language tag.  Language tags should be keywords representing the
+  country code, e.g.
+
+  (language \"Bonsoir\" :fr)"
+  [s lang]
+  {:pre [(string? s)
+         lang
+         (keyword? lang)]}
+  (pr/->LangString s lang))
+
+(defn literal
+  "You can use this to declare an RDF typed literal value along with
+  its URI.  Note that there are implicit coercions already defined for
+  many core clojure/java datatypes, so for common datatypes you
+  shounld't need this."
+
+  [val datatype-uri]
+  (pr/->RDFLiteral (str val) (->java-uri datatype-uri)))
 
 (defmulti literal-datatype->type
   "A multimethod to convert an RDF literal into a corresponding
   Clojure type.  This method can be extended to provide custom
   conversions."
-  (fn [^Literal literal]
-    (when-let [datatype (-> literal .getDatatype)]
+  (fn [lit]
+    (when-let [datatype (pr/datatype-uri lit)]
       (str datatype))))
 
-(defmethod literal-datatype->type nil [^Literal literal]
-  (s (.stringValue literal) (.getLanguage literal)))
+(defmethod literal-datatype->type nil [literal]
+  (language (pr/raw-value literal) (pr/lang literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [^Literal literal]
-  (.byteValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#boolean" [literal]
+  (Boolean/parseBoolean (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#short" [^Literal literal]
-  (.shortValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#byte" [literal]
+  (Byte/parseByte (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [^Literal literal]
-  (.decimalValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#short" [literal]
+  (Short/parseShort (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [^Literal literal]
-  (.doubleValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#decimal" [literal]
+  ;; Prefer clj's big integer over java's because of hash code issue:
+  ;; http://stackoverflow.com/questions/18021902/use-cases-for-bigint-versus-biginteger-in-clojure
+  (bigdec (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [^Literal literal]
-  (.floatValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [literal]
+  (Double/parseDouble (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [^Literal literal]
-  (.integerValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [literal]
+  (Float/parseFloat (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [^Literal literal]
-  (.intValue literal))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [literal]
+  (bigint (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Literal literal]
-  (s (.stringValue literal) (.getLanguage literal)))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#int" [literal]
+  (java.lang.Integer/parseInt (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#string" [^Literal literal]
-  (s (.stringValue literal) (.getLanguage literal)))
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#long" [literal]
+  (java.lang.Long/parseLong (pr/raw-value literal)))
 
-(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [^Literal literal]
+(defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
+  (language (pr/raw-value literal) (pr/lang literal)))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#string" [literal]
+  (pr/raw-value literal))
+
+(defmethod literal-datatype->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [literal]
+  (language (pr/raw-value literal) (pr/lang literal)))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
 
-(defmethod literal-datatype->type :default [^Literal literal]
+(defmethod literal-datatype->type :default [literal]
   ;; If we don't have a type conversion for it, let the sesame type
   ;; through, as it's not really up to grafter to fail the processing,
   ;; as they might just want to pass data through rather than
@@ -121,6 +128,13 @@
 
 (extend-protocol ISesameRDFConverter
   ;; Numeric Types
+
+  RDFLiteral
+  (->sesame-rdf-type [this]
+    (LiteralImpl. (pr/raw-value this) (URIImpl. (pr/datatype-uri this))))
+
+  (sesame-rdf-type->type [this]
+    this)
 
   java.lang.Byte
   (->sesame-rdf-type [this]
@@ -173,15 +187,13 @@
 
   java.lang.Long
   (->sesame-rdf-type [this]
-    ;; hacky and probably a little slow but works for now
-    (IntegerLiteralImpl. (BigInteger. (str this))))
+    (NumericLiteralImpl. (long this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   clojure.lang.BigInt
   (->sesame-rdf-type [this]
-    ;; hacky and probably a little slow but works for now
     (IntegerLiteralImpl. (BigInteger. (str this))))
 
   (sesame-rdf-type->type [this]
@@ -199,6 +211,14 @@
       (StatementImpl. (->sesame-rdf-type (pr/subject is))
                       (->sesame-rdf-type (pr/predicate is))
                       (->sesame-rdf-type (pr/object is))))
+    (catch ClassCastException cce
+      ;; We could really make do with just letting the ClassCastException raise,
+      ;; but improve the message a little to nudge developers in the right
+      ;; direction, about what is likely to be wrong.
+      (throw (ex-info "Error outputing Quad.  It looks like you have an incorrect data type inside a quad.  Check your URI's are not strings."
+                      {:error :statement-conversion-error
+                       :quad is
+                       :quad-meta (meta is)} cce)))
     (catch Exception ex
       (throw (ex-info "Error outputing Quad" {:error :statement-conversion-error
                                               :quad is
@@ -215,17 +235,6 @@
 
   BooleanLiteralImpl
   (->sesame-rdf-type [this]
-    this)
-
-  (sesame-rdf-type->type [this]
-    (.booleanValue this))
-
-  java.lang.String
-  ;; Assume URI's are the norm not strings
-  (->sesame-rdf-type [this]
-    (URIImpl. this))
-
-  (sesame-rdf-type->type [this]
     this)
 
   Statement
@@ -259,7 +268,7 @@
     this)
 
   (sesame-rdf-type->type [this]
-    (str this))
+    (->java-uri this))
 
   java.net.URI
   (->sesame-rdf-type [this]
@@ -293,7 +302,22 @@
 
   clojure.lang.Keyword
   (->sesame-rdf-type [this]
-    (BNodeImpl. (name this))))
+    (BNodeImpl. (name this)))
+
+  String
+  ;; Assume URI's are the norm not strings
+  (->sesame-rdf-type [this]
+    (LiteralImpl. this))
+
+  (sesame-rdf-type->type [this]
+    this)
+
+  grafter.rdf.protocols.LangString
+  (->sesame-rdf-type [t]
+    (LiteralImpl. (pr/raw-value t) (name (pr/lang t))))
+
+  (sesame-rdf-type->type [t]
+    t))
 
 (extend-protocol ISesameRDFConverter
   GrafterURL
@@ -319,7 +343,7 @@
   ;; context should return either nil or a URI
   ;; object should be converted to a clojure type.
   (->Quad (sesame-rdf-type->type (.getSubject st))
-          (sesame-rdf-type->type (.getPredicate st))
+          (->java-uri (.getPredicate st))
           (sesame-rdf-type->type (.getObject st))
           (when-let [graph (.getContext st)]
             (sesame-rdf-type->type graph))))
@@ -414,18 +438,32 @@
   ([destination & {:keys [append format encoding prefixes] :or {append false
                                                                 encoding "UTF-8"
                                                                 prefixes default-prefixes}}]
+
    (let [^RDFFormat format (resolve-format-preference destination format)
          writer (Rio/createWriter format
                                   (io/writer destination
                                              :append append
                                              :encoding encoding))]
+
+
      (reduce (fn [acc [name prefix]]
                (doto writer
-                 (.handleNamespace name prefix))) prefixes))))
+                 (.handleNamespace name prefix))) writer prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
                                        RDFFormat/TRIG})
+
+(defn- write-namespaces
+  "Signal to the writer that we're about to send RDF data.  This will
+  also trigger any buffered prefixes to be written to the stream."
+  [target]
+  (.startRDF target))
+
+(defn- end-rdf
+  "Signal to the writer that we've finished sending RDF data."
+  [target]
+  (.endRDF target))
 
 (extend-protocol pr/ITripleWriteable
   RDFWriter
@@ -437,10 +475,10 @@
      (cond
        (seq triples)
        (do
-         (.startRDF this)
+         (write-namespaces this)
          (doseq [t triples]
            (pr/add-statement this t))
-         (.endRDF this))
+         (end-rdf this))
        (nil? (seq triples)) (do (.startRDF this)
                                 (.endRDF this))
        :else (throw (IllegalArgumentException. "This serializer was given an unknown type it must be passed a sequence of Statements."))))
@@ -484,7 +522,6 @@
     [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
-
   String
   (pr/to-statements [this options]
     (try
@@ -557,9 +594,25 @@
           (map read-rdf statements))))))
 
 (extend-protocol ToGrafterURL
-
   URI
   (->grafter-url [uri]
     (-> uri
         str
         ->grafter-url)))
+
+(defprotocol ToSesameURI
+  (->sesame-uri [this] "Coerce an object into a sesame URIImpl"))
+
+(extend-protocol ToSesameURI
+  String
+  (->sesame-uri [this] (URIImpl. this))
+  URL
+  (->sesame-uri [this] (URIImpl. (str this)))
+  java.net.URI
+  (->sesame-uri [this] (URIImpl. (str this)))
+  org.openrdf.model.URI
+  (->sesame-uri [this] this)
+  GrafterURL
+  (->sesame-uri [this] (URIImpl. (str this)))
+  org.openrdf.model.Graph
+  (->sesame-uri [this] (URIImpl. (str this))))

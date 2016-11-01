@@ -1,7 +1,7 @@
 (ns grafter.pipeline
-  "Macro's to declare pipeline functions and their arguments, expected
-  types and metadata to the leiningen plugin and 3rd party systems
-  such as PublishMyData import services."
+  "Functions to declare the presence of Grafter pipeline functions to
+  external processes and programs such as lein-grafter and Grafter
+  server."
   (:require
    [grafter.pipeline.types :refer [resolve-var create-pipeline-declaration
                                    coerce-arguments]]))
@@ -54,7 +54,7 @@
   \"[Quad]\".
 
   Default type-readers are defined for common grafter/clojure types."
-
+  {:style/indent :defn}
   ([sym display-name type-form metadata]
    (if-let [sym (qualify-symbol sym)]
      (let [decl (create-pipeline-declaration sym type-form metadata)]

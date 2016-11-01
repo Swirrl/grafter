@@ -2,7 +2,6 @@
   "Functions and macros for creating RDF data.  Includes a small
   DSL for creating turtle-like templated forms."
   (:require [grafter.rdf.protocols :as pr]
-            [grafter.rdf.protocols :refer [->Quad]]
             [potemkin.namespaces :refer [import-vars]]))
 
 ;; Force loading the required protocol implementations.  Keep separate from ns
@@ -11,20 +10,12 @@
 
 (import-vars
  [grafter.rdf.io
-  s])
-
-(defn prefixer
-  "Takes the base prefix of a URI string and returns a function that
-  concatenates its argument onto the end of it e.g.
-
-`((prefixer \"http://example.org/\") \"foo\") ;; => \"http://example.org/foo\"`
-
-  This function is being deprecated and will be replaced with functions for
-  generating URIs in a later release"
-  { :deprecated "0.4.0" }
-  [uri-prefix]
-  (fn [value]
-    (str uri-prefix value)))
+  language
+  literal]
+ [grafter.rdf.protocols
+  ->Quad
+  ->Triple
+  triple?])
 
 (defn subject
   "Return the RDF subject from a statement."
@@ -69,9 +60,11 @@
 
   Takes an optional string/URI to use as a graph."
   ([target statement]
-     (pr/add-statement target statement))
+   (pr/add-statement target statement)
+   target)
   ([target graph statement]
-     (pr/add-statement target graph statement)))
+   (pr/add-statement target graph statement)
+   target))
 
 (defn add
   "Adds a sequence of statements to the specified datasink.  Supports
@@ -79,18 +72,42 @@
 
   Takes an optional string/URI to use as a graph.
 
+  Depending on the target, this function will also write any prefixes
+  associated with the rdf-serialiser to the target.
+
   Returns target."
   ([target triples]
-   (pr/add target triples))
+   (pr/add target triples)
+   target)
 
   ([target graph triples]
-   (pr/add target graph triples))
+   (pr/add target graph triples)
+   target)
 
   ([target graph format triple-stream]
-   (pr/add target graph format triple-stream))
+   (pr/add target graph format triple-stream)
+   target)
 
   ([target graph base-uri format triple-stream]
-   (pr/add target graph base-uri format triple-stream)))
+   (pr/add target graph base-uri format triple-stream)
+   target))
+
+
+
+(defn delete
+  "Deletes a sequence of statements from the specified repository.
+
+  Takes an optional string/URI to use as a graph.
+
+  Returns target."
+
+  ([target quads]
+   (pr/delete target quads)
+   target)
+
+  ([target graph triples]
+   (pr/delete target graph triples)
+   target))
 
 (defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a

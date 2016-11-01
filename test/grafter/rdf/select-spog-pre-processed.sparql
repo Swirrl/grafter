@@ -1,0 +1,22 @@
+## -- Some Header and Doc String like in yessparql
+
+SELECT * WHERE {
+  {
+      SELECT * WHERE {
+          GRAPH ?g {
+            ?s ?p ?o .
+          }
+      }
+      LIMIT 55
+  }
+  UNION
+  {
+      SELECT * WHERE {
+          GRAPH ?g {
+            ?s ?p ?o .
+          }
+      }
+      LIMIT 39
+  }
+}
+LIMIT 1 OFFSET 50

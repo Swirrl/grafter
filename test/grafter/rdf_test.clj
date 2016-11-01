@@ -1,27 +1,8 @@
 (ns grafter.rdf-test
-  (:require [clojure.test :refer :all]
-            [grafter.rdf :refer :all]
-            [grafter.rdf.protocols :refer [->Quad]]
-            [grafter.tabular :refer [make-dataset]]
-            [grafter.rdf.templater :refer [triplify]]))
-
-(def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
-                ["http://a2" "http://b2" "http://c2" "http://graph2"]])
-
-(def first-quad (->Quad "http://a1" "http://b1" "http://c1" "http://graph1"))
-
-(def second-quad (->Quad "http://a2" "http://b2" "http://c2" "http://graph2"))
-
-(deftest quads-test
-  (testing "Quads"
-    (testing "support positional destructuring"
-      (let [quad (->Quad "http://subject/" "http://predicate/" "http://object/" "http://context/")
-            [s p o c] quad]
-
-        (is (= "http://subject/" s))
-        (is (= "http://predicate/" p))
-        (is (= "http://object/" o))
-        (is (= "http://context/" c))))))
+  (:require [grafter.rdf :refer :all]
+            [grafter.rdf.protocols :refer [raw-value datatype-uri]]
+            [clojure.test :refer :all])
+  (:import [java.net URI]))
 
 (deftest triple=-test
   (testing "triple= quads"
@@ -32,3 +13,13 @@
   (testing "not triple="
     (triple= (->Quad "http://subject/1" "http://predicate/" "http://object/" "http://context/")
              (->Quad "http://subject/2" "http://predicate/" "http://object/" "http://context/"))))
+
+
+(deftest literal-test
+  (let [lit (literal "10" "http://www.w3.org/2001/XMLSchema#byte")]
+    (is (= (URI. "http://www.w3.org/2001/XMLSchema#byte") (datatype-uri lit)))
+    (is (= "10" (raw-value lit)))))
+
+(deftest language-test
+  (is (thrown? AssertionError
+               (language "foo" nil))))

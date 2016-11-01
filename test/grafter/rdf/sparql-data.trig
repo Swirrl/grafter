@@ -1,0 +1,22 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix graph: <http://example.org/graph/> .
+@prefix data: <http://example.org/data/> .
+
+<http://example.org/graph/meta-syntactic-variables> {
+
+data:foo a data:Foo .
+data:bar a data:Bar .
+data:baz a data:Baz .
+
+}
+
+<http://example.org/graph/more-quads> {
+
+data:a-triple a data:Quad .
+
+# This subject has 3 triples
+data:another-triple a data:Quad .
+data:another-triple a data:Triple .
+data:another-triple a data:Foo .
+
+}

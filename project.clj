@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.7.7-SNAPSHOT"
+(defproject grafter/grafter "0.8.0-SNAPSHOT"
   :description "Tools for the hard graft of data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -6,15 +6,17 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.openrdf.sesame/sesame-runtime "2.8.9"]
                  [org.clojure/tools.logging "0.3.1"]
                  [grafter/url "0.2.1"]
+                 [grafter/vocabularies "0.2.0-SNAPSHOT"]
+
                  [commons-logging "1.2"] ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
                  [org.clojure/data.csv "0.1.3"]
                  [grafter/clj-excel "0.0.9" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.6"]
-                 [potemkin "0.4.1"]
+                 [potemkin "0.4.3"]
                  [incanter/incanter-core "1.5.7" :exclusions [net.sf.opencsv/opencsv commons-codec]]
                  [com.novemberain/pantomime "2.8.0"] ;; mimetypes
                  ]
@@ -25,8 +27,10 @@
           :sources ["src/common" "src/rdf-repository" "src/tabular"
                    "src/templater" "src/rdf-common" "src/pipeline"
                    ;; Include docs from grafter-url project too
-                   "../grafter-url/src"]
-          :src-dir-uri "http://github.com/Swirrl/grafter/blob/master/"
+                    "../grafter-url/src"]
+
+          ;; TODO change this when we merge back to master
+          :src-dir-uri "http://github.com/Swirrl/grafter/blob/0.8.x-SNAPSHOT/"
           :src-linenum-anchor-prefix "L"}
 
   :source-paths ["src/common" "src/rdf-repository" "src/tabular"
@@ -62,7 +66,8 @@
                                                                 org.codehaus.plexus/plexus-utils]]]
 
                    :dependencies [[com.aphyr/prism "0.1.3"]
-                                  [prismatic/schema "1.0.4"]
-                                  [criterium "0.4.3"]]
+                                  [org.slf4j/slf4j-simple "1.7.21"]
+                                  [prismatic/schema "1.0.5"]
+                                  [criterium "0.4.4"]]
 
                    :env {:dev true}}})

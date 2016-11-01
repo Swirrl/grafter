@@ -1,5 +1,10 @@
 (ns grafter.rdf.protocols
-  "Grafter protocols and types for RDF processing")
+  "Grafter protocols and types for RDF processing"
+  (:require [grafter.vocabularies.xsd :refer :all]
+            [grafter.url :refer [->java-uri]])
+  (:import [java.net URI]
+           [java.util Date]
+           [org.openrdf.model Literal]))
 
 (defprotocol IStatement
   "An RDF triple or quad"
@@ -16,13 +21,25 @@
     [this graph statement])
 
   (add
-    [this triples]
+    [this quads]
     [this graph triples]
     ;; A more efficient way to add an InputStream/Reader of RDF data to the destination.
     [this graph format triple-stream]
     [this graph base-uri format triple-stream]
     "Add a seq of triples or quads to a destination.  Works with a
     sequence of IStatements an InputStream, File or Reader"))
+
+(defprotocol ITripleDeleteable
+  "This protocol can be implemented by anything which you can delete
+  statements from.  For example a SPARQL Update Endpoint."
+
+  (delete-statement [this statement]
+    [this graph statement])
+
+  (delete
+    [this quads]
+    [this graph triples]
+    "Delete the supplied triples or quads from the destination."))
 
 (defprotocol ITripleReadable
   "Use the higher level wrapper function statements if you just wish to read in some RDF.
@@ -69,7 +86,169 @@
   (query-dataset [this sparql-string model]))
 
 (defprotocol ISPARQLUpdateable
-  (update! [this sparql-string]))
+  (update! [this sparql-string]
+    "Issue a SPARQL Update statement against the repository"))
+
+;; TODO add literals and strings...
+
+(defprotocol IRDFString
+  (lang [this]
+    "Return the strings language tag (as a clojure Keyword)"))
+
+(defprotocol IRDFLiteral
+  (raw-value [this]
+    "Returns the naked value of a literal.  For native primitve values this will
+    return the supplied value (like identity).  However for more complex types
+    such as LangString's it will coerce the value into a more natural primitive
+    type.")
+  (datatype-uri [this]
+    "Returns the RDF literals datatype URI as a java.net.URI."))
+
+(def rdf:langString (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
+
+;; TODO add tests to ensure that datatype-uri's etc are right
+;; everywhere we do string coercions.
+;;
+;; https://www.w3.org/TR/rdf11-new/#literals
+
+(extend-type String
+  IRDFString
+  (lang [this]
+    nil)
+
+  IRDFLiteral
+
+  (raw-value [this]
+    this)
+
+  (datatype-uri [this]
+    xsd:string))
+
+(defrecord LangString [string lang]
+  IRDFString
+  (lang [this]
+    (:lang this))
+
+  Object
+  (toString [this]
+    ;; TODO consider making this output the same as .toString on a sesame
+    ;; Literal.  Advantage is its more consistent with sesame etc... The
+    ;; disadvantage is that this implementation makes using str more intuitive
+    (:string this))
+
+  IRDFLiteral
+
+  (raw-value [this]
+    (.toString this))
+
+  (datatype-uri [this]
+    rdf:langString))
+
+(extend-type Literal
+  IRDFString
+  (lang [this]
+    (keyword (.getLanguage this)))
+
+  IRDFLiteral
+  (raw-value [this]
+    (.stringValue this))
+
+  (datatype-uri [this]
+    (URI. (str (.getDatatype this)))))
+
+(defrecord RDFLiteral [raw-value datatype-uri]
+  IRDFLiteral
+  (raw-value [this]
+    (:raw-value this))
+
+  (datatype-uri [this]
+    (:datatype-uri this))
+
+  IRDFString
+  (lang [this]
+    nil))
+
+(extend-protocol IRDFLiteral
+
+  java.math.BigInteger
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:integer))
+
+  java.math.BigDecimal
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:decimal))
+
+  Boolean
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:boolean))
+
+  Byte
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:byte))
+
+  Date
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:dateTime))
+
+  Double
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:double))
+
+  Float
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:float))
+
+  Integer
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:integer))
+
+  Long
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:integer))
+
+  Short
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:short))
+
+  String
+  (raw-value [t]
+    t)
+
+  (datatype-uri [t]
+    (->java-uri xsd:string))
+
+  (lang [t]
+    nil))
 
 (defn- destructure-quad [quad i default]
   (case i
