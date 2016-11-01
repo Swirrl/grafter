@@ -1,11 +1,29 @@
 (ns ^:no-doc grafter.pipeline.types
-    (:require [clojure.data :refer [diff]]
-              [clojure.edn :as edn]
-              [clojure.instant :refer [read-instant-date]]
-              [grafter.tabular :as tabular])
-    (:import [java.net URI URL]
-             [java.util UUID Date Map]
-             [incanter.core Dataset]))
+  "This namespace code for parsing and interpreting
+  grafter.pipeline/declare-pipeline type signatures.  In particular it
+  defines a macro deftype-reader that can be used to coerce/read
+  strings into their appropriate clojure types.
+
+  We use the declared pipelines signature to guide the interpretation
+  of a string the target type."
+  (:require [clojure.data :refer [diff]]
+            [clojure.edn :as edn]
+            [clojure.instant :refer [read-instant-date]]
+            [grafter.tabular :as tabular])
+  (:import [java.net URI URL]
+           [java.util UUID Date Map]
+           [incanter.core Dataset]))
+
+;; NOTE: we could possibly have done this in a slightly more clojurey
+;; way by defining tagged literals and supplying :readers for them to
+;; clojure.edn/read-string, however we'd still need to define a
+;; mechanism for extension.
+;;
+;; This mechanism has one (minor) advantage to the approach above
+;; which is that when supplying arguments to a pipeline you don't need
+;; to provide the tag itself, just the form to interpret, as we
+;; already know the target type from the pipelines declaration.
+
 
 (defmulti type-reader (fn [target-type input-value]
                         [target-type (type input-value)]))
@@ -162,7 +180,7 @@
     '[Quad] :graft
     'Quads :graft
     'Dataset :pipe
-    (let [msg (str "Invalid return type " ret-sym " for pipeline function: required Dataset or (Seq Statement)")]
+    (let [msg (str "Invalid return type " ret-sym " for pipeline function: required Dataset or [Quad]")]
       (throw (IllegalArgumentException. msg)))))
 
 ;;[a] -> {a b} -> [[a b]]

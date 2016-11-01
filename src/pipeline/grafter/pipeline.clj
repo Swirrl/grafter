@@ -1,4 +1,7 @@
 (ns grafter.pipeline
+  "Macro's to declare pipeline functions and their arguments, expected
+  types and metadata to the leiningen plugin and 3rd party systems
+  such as PublishMyData import services."
   (:require
    [grafter.pipeline.types :refer [resolve-var create-pipeline-declaration
                                    coerce-arguments]]))
@@ -37,7 +40,20 @@
   (defn my-pipeline [a] [(->Quad a a a a)])
 
   (declare-pipeline my-pipeline \"My example pipeline\" [URI -> Quads]
-                    {a \"Argument a\"})"
+                    {a \"Argument a\"})
+
+  Note that the type-form/signature specifies the input arguments
+  followed by a -> and an output type.
+
+  All input argument types MUST be imported into the namespace and
+  have a type reader declared via
+  grafter.pipeline.types/deftype-reader.
+
+  Output types do not need be imported into the namespace, and must
+  either be the symbols Quads or Dataset, or an alias such as
+  \"[Quad]\".
+
+  Default type-readers are defined for common grafter/clojure types."
 
   ([sym display-name type-form metadata]
    (if-let [sym (qualify-symbol sym)]
