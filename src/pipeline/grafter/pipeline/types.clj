@@ -1,4 +1,4 @@
-(ns ^:no-doc grafter.pipeline.types
+(ns grafter.pipeline.types
   "This namespace code for parsing and interpreting
   grafter.pipeline/declare-pipeline type signatures.  In particular it
   defines a macro deftype-reader that can be used to coerce/read
@@ -25,10 +25,10 @@
 ;; already know the target type from the pipelines declaration.
 
 
-(defmulti type-reader (fn [target-type input-value]
-                        [target-type (type input-value)]))
+(defmulti ^:no-doc type-reader (fn [target-type input-value]
+                                 [target-type (type input-value)]))
 
-(defmulti can-parse-type? identity)
+(defmulti ^:no-doc can-parse-type? identity)
 
 (defmethod can-parse-type? :default [v]
   false)
@@ -114,7 +114,7 @@
          (type-reader (:class et) sa)) expected-types supplied-args))
 
 ;;[Symbol] -> {:arg-types [Symbol], :return-type Symbol]}
-(defn parse-type-list
+(defn ^:no-doc parse-type-list
   "Parses a given list of symbols expected to represent a pipeline
   type definition. Validates the list has the expected format - n >= 0
   parameter types followed by a '-> followed by the return
@@ -165,7 +165,7 @@
       (throw (IllegalArgumentException. (str "Unsupported pipeline parameter type: " param-class))))))
 
 ;;Namespace -> Symbol -> Var
-(defn resolve-var
+(defn ^:no-doc resolve-var
   "Attempts to resolve a named var inside the given namespace. Throws
   an exception if the resolution fails."
   [ns v]
@@ -221,7 +221,7 @@
              correlated-docs)))))
 
 ;;Var -> [Symbol] -> Metadata -> PipelineDef
-(defn create-pipeline-declaration
+(defn ^:no-doc create-pipeline-declaration
   "Inspects a var containing a pipeline function along with an
   associated type definition and metadata map. The type definition
   should declare the type of each parameter and the return type of the
