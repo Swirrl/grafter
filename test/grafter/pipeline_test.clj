@@ -169,8 +169,8 @@
 
 (declare-pipeline delete-only-pipeline
                   [URI -> (Seq Statement)]
-                  {:supported-operations #{:delete}
-                   uri "URI"})
+                  {uri "URI"}
+                  :supported-operations #{:delete})
 
 (declare-pipeline append-only-pipeline
                   [URI -> (Seq Statement)]

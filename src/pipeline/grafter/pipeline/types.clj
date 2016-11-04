@@ -222,17 +222,14 @@
              arg-type-syms
              correlated-docs)))))
 
-(defn- get-supported-pipeline-operations [{:keys [supported-operations]}]
-  (if (some? supported-operations)
-    (let [ops (set supported-operations)
-          valid-operations #{:append :delete}
-          invalid-operations (set/difference ops valid-operations)]
-      (if (empty? invalid-operations)
-        ops
-        (throw (IllegalArgumentException. (str "Invalid supported operations for pipeline: "
-                                               (str/join ", " invalid-operations)
-                                               ". Valid operations are: " (str/join ", " valid-operations))))))
-    #{:append}))
+(defn- validate-supported-pipeline-operations! [supported-operations]
+  (let [ops (set supported-operations)
+        valid-operations #{:append :delete}
+        invalid-operations (set/difference ops valid-operations)]
+    (when-not (empty? invalid-operations)
+      (throw (IllegalArgumentException. (str "Invalid supported operations for pipeline: "
+                                             (str/join ", " invalid-operations)
+                                             ". Valid operations are: " (str/join ", " valid-operations)))))))
 
 ;;Var -> [Symbol] -> Metadata -> PipelineDef
 (defn ^:no-doc create-pipeline-declaration
@@ -242,19 +239,20 @@
   pipeline. The metadata map must contain a key-value pair for each
   named parameter in the pipeline function argument list. The value
   corresponding to each key in the metadata map is expected to be a
-  String describing the parameter. The metadata map can also contain
+  String describing the parameter. The opts map can contain
   an optional :supported-operations key associated to a collection
   containing :append and/or :delete. These operations indicate whether
   the data returned from the pipeline can be appended to or deleted
   from the destination."
-  [sym type-list metadata]
+  [sym type-list metadata opts]
   (let [def-var (resolve-var *ns* sym)
         def-meta (meta def-var)
         arg-list (first (:arglists def-meta))
         {:keys [arg-types return-type]} (parse-type-list type-list)
         pipeline-type (pipeline-type-from-return-type-sym return-type)
-        supported-operations (get-supported-pipeline-operations metadata)
-        args (resolve-pipeline-arg-descriptors arg-list arg-types (dissoc metadata :supported-operations))]
+        args (resolve-pipeline-arg-descriptors arg-list arg-types metadata)
+        supported-operations (:supported-operations opts #{:append})]
+    (validate-supported-pipeline-operations! supported-operations)
      {:var def-var
       :doc (or (:doc def-meta) "")
       :args args

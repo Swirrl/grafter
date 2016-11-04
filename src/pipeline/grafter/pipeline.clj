@@ -28,19 +28,36 @@
           (symbol sym)
           (symbol (str ns "/" sym)))))))
 
+(defn- parse-pipeline-declaration [arg-list]
+  (let [[sym display-name-or-type-form] arg-list
+        has-display? (string? display-name-or-type-form)
+        display-name (if has-display? display-name-or-type-form nil)
+        rest-args (drop (if has-display? 2 1) arg-list)
+        [type-form metadata] rest-args
+        opts (into {} (map vec (partition 2 2 (drop 2 rest-args))))]
+    {:sym          sym
+     :display-name display-name
+     :type-form type-form
+     :metadata metadata
+     :opts opts}))
+
 (defmacro declare-pipeline
   "Declare a pipeline function and expose it to other services such as
   the grafter leiningen plugin and grafter-server.
 
   declare-pipeline takes a symbol identifying the function to expose,
-  an optional human friendly title string a type-form describing the
-  pipelines arguments and return type and a map of metadata describing
-  each argument.
+  an optional human friendly title string, a type-form describing the
+  pipelines arguments and return type, a map of metadata describing
+  each argument and an optional sequence of key-value pairs containing
+  additional options. The only recognised option is :supported-operations
+  which indicates whether the pipeline output supports being append to
+  or deleted from the pipeline destination.
 
   (defn my-pipeline [a] [(->Quad a a a a)])
 
   (declare-pipeline my-pipeline \"My example pipeline\" [URI -> Quads]
-                    {a \"Argument a\"})
+                    {a \"Argument a\"}
+                    :supported-operations #{:append :delete})
 
   Note that the type-form/signature specifies the input arguments
   followed by a -> and an output type.
@@ -55,16 +72,25 @@
 
   Default type-readers are defined for common grafter/clojure types."
   {:style/indent :defn}
-  ([sym display-name type-form metadata]
-   (if-let [sym (qualify-symbol sym)]
-     (let [decl (create-pipeline-declaration sym type-form metadata)]
-       (register-pipeline! sym display-name decl))
-     (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:error :pipeline-declaration-error
-                                                                                 :sym sym})))
-   nil)
+  ([& args]
+   (let [{:keys [sym display-name type-form metadata opts]} (parse-pipeline-declaration args)]
+     (if-let [sym (qualify-symbol sym)]
+       (let [decl (create-pipeline-declaration sym type-form metadata opts)]
+         (register-pipeline! sym display-name decl))
+       (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:error :pipeline-declaration-error
+                                                                                   :sym   sym}))))
+   nil))
 
-  ([sym type-form metadata]
-   `(declare-pipeline ~sym nil ~type-form ~metadata)))
+(defn wat [& {:keys [foo bar] :or {foo 0 bar 0} :as m}]
+  (println "foo: " foo ", bar: " bar)
+  (println "M: " m))
+
+(defn hello [& {:keys [salutation name]
+                :or {salutation "Hello"
+                     name "World"}
+                :as m}]
+  (println "M: " m)
+  (str salutation " " name))
 
 (defn ^:no-doc all-declared-pipelines
   "List all the declared pipelines"
