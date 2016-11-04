@@ -29,7 +29,8 @@
                                :doc s/Str
                                :args [{:name s/Symbol :class java.lang.Class :doc s/Str (s/optional-key :meta) {s/Keyword s/Any}}]
                                :type (s/either (s/eq :graft) (s/eq :pipe)) ;; one day maybe also :validation and a fallback of :function
-                               :declared-args [s/Symbol]}
+                               :declared-args [s/Symbol]
+                               :operations #{(s/enum :append :delete)}}
                      })
 
 (deftest declare-pipeline-test
@@ -90,18 +91,12 @@
     'grafter.pipeline-test/quads-pipeline
     'grafter.pipeline-test/seq-quad-pipeline))
 
-
-
-
-
-(defn uuid-pipeline-test [uuid]
-  )
+(defn uuid-pipeline-test [uuid])
 
 (declare-pipeline uuid-pipeline-test
   "Test pipeline for map objects"
   [UUID -> (Seq Statement)]
   {uuid "A UUID"})
-
 
 (defn url-pipeline-test [url]
   [])
@@ -168,3 +163,20 @@
                                                    "cabec818-df6a-4c27-b445-117163e70227"
                                                    ":foo"
                                                    "2015"]))))
+
+(defn delete-only-pipeline [uri])
+(defn append-only-pipeline [uri])
+
+(declare-pipeline delete-only-pipeline
+                  [URI -> (Seq Statement)]
+                  {:supported-operations #{:delete}
+                   uri "URI"})
+
+(declare-pipeline append-only-pipeline
+                  [URI -> (Seq Statement)]
+                  {uri "URI"})
+
+(deftest supported-operations-test
+  (are [pipeline-sym expected] (= expected (get-in @exported-pipelines [pipeline-sym :operations]))
+                               'grafter.pipeline-test/delete-only-pipeline #{:delete}
+                               'grafter.pipeline-test/append-only-pipeline #{:append}))

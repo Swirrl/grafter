@@ -9,7 +9,9 @@
   (:require [clojure.data :refer [diff]]
             [clojure.edn :as edn]
             [clojure.instant :refer [read-instant-date]]
-            [grafter.tabular :as tabular])
+            [clojure.set :as set]
+            [grafter.tabular :as tabular]
+            [clojure.string :as str])
   (:import [java.net URI URL]
            [java.util UUID Date Map]
            [incanter.core Dataset]))
@@ -220,6 +222,18 @@
              arg-type-syms
              correlated-docs)))))
 
+(defn- get-supported-pipeline-operations [{:keys [supported-operations]}]
+  (if (some? supported-operations)
+    (let [ops (set supported-operations)
+          valid-operations #{:append :delete}
+          invalid-operations (set/difference ops valid-operations)]
+      (if (empty? invalid-operations)
+        ops
+        (throw (IllegalArgumentException. (str "Invalid supported operations for pipeline: "
+                                               (str/join ", " invalid-operations)
+                                               ". Valid operations are: " (str/join ", " valid-operations))))))
+    #{:append}))
+
 ;;Var -> [Symbol] -> Metadata -> PipelineDef
 (defn ^:no-doc create-pipeline-declaration
   "Inspects a var containing a pipeline function along with an
@@ -228,16 +242,22 @@
   pipeline. The metadata map must contain a key-value pair for each
   named parameter in the pipeline function argument list. The value
   corresponding to each key in the metadata map is expected to be a
-  String describing the parameter."
+  String describing the parameter. The metadata map can also contain
+  an optional :supported-operations key associated to a collection
+  containing :append and/or :delete. These operations indicate whether
+  the data returned from the pipeline can be appended to or deleted
+  from the destination."
   [sym type-list metadata]
   (let [def-var (resolve-var *ns* sym)
         def-meta (meta def-var)
         arg-list (first (:arglists def-meta))
         {:keys [arg-types return-type]} (parse-type-list type-list)
         pipeline-type (pipeline-type-from-return-type-sym return-type)
-        args (resolve-pipeline-arg-descriptors arg-list arg-types metadata)]
+        supported-operations (get-supported-pipeline-operations metadata)
+        args (resolve-pipeline-arg-descriptors arg-list arg-types (dissoc metadata :supported-operations))]
      {:var def-var
       :doc (or (:doc def-meta) "")
       :args args
       :type pipeline-type
-      :declared-args arg-list}))
+      :declared-args arg-list
+      :operations supported-operations}))
