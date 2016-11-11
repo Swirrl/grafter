@@ -170,6 +170,10 @@
 
 (extend-protocol IRDFLiteral
 
+  Object
+  (raw-value [t]
+    t)
+
   java.math.BigInteger
   (raw-value [t]
     t)

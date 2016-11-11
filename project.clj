@@ -18,8 +18,8 @@
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.3"]
                  [incanter/incanter-core "1.5.7" :exclusions [net.sf.opencsv/opencsv commons-codec]]
-                 [com.novemberain/pantomime "2.8.0"] ;; mimetypes
-                 ]
+                 [com.novemberain/pantomime "2.8.0"]] ;; mimetypes
+
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
@@ -55,8 +55,8 @@
             :levels 2}
            {:type :clojure
             :path "src/tabular"
-            :levels 2}
-           ]
+            :levels 2}]
+
 
   :profiles {:uberjar {:aot :all}
 
