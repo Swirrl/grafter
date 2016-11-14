@@ -274,6 +274,9 @@
   (->sesame-rdf-type [this]
     (URIImpl. (.toString this)))
 
+  (sesame-rdf-type->type [this]
+    this)
+
   java.net.URL
   (->sesame-rdf-type [this]
     (URIImpl. (.toString this)))
