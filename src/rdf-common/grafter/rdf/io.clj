@@ -274,6 +274,9 @@
   (->sesame-rdf-type [this]
     (URIImpl. (.toString this)))
 
+  (sesame-rdf-type->type [this]
+    this)
+
   java.net.URL
   (->sesame-rdf-type [this]
     (URIImpl. (.toString this)))
@@ -414,8 +417,8 @@
    "sdmx-dimension" "http://purl.org/linked-data/sdmx/2009/dimension#"
    "skos" "http://www.w3.org/2004/02/skos/core#"
    "void" "http://rdfs.org/ns/void#"
-   "xsd" "http://www.w3.org/2001/XMLSchema#"
-   })
+   "xsd" "http://www.w3.org/2001/XMLSchema#"})
+
 
 (defn rdf-serializer
   "Coerces destination into an java.io.Writer using
@@ -499,8 +502,8 @@
                RDFFormat/NQUADS NQuadsParserFactory
                RDFFormat/TURTLE TurtleParserFactory
                RDFFormat/JSONLD RDFJSONParserFactory
-               RDFFormat/N3 N3ParserFactory
-               }
+               RDFFormat/N3 N3ParserFactory}
+
         ^Class parser-class (table format)]
     (if-not parser-class
       (throw (ex-info (str "Unsupported format: " (pr-str format)) {:error :unsupported-format})))

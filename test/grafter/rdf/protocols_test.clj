@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [grafter.rdf.protocols :refer :all]
             [grafter.rdf :refer [language]]
-            [grafter.vocabularies.xsd :refer :all]))
+            [grafter.vocabularies.xsd :refer :all])
+  (import [org.openrdf.model.impl LiteralImpl]))
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])
@@ -25,8 +26,8 @@
 (deftest rdf-strings-test
   (testing "RDF Strings"
     (let [en (language "Hello" :en)
-          sesame-fr (org.openrdf.model.impl.LiteralImpl. "Bonjour" "fr")
-          sesame-nolang (org.openrdf.model.impl.LiteralImpl. "Bonjour")]
+          sesame-fr (LiteralImpl. "Bonjour" "fr")
+          sesame-nolang (LiteralImpl. "Bonjour")]
       (are [expected test-val]
           (is (= expected test-val))
 
@@ -41,3 +42,14 @@
         ;; NOTE we're currently inconsistent with sesame here...
         "\"Bonjour\"@fr" (str sesame-fr)
         rdf:langString (datatype-uri sesame-fr)))))
+
+
+(deftest raw-value-test
+  (testing "Default implementation"
+    (let [o (Object.)]
+      (is (= o (raw-value o))
+          "Returns identity on all Objects by default")))
+
+  (testing "RDF Literals"
+    (is (= "I stepped into an avalanche"
+           (raw-value (LiteralImpl. "I stepped into an avalanche"))))))
