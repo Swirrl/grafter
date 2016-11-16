@@ -95,12 +95,15 @@
   (lang [this]
     "Return the strings language tag (as a clojure Keyword)"))
 
-(defprotocol IRDFLiteral
+(defprotocol IRawValue
   (raw-value [this]
-    "Returns the naked value of a literal.  For native primitve values this will
-    return the supplied value (like identity).  However for more complex types
-    such as LangString's it will coerce the value into a more natural primitive
-    type.")
+    "Returns the naked value of a literal.  For native primitive
+    values e.g. a java.lang.Integer, this will return the supplied
+    value (like identity).  However for more complex types such as
+    LangString's it will coerce the value into a more natural
+    primitive type."))
+
+(defprotocol IDatatypeURI
   (datatype-uri [this]
     "Returns the RDF literals datatype URI as a java.net.URI."))
 
@@ -116,11 +119,11 @@
   (lang [this]
     nil)
 
-  IRDFLiteral
-
+  IRawValue
   (raw-value [this]
     this)
 
+  IDatatypeURI
   (datatype-uri [this]
     xsd:string))
 
@@ -136,11 +139,12 @@
     ;; disadvantage is that this implementation makes using str more intuitive
     (:string this))
 
-  IRDFLiteral
+  IRawValue
 
   (raw-value [this]
     (.toString this))
 
+  IDatatypeURI
   (datatype-uri [this]
     rdf:langString))
 
@@ -149,18 +153,20 @@
   (lang [this]
     (keyword (.getLanguage this)))
 
-  IRDFLiteral
+  IRawValue
   (raw-value [this]
     (.stringValue this))
 
+  IDatatypeURI
   (datatype-uri [this]
     (URI. (str (.getDatatype this)))))
 
 (defrecord RDFLiteral [raw-value datatype-uri]
-  IRDFLiteral
+  IRawValue
   (raw-value [this]
     (:raw-value this))
 
+  IDatatypeURI
   (datatype-uri [this]
     (:datatype-uri this))
 
@@ -168,91 +174,56 @@
   (lang [this]
     nil))
 
-(extend-protocol IRDFLiteral
-
+(extend-protocol IRawValue
   Object
   (raw-value [t]
-    t)
+    t))
+
+(extend-protocol IDatatypeURI
 
   java.math.BigInteger
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:integer))
 
   java.math.BigDecimal
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:decimal))
 
   Boolean
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:boolean))
 
   Byte
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:byte))
 
   Date
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:dateTime))
 
   Double
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:double))
 
   Float
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:float))
 
   Integer
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:integer))
 
   Long
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:integer))
 
   Short
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
     (->java-uri xsd:short))
 
   String
-  (raw-value [t]
-    t)
-
   (datatype-uri [t]
-    (->java-uri xsd:string))
-
-  (lang [t]
-    nil))
+    (->java-uri xsd:string)))
 
 (defn- destructure-quad [quad i default]
   (case i
