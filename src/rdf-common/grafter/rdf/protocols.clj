@@ -177,6 +177,10 @@
 (extend-protocol IRawValue
   Object
   (raw-value [t]
+    t)
+
+  nil
+  (raw-value [t]
     t))
 
 (extend-protocol IDatatypeURI
