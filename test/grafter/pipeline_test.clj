@@ -30,7 +30,7 @@
                                :args [{:name s/Symbol :class java.lang.Class :doc s/Str (s/optional-key :meta) {s/Keyword s/Any}}]
                                :type (s/either (s/eq :graft) (s/eq :pipe)) ;; one day maybe also :validation and a fallback of :function
                                :declared-args [s/Symbol]
-                               :operations #{(s/enum :append :delete)}}
+                               :supported-operations #{(s/enum :append :delete)}}
                      })
 
 (deftest declare-pipeline-test
@@ -177,6 +177,6 @@
                   {uri "URI"})
 
 (deftest supported-operations-test
-  (are [pipeline-sym expected] (= expected (get-in @exported-pipelines [pipeline-sym :operations]))
+  (are [pipeline-sym expected] (= expected (get-in @exported-pipelines [pipeline-sym :supported-operations]))
                                'grafter.pipeline-test/delete-only-pipeline #{:delete}
                                'grafter.pipeline-test/append-only-pipeline #{:append}))

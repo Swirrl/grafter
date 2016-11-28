@@ -258,4 +258,4 @@
       :args args
       :type pipeline-type
       :declared-args arg-list
-      :operations supported-operations}))
+      :supported-operations supported-operations}))
