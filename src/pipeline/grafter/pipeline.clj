@@ -81,17 +81,6 @@
                                                                                    :sym   sym}))))
    nil))
 
-(defn wat [& {:keys [foo bar] :or {foo 0 bar 0} :as m}]
-  (println "foo: " foo ", bar: " bar)
-  (println "M: " m))
-
-(defn hello [& {:keys [salutation name]
-                :or {salutation "Hello"
-                     name "World"}
-                :as m}]
-  (println "M: " m)
-  (str salutation " " name))
-
 (defn ^:no-doc all-declared-pipelines
   "List all the declared pipelines"
   ([] (all-declared-pipelines nil))
