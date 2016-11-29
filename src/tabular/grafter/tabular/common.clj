@@ -32,6 +32,31 @@
                                   (merge blank-row row-map)))]
     (map pad-with-nils rows)))
 
+(defmulti to-list
+  "
+  Returns a list-of-lists if the given matrix is two-dimensional
+  and a flat list if the matrix is one-dimensional.
+
+  Replaces incanter's to-list with a version that doesn't hold onto the head.
+  "
+  type)
+
+(defmethod to-list :incanter.core/matrix
+  ([^clatrix.core.Matrix mat]
+    (clatrix.core/as-vec mat)))
+
+(defmethod to-list :incanter.core/dataset
+  [data]
+  (let [original-columns (vec (:column-names data))]
+    (map (fn [row] (map (fn [col] (row col))
+                        original-columns))
+         (:rows data))))
+
+(defmethod to-list :default [s] s)
+
+(defmethod to-list nil [s] nil)
+
+
 (defn make-dataset
   "Like incanter's dataset function except it can take a lazy-sequence
   of column names which will get mapped to the source data.
@@ -53,13 +78,14 @@
        (make-dataset data columns))))
 
   ([data columns-or-f]
-   (let [data-seq (if (inc/dataset? data) (inc/to-list data) data)
+   (let [original-meta (meta data)
+         data-seq (if (inc/dataset? data) (to-list data) data)
          [column-headers rows] (if (fn? columns-or-f)
                                  (columns-or-f data-seq)
                                  [columns-or-f data-seq])
          full-data (fill-gaps-with-nil rows column-headers)]
      (-> (inc/dataset column-headers full-data)
-         (with-meta (meta data))))))
+         (with-meta original-meta)))))
 
 (defn dataset?
   "Predicate function to test whether the supplied argument is a
@@ -87,9 +113,11 @@
   because users of this function need to be aware of Dataset
   implementation details."
   [dataset f]
-  (-> (make-dataset (->> dataset :rows f)
-                    (column-names dataset))
-      (with-meta (meta dataset))))
+  (let [original-meta (meta dataset)
+        original-columns (column-names dataset)]
+    (-> (make-dataset (->> dataset :rows f)
+                      original-columns)
+        (with-meta original-meta))))
 
 (defn ^:no-doc extension
   "Gets the extension for the given file name as a keyword, or nil if the file has no extension"
