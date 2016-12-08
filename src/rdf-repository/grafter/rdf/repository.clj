@@ -2,10 +2,12 @@
   "Functions for constructing and working with various Sesame repositories."
   (:require [clojure.java.io :as io]
             [grafter.rdf]
+            [me.raynes.fs :as fs]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.io :refer :all]
             [clojure.tools.logging :as log]
-            [grafter.rdf :as rdf])
+            [grafter.rdf :as rdf]
+            [clojure.string :as string])
   (:import (grafter.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -230,9 +232,18 @@
      (rdf/add acc v))))
 
 (defn- coerce-into-repo [repo-or-data]
-  (if (instance? Repository repo-or-data)
-                    repo-or-data
-                    (rdf/add (sail-repo) (rdf/statements repo-or-data))))
+  (cond
+    (instance? Repository repo-or-data) repo-or-data
+    (seq? repo-or-data) repo-or-data
+    (string/starts-with? repo-or-data "file:") (let [ext (-> (io/resource "fixtures/data.trig")
+                                                              me.raynes.fs/extension
+                                                              (clojure.string/replace-first  #"." "")
+                                                              keyword)
+
+                                                     quads (rdf/statements repo-or-data :format (keyword ext))]
+                                                 ;; TODO
+                                                 (fixture-repo quads))
+    :else (rdf/add (sail-repo) (rdf/statements repo-or-data))))
 
 (defn fixture-repo
   "Adds the specified data to a SPARQL repository.  If the first
