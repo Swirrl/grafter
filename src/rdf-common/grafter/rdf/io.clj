@@ -2,37 +2,22 @@
   "Functions & Protocols for serializing Grafter Statements to (and from)
   any Linked Data format supported by Sesame."
   (:require [clojure.java.io :as io]
-            [grafter.rdf.protocols :as pr]
-            [grafter.url :refer [->java-uri]]
-            [grafter.rdf.protocols :refer [->Quad]]
-            [clojure.tools.logging :as log]
-            [me.raynes.fs :as fs]
-            [pantomime.media :as mime]
-            [grafter.url :refer [->url ->grafter-url ->java-uri IURIable ToGrafterURL]])
-  (:import (grafter.rdf.protocols IStatement Quad RDFLiteral)
-           (grafter.url GrafterURL)
-           (java.io File)
-           (java.net MalformedURLException URL)
-           (java.util GregorianCalendar)
-           (javax.xml.datatype DatatypeFactory)
-           (org.openrdf.model BNode Literal Resource Statement URI
-                              Value)
-           (org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
-                                   CalendarLiteralImpl
-                                   ContextStatementImpl
-                                   IntegerLiteralImpl LiteralImpl
-                                   NumericLiteralImpl StatementImpl
-                                   URIImpl)
-           (org.openrdf.repository Repository RepositoryConnection)
-           (org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio RDFParserFactory RDFParser)
-           (org.openrdf.rio.n3 N3ParserFactory)
-           (org.openrdf.rio.nquads NQuadsParserFactory)
-           (org.openrdf.rio.ntriples NTriplesParserFactory)
-           (org.openrdf.rio.rdfjson RDFJSONParserFactory)
-           (org.openrdf.rio.rdfxml RDFXMLParserFactory)
-           (org.openrdf.rio.trig TriGParserFactory)
-           (org.openrdf.rio.trix TriXParserFactory)
-           (org.openrdf.rio.turtle TurtleParserFactory)))
+            [clojure.string :as string]
+            [grafter.rdf
+             [formats :as fmt]
+             [protocols :as pr :refer [->Quad]]]
+            [grafter.url
+             :refer
+             [->grafter-url ->java-uri ->url IURIable ToGrafterURL]])
+  (:import [grafter.rdf.protocols IStatement Quad RDFLiteral]
+           grafter.url.GrafterURL
+           java.io.File
+           [java.net MalformedURLException URL]
+           java.util.GregorianCalendar
+           javax.xml.datatype.DatatypeFactory
+           [org.openrdf.model BNode Literal Resource Statement URI Value]
+           [org.openrdf.model.impl BNodeImpl BooleanLiteralImpl CalendarLiteralImpl ContextStatementImpl IntegerLiteralImpl LiteralImpl NumericLiteralImpl StatementImpl URIImpl]
+           [org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio]))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -297,6 +282,9 @@
 
   java.util.Date
   (->sesame-rdf-type [this]
+    this)
+
+  (->sesame-rdf-type [this]
     (let [cal (doto (GregorianCalendar.)
                 (.setTime this))]
       (-> (DatatypeFactory/newInstance)
@@ -351,37 +339,24 @@
           (when-let [graph (.getContext st)]
             (sesame-rdf-type->type graph))))
 
-(defn filename->rdf-format
-  "Given a filename we attempt to return an appropriate RDFFormat
+(defn ^{:deprecated "0.8.0"} filename->rdf-format
+  "DEPRECATED: Use grafter.rdf.formats/filename->rdf-format instead.
+
+  Given a filename we attempt to return an appropriate RDFFormat
   object based on the files extension."
   [fname]
-  (Rio/getParserFormatForFileName fname))
+  (if (nil? fname)
+    (fmt/filename->rdf-format fname)))
 
-(defn mimetype->rdf-format
-  "Given a mimetype string we attempt to return an appropriate
+(defn ^{:deprecated "0.8.0"} mimetype->rdf-format
+  "DEPRECATED: Use grafter.rdf.formats/mimetype->rdf-format instead.
+
+  Given a mimetype string we attempt to return an appropriate
   RDFFormat object based on the files extension."
   [mime-type]
   (if (nil? mime-type)
     (throw (IllegalArgumentException. "Mime type required"))
-    (let [base-type (str (mime/base-type mime-type))]
-      (condp = base-type
-        "application/rdf+xml" RDFFormat/RDFXML
-        "application/xml" RDFFormat/RDFXML
-        "text/plain" RDFFormat/NTRIPLES
-        "application/n-triples" RDFFormat/NTRIPLES
-        "text/turtle" RDFFormat/TURTLE
-        "application/x-turtle" RDFFormat/TURTLE
-        "text/n3" RDFFormat/N3
-        "text/rdf+n3" RDFFormat/N3
-        "application/trix" RDFFormat/TRIX
-        "application/x-trig" RDFFormat/TRIG
-        "application/x-binary-rdf" RDFFormat/BINARY
-        "text/x-nquads" RDFFormat/NQUADS
-        "application/ld+json" RDFFormat/JSONLD
-        "application/rdf+json" RDFFormat/RDFJSON
-        "application/xhtml+xml" RDFFormat/RDFA
-        "application/html" RDFFormat/RDFA
-        (Rio/getParserFormatForMIMEType mime-type)))))
+    (fmt/mimetype->rdf-format mime-type)))
 
 (defn- resolve-format-preference
   "Takes an clojure.java.io destination (e.g. URL/File etc...) and a
@@ -392,17 +367,13 @@
   exception.
 
   format-preference can be a keyword e.g. :ttl, a string of an extension e.g
-  \"nt\" or a mime-type.
-  "
+  \"nt\" or a mime-type."
   [dest format-preference]
-  (if (instance? RDFFormat format-preference)
-    format-preference
-    (or (try (mimetype->rdf-format format-preference) (catch Exception nx nil))
-        (filename->rdf-format (str "." format-preference))
-        (condp = (class dest)
-          String (filename->rdf-format dest)
-          File   (filename->rdf-format (str dest)))
-        (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object dest})))))
+
+  (if-let [fmt (or (fmt/->rdf-format format-preference)
+                   (fmt/->rdf-format dest))]
+         fmt
+         (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object dest}))))
 
 (def default-prefixes
   {
@@ -491,25 +462,6 @@
        (pr/add this (map (fn [s] (assoc s :c graph)) triples))
        (pr/add this triples)))))
 
-(defn ^:no-doc format->parser
-  "Convert a format into a sesame parser for that format."
-  ^RDFParser
-  [format]
-  (let [table {RDFFormat/NTRIPLES NTriplesParserFactory
-               RDFFormat/TRIX TriXParserFactory
-               RDFFormat/TRIG TriGParserFactory
-               RDFFormat/RDFXML RDFXMLParserFactory
-               RDFFormat/NQUADS NQuadsParserFactory
-               RDFFormat/TURTLE TurtleParserFactory
-               RDFFormat/JSONLD RDFJSONParserFactory
-               RDFFormat/N3 N3ParserFactory}
-
-        ^Class parser-class (table format)]
-    (if-not parser-class
-      (throw (ex-info (str "Unsupported format: " (pr-str format)) {:error :unsupported-format})))
-    (let [^RDFParserFactory factory (.newInstance parser-class)]
-      (.getParser factory))))
-
 ;; http://clj-me.cgrand.net/2010/04/02/pipe-dreams-are-not-necessarily-made-of-promises/
 (defn- pipe
   "Returns a pair: a seq (the read end) and a function (the write end).
@@ -525,28 +477,44 @@
     [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
 
 (extend-protocol pr/ITripleReadable
+  clojure.lang.Sequential
+  (pr/to-statements [this options]
+    ;; Assume it contains Quads and pass it through, if it doesn't it
+    ;; will fail later anyway
+    this)
+
   String
   (pr/to-statements [this options]
     (try
-      (pr/to-statements (URL. this) options)
+      (pr/to-statements (java.net.URL. this) options)
       (catch MalformedURLException ex
         (pr/to-statements (File. this) options))))
 
   URL
   (pr/to-statements [this options]
-    (pr/to-statements (io/reader this) options))
+    (pr/to-statements (java.net.URI. (str this)) options))
 
   URI
   (pr/to-statements [this options]
-    (pr/to-statements (str this) options))
+    (pr/to-statements (java.net.URI (str this)) options))
+
+  java.net.URI
+  (pr/to-statements [this options]
+    (let [s (str this)]
+      (cond
+        (string/starts-with? s "file://")
+        (pr/to-statements (java.io.File. (string/replace s "file://" "")) options)
+
+        (string/starts-with? s "file:") ;; Resource URIs have this format
+        (pr/to-statements (java.io.File. (string/replace s "file:" "")) options)
+
+        :else
+        (pr/to-statements (io/reader this) options))))
 
   File
-  (pr/to-statements [this opts]
-    (let [implied-format (Rio/getParserFormatForFileName (str this))
-          options (if implied-format
-                    (merge {:format implied-format} opts)
-                    opts)]
-      (pr/to-statements (io/reader this) options)))
+  (pr/to-statements [this {:keys [format] :as opts}]
+    (let [format (resolve-format-preference this format)]
+      (pr/to-statements (io/reader this) (assoc opts :format format))))
 
   java.io.InputStream
   (pr/to-statements [this opts]
@@ -568,25 +536,26 @@
   ;; handle, unless you consume the whole sequence.
   ;;
   ;; TODO: consider how to support proper resource cleanup.
-  (pr/to-statements [reader {:keys [format buffer-size] :or {buffer-size 32} :as options}]
+  (pr/to-statements [reader {:keys [format buffer-size base-uri] :or {buffer-size 32
+                                                                      base-uri "http://example.org/base-uri"} :as options}]
     (if-not format
       (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:error :no-format-supplied}))
-      (let [[statements put!] (pipe buffer-size)]
+      (let [[statements put!] (pipe buffer-size)
+            parser (doto (fmt/format->parser (fmt/->rdf-format format))
+                     (.setRDFHandler (reify RDFHandler
+                                       (startRDF [this])
+                                       (endRDF [this]
+                                         (put!)
+                                         (.close reader))
+                                       (handleStatement [this statement]
+                                         (put! statement))
+                                       (handleComment [this comment])
+                                       (handleNamespace [this prefix-str uri-str]))))]
         (future
-          (let [parser (doto (format->parser format)
-                         (.setRDFHandler (reify RDFHandler
-                                           (startRDF [this])
-                                           (endRDF [this]
-                                             (put!)
-                                             (.close reader))
-                                           (handleStatement [this statement]
-                                             (put! statement))
-                                           (handleComment [this comment])
-                                           (handleNamespace [this prefix-str uri-str]))))]
-            (try
-              (.parse parser reader "http://example.org/base-uri")
-              (catch Exception ex
-                (put! ex)))))
+          (try
+            (.parse parser reader (str base-uri))
+            (catch Exception ex
+              (put! ex))))
         (let [read-rdf (fn read-rdf [msg]
                          (if (instance? Throwable msg)
                            ;; if the other thread puts an Exception on

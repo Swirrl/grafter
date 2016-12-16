@@ -7,7 +7,8 @@
             [grafter.rdf.io :refer :all]
             [clojure.tools.logging :as log]
             [grafter.rdf :as rdf]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [grafter.rdf.formats :as format])
   (:import (grafter.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -231,20 +232,6 @@
      acc
      (rdf/add acc v))))
 
-(defn- coerce-into-repo [repo-or-data]
-  (cond
-    (instance? Repository repo-or-data) repo-or-data
-    (seq? repo-or-data) repo-or-data
-    (string/starts-with? repo-or-data "file:") (let [ext (-> (io/resource "fixtures/data.trig")
-                                                              me.raynes.fs/extension
-                                                              (clojure.string/replace-first  #"." "")
-                                                              keyword)
-
-                                                     quads (rdf/statements repo-or-data :format (keyword ext))]
-                                                 ;; TODO
-                                                 (fixture-repo quads))
-    :else (rdf/add (sail-repo) (rdf/statements repo-or-data))))
-
 (defn fixture-repo
   "Adds the specified data to a SPARQL repository.  If the first
   argument is a Repository that object is used, otherwise the first
@@ -256,12 +243,13 @@
 
   (fixture-repo \"test-data.trig\" \"more-test-data.trig\")"
   ([] (sail-repo))
-  ([repo-or-data] (coerce-into-repo repo-or-data))
   ([repo-or-data & data]
-   (let [repo (coerce-into-repo repo-or-data)]
+   (let [repo (if (instance? Repository repo-or-data)
+                repo-or-data
+                (rdf/add (sail-repo) (rdf/statements repo-or-data)))]
      (let [xf (mapcat (fn [d]
                         (cond
-                          (satisfies? pr/ITripleReadable d) (rdf/statements d)
+                          (satisfies? pr/ITripleReadable d) (rdf/statements d :format (format/->rdf-format (fs/extension (str d))))
                           (seq d) d)))]
        (transduce xf add->repo repo data)))))
 
