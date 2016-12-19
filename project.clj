@@ -70,4 +70,6 @@
                                   [prismatic/schema "1.0.5"]
                                   [criterium "0.4.4"]]
 
+                   :resource-paths ["dev/resources"]
+
                    :env {:dev true}}})

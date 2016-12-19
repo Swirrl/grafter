@@ -132,6 +132,6 @@
 
 
 (deftest blank-nodes-load-test
-  (let [[btriple1 btriple2] (statements "./test/grafter/bnodes.nt")]
+  (let [[btriple1 btriple2] (statements (io/resource "grafter/rdf/bnodes.nt"))]
     (is (s/validate BlankObjectNode btriple1))
     (is (s/validate BlankSubjectNode btriple2))))

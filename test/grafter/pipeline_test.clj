@@ -138,7 +138,7 @@
 
 (deftest coerce-pipeline-arguments-test
   (apply pipeline-string-argument-coercion (coerce-pipeline-arguments 'grafter.pipeline-test/pipeline-string-argument-coercion
-                                                                      ["./test/grafter/test.csv"
+                                                                      ["./dev/resources/grafter/tabular/test.csv"
                                                                        "a string"
                                                                        "10"
                                                                        "true"
@@ -153,7 +153,7 @@
 (deftest execute-pipeline-with-coerced-arguments-test
   (is (= (test-dataset 1 1)
          (execute-pipeline-with-coerced-arguments 'grafter.pipeline-test/pipeline-string-argument-coercion
-                                                  ["./test/grafter/test.csv"
+                                                  ["./dev/resources/grafter/tabular/test.csv"
                                                    "a string"
                                                    "10"
                                                    "true"
