@@ -1,6 +1,6 @@
 (ns grafter.rdf.repository-test
   (:require [grafter.rdf.templater :refer [graph]]
-            [clojure.java.io :refer [file]]
+            [clojure.java.io :refer [file] :as io]
             [grafter.rdf.protocols :as pr :refer [->Triple]]
             [grafter.rdf.repository :refer :all]
             [grafter.rdf :refer [statements]]
@@ -13,9 +13,9 @@
            java.net.URI
            java.net.URL))
 
-(def quad-fixture-file-path "./test/grafter/rdf-types.trig")
+(def quad-fixture-file-path (io/resource "grafter/rdf/rdf-types.trig"))
 
-(def triple-fixture-file-path "./test/grafter/rdf-types.ttl")
+(def triple-fixture-file-path (io/resource "grafter/rdf/rdf-types.ttl"))
 
 (deftest reading-writing-to-Graph
   (let [graph (GraphImpl.)
@@ -119,7 +119,7 @@
   (is (= (into #{} (repo))
          #{}))
 
-  (is (= (into #{} (repo "./test/grafter/1.nt"))
+  (is (= (into #{} (repo (io/resource "grafter/rdf/1.nt")))
          #{(->Triple (URI. "http://one")
                      (URI. "http://lonely")
                      (URI. "http://triple"))})))
@@ -128,7 +128,7 @@
   (is (= (into #{} (fixture-repo))
          #{}))
 
-  (is (= (into #{} (fixture-repo "./test/grafter/1.nt"))
+  (is (= (into #{} (fixture-repo (io/resource "grafter/rdf/1.nt")))
          #{(->Triple (URI. "http://one")
                      (URI. "http://lonely")
                      (URI. "http://triple"))})))
@@ -142,7 +142,7 @@
 (deftest batched-query-test
   (let [repo (let [r (repo)]
                (grafter.rdf/add r
-                                (grafter.rdf/statements "test/grafter/triples.nt"))
+                                (grafter.rdf/statements (io/resource "grafter/rdf/triples.nt")))
                r)]
     (with-open [c (->connection repo)]
       (is (= 3 (count (batched-query "SELECT * WHERE { ?s ?p ?o .}"

@@ -127,6 +127,9 @@
   The `:buffer-size` option can be used to configure the buffer size
   at which statements are parsed from an RDF stream.  Its default
   value of 32 was found to work well in practice, and also aligns with
-  chunk size of Clojure's lazy sequences."
-  [this & {:keys [format buffer-size] :as options}]
+  chunk size of Clojure's lazy sequences.
+
+  The `:base-uri` option can be supplied to automatically re`@base`
+  URI's on a new prefix when reading."
+  [this & {:keys [format buffer-size base-uri] :as options}]
   (pr/to-statements this options))

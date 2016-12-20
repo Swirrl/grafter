@@ -4,21 +4,25 @@
             [grafter.rdf :refer [add statements]]
             [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.io :refer :all]
-            [grafter.rdf.formats :refer :all]
             [grafter.url :refer :all]
             [grafter.rdf.protocols :as pr]
-            [schema.core :as s])
+            [schema.core :as s]
+            [grafter.rdf.formats :as fmt]
+            [clojure.java.io :as io])
   (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]
            [java.net URI]))
 
+;; NOTE this function is deprecated in favour of the one in formats,
+;; but unlike the variation in formats it raises an exception if the
+;; supplied argument is nil.
 (deftest mimetype->rdf-format-test
   (testing "mimetype->rdf-format"
 
-    (is (= rdf-ntriples
+    (is (= fmt/rdf-ntriples
            (mimetype->rdf-format "application/n-triples; charset=UTF-8"))
         "works with charset parameters")
 
-    (is (= rdf-xml
+    (is (= fmt/rdf-xml
            (mimetype->rdf-format "application/rdf+xml"))
         "works without charset parameters")
 
@@ -83,10 +87,13 @@
   (let [quad (graph (->java-uri "http://example.org/test/graph")
                     [(->java-uri "http://test/subj") [(->java-uri "http://test/pred") (->java-uri "http://test/obj")]])
         string-wtr (java.io.StringWriter.)
-        serializer (rdf-serializer string-wtr :format rdf-nquads)]
+        serializer (rdf-serializer string-wtr :format :nq)]
     (add serializer quad)
-    (is (= quad
-           (statements (java.io.StringReader. (.toString string-wtr)) :format rdf-nquads)))))
+
+    (let [output-str (str string-wtr)]
+      (with-open [rdr (java.io.StringReader. output-str)]
+        (is (= quad
+               (statements rdr :format :nq)))))))
 
 
 (deftest IStatement->sesame-statement-test
@@ -125,6 +132,6 @@
 
 
 (deftest blank-nodes-load-test
-  (let [[btriple1 btriple2] (statements "./test/grafter/bnodes.nt")]
+  (let [[btriple1 btriple2] (statements (io/resource "grafter/rdf/bnodes.nt"))]
     (is (s/validate BlankObjectNode btriple1))
     (is (s/validate BlankSubjectNode btriple2))))
