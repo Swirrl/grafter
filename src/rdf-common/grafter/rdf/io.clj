@@ -116,7 +116,7 @@
 
   RDFLiteral
   (->sesame-rdf-type [this]
-    (LiteralImpl. (pr/raw-value this) (URIImpl. (pr/datatype-uri this))))
+    (LiteralImpl. (pr/raw-value this) (URIImpl. (str (pr/datatype-uri this)))))
 
   (sesame-rdf-type->type [this]
     this)

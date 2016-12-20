@@ -62,6 +62,9 @@
     (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
     "hello"        "http://www.w3.org/2001/XMLSchema#string" String))
 
+(deftest literal-test
+  (is (instance? LiteralImpl (->sesame-rdf-type (literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
+
 (deftest language-string-test
   (let [bonsoir (language "Bonsoir Mademoiselle" :fr)]
     (is (= bonsoir (literal-datatype->type bonsoir)))
