@@ -60,6 +60,8 @@
 
   :profiles {:uberjar {:aot :all}
 
+             :clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
+
              :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
                              [codox "0.8.10"]
                              [lein-repack "0.2.10" :exclusions [org.clojure/clojure
@@ -67,7 +69,7 @@
 
                    :dependencies [[com.aphyr/prism "0.1.3"]
                                   [org.slf4j/slf4j-simple "1.7.21"]
-                                  [prismatic/schema "1.0.5"]
+                                  [prismatic/schema "1.1.3"]
                                   [criterium "0.4.4"]]
 
                    :resource-paths ["dev/resources"]

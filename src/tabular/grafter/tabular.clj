@@ -634,7 +634,7 @@ the specified column being cloned."
 
   (let [row-sym (gensym "row")
         ds-sym (gensym "ds")]
-    `(with-meta (fn graphify-dataset [~ds-sym]
+    `(with-meta (fn ~'graphify-dataset [~ds-sym]
                   (let [ds-rows# (:rows ~ds-sym)
                         ds-meta# (meta ~ds-sym)]
                     (letfn [(graphify-row# [~row-sym]
@@ -642,7 +642,7 @@ the specified column being cloned."
                                       (generate-vector-bindings ds-sym row-sym row-bindings)
                                       (splice-supplied-bindings row-sym row-bindings))
                                 (->> (concat ~@forms)
-                                     (map (fn with-row-meta [triple#]
+                                     (map (fn ~'with-row-meta [triple#]
                                             (let [meta# {::row ~row-sym}
                                                   meta# (if ds-meta#
                                                           (assoc meta# ::dataset ds-meta#)
