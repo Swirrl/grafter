@@ -1,9 +1,10 @@
 node {
-  checkout scm
+
+  stage('Checkout') {
+    checkout scm
+  }
 
   stage('Test') {
-    sh 'pwd'
-    sh 'pwd > pwd-out'
     sh 'lein test'
   }
 
@@ -12,6 +13,7 @@ node {
   }
 
   stage('Deploy') {
-    sh 'lein deploy clojars'
+    echo 'TODO: Setup Deploy'
+    // sh 'lein deploy clojars'
   }
 }
