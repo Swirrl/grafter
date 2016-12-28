@@ -1,4 +1,6 @@
 node {
+  checkout scm
+
   stage('Test') {
     sh 'pwd'
     sh 'pwd > pwd-out'
