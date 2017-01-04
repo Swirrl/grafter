@@ -1,5 +1,4 @@
-(ns ^{:doc "Functions for processing tabular data."}
-  grafter.tabular
+(ns grafter.tabular
   "Functions for processing tabular data."
   (:require [clojure
              [set :as set]
@@ -634,7 +633,7 @@ the specified column being cloned."
 
   (let [row-sym (gensym "row")
         ds-sym (gensym "ds")]
-    `(with-meta (fn ~'graphify-dataset [~ds-sym]
+    `(with-meta (fn [~ds-sym]
                   (let [ds-rows# (:rows ~ds-sym)
                         ds-meta# (meta ~ds-sym)]
                     (letfn [(graphify-row# [~row-sym]
