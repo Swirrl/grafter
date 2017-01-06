@@ -3,8 +3,8 @@
   external processes and programs such as lein-grafter and Grafter
   server."
   (:require
-   [grafter.pipeline.types-two :refer [resolve-var create-pipeline-declaration
-                                   coerce-arguments]]))
+   [grafter.pipeline.types-two :refer [resolve-parameter-type create-pipeline-declaration
+                                       parse-parameter]]))
 
 (defonce ^{:doc "Map of pipelines that have been declared and exported to the pipeline runners"} exported-pipelines (atom {}))
 
@@ -91,13 +91,20 @@
 
      (filter type? (sort-by (comp str :var) (vals @exported-pipelines))))))
 
+(defn ^:no-doc coerce-arguments
+  ([expected-types supplied-args] (coerce-arguments expected-types supplied-args {}))
+  ([expected-types supplied-args opts]
+   (map (fn [et sa]
+          (let [klass (:class et)]
+            (parse-parameter (resolve-parameter-type klass) sa opts))) expected-types supplied-args)))
+
 (defn ^:no-doc coerce-pipeline-arguments
   "Coerce the arguments based on the pipelines stated types.  Receives
   a fully qualified symbol identifying the pipeline and returns the
   arguments as coerced values, or raise an error if a coercion isn't
   possible.
 
-  Uses the multi-method grafter.pipeline.types/type-reader to coerce
+  Uses the multi-method grafter.pipeline.types/parse-parameter to coerce
   values."
   [pipeline-sym supplied-args]
   (let [expected-types (:args (@exported-pipelines pipeline-sym))]
