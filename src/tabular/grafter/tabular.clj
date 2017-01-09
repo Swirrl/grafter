@@ -5,7 +5,8 @@
              [string :as str]]
             [grafter.tabular.common :as tabc :refer [lift->vector map-keys]]
             [incanter.core :as inc]
-            [potemkin.namespaces :refer [import-vars]]))
+            [potemkin.namespaces :refer [import-vars]]
+            [grafter.pipeline.types :as types]))
 
 ;; Load protocol definitions.  This could occur in the ns definition but putting
 ;; them in their means that namespace refactoring tools can clear them out
@@ -32,6 +33,13 @@
   resolve-column-id]
  [grafter.tabular.melt
   melt])
+
+(defmethod types/parse-parameter [String incanter.core.Dataset] [_ val opts]
+  (read-dataset val))
+
+(swap! types/parameter-types derive ::tabular-file ::types/file)
+
+(swap! types/parameter-types derive incanter.core.Dataset ::tabular-file)
 
 (defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
