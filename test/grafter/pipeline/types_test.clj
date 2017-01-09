@@ -40,7 +40,7 @@
 
 (swap! sut/parameter-types derive ::my-new-sub-type ::my-new-data-type)
 
-(t/deftest parameter-type-chain
+(t/deftest parameter-type-chain-test
   (t/testing "parameter-type-chain Reports hierarchy ordered from sub-type to super-type"
     (t/is (= [:grafter.pipeline.types-test/my-new-sub-type
               :grafter.pipeline.types-test/my-new-data-type

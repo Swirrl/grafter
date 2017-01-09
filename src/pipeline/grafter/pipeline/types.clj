@@ -12,7 +12,8 @@
             [clojure.instant :refer [read-instant-date]]
             [clojure.set :as set]
             [clojure.string :as str]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [grafter.pipeline.types :as sut])
   (:import [java.net URI URL]
            [java.util UUID Date Map]))
 
@@ -114,8 +115,6 @@
 
 (swap! parameter-types derive ::url ::uri)
 
-(swap! parameter-types derive ::dataset-uri ::uri) ;; TODO move into pmd-pipelines
-
 (swap! parameter-types derive java.net.URI ::uri)
 
 (swap! parameter-types derive ::map ::value)
@@ -186,10 +185,6 @@
   prefer-method."
   [t]
   (distinct (parameter-type-chain* t)))
-
-(defn parse-parameter* [dest-type source-val opts]
-
-  )
 
 ;;[Symbol] -> {:arg-types [Symbol], :return-type Symbol]}
 (defn ^:no-doc parse-type-list
