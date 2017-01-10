@@ -42,14 +42,10 @@
 
 (t/deftest parameter-type-chain-test
   (t/testing "parameter-type-chain Reports hierarchy ordered from sub-type to super-type"
-    (t/is (= [:grafter.pipeline.types-test/my-new-sub-type
-              :grafter.pipeline.types-test/my-new-data-type
+    (t/is (= [::my-new-sub-type
+              ::my-new-data-type
               :grafter.pipeline.types/primitive]
-             (sut/parameter-type-chain ::my-new-sub-type))))
-
-  (t/testing "With built-in types"
-    (t/is (= [:grafter.pipeline.types/dataset-uri :grafter.pipeline.types/uri]
-             (sut/parameter-type-chain ::sut/dataset-uri)))))
+             (sut/parameter-type-chain ::my-new-sub-type)))))
 
 
 ;; Records implement java.util.Map, so can cause a problem in
