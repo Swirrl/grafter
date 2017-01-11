@@ -224,5 +224,31 @@
                                             "http://foo"
                                             "2015"
                                             ":a-keyword"
-                                            "04eccc7e-bddd-44e5-a299-8879512a3ceb"])
-  )
+                                            "04eccc7e-bddd-44e5-a299-8879512a3ceb"]))
+
+(defn symbol-deref-test-pipeline [klass kwd]
+  [klass kwd])
+
+(def klass-symbol URI)
+
+(def keyword-symbol ::types/primitive)
+
+(def not-a-class-or-a-keyword "an unsupported type")
+
+(deftest declare-pipeline-dereferencing-test
+  (testing "declare-pipeline resolves classes or keywords from vars"
+    (is (nil? (eval `(declare-pipeline symbol-deref-test-pipeline
+                       [klass-symbol keyword-symbol ~'-> ~'(Seq Statement)]
+                       {~'klass "URI"
+                        ~'kwd "Keyword"}))))))
+
+
+(deftest declare-pipeline-dereferencing-test-2
+  (testing "declare-pipeline errors if vars don't contain a valid type (either class or keyword)"
+    (is (thrown? IllegalArgumentException
+                 (eval `(declare-pipeline symbol-deref-test-pipeline
+                          [not-a-class-or-a-keyword keyword-symbol ~'-> ~'(Seq Statement)]
+                          {~'klass "A class"
+                           ~'kwd "A keyword"}
+                          :supported-operations #{:delete})))
+        "Raises an exception because the string in not-a-class-or-a-keyword is not a valid parameter type")))

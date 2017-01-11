@@ -178,7 +178,7 @@
       (->> (cons t (lazy-seq (mapcat parameter-type-chain* ps)))
            (map preferred-type)))))
 
-(defn parameter-type-chain
+(defn ^:no-doc parameter-type-chain
   "Interogates the parse-parameter multi-method and returns an ordered
   sequence representing the hierarchy chain.  The order of items in
   the chain respects both the hierarchy of parameter-types and
@@ -218,22 +218,35 @@
             msg (str "Too " det " argument types provided for pipeline argument list " declared-arg-list " (got " type-list ")")]
         (throw (IllegalArgumentException. msg))))))
 
+(defn ^:no-doc resolve-pipeline-fn [ns sym]
+  (if (symbol? sym)
+    (ns-resolve ns sym)
+    (throw (IllegalArgumentException. (str "Unexpected syntax for pipeline declaration.  Was expecting a symbol but got a " (type sym))))))
+
 ;;Symbol -> Class
-(defn resolve-parameter-type
+(defn ^:no-doc resolve-parameter-type
   "Attempts to resolve a symbol representing a pipeline parameter type
-  to the class instance representing the class. Throws an exception if
-  the resolution fails."
+  to a class/keyword instance.  This is necessary to resolve symbols
+  in the declare-pipeline macro to their corresponding classes or
+  keyword types.
+
+  We also support resolving vars that dereference to a class or
+  keyword, which allows the declare-pipeline arguments definition to
+  also reference vars.
+
+  An IllegalArgumentException is raised if the parameter either
+  doesn't resolve or ultimately resolves to anything other than a
+  keyword or class."
   ([sym] (resolve-parameter-type *ns* sym))
   ([ns sym]
    (cond
-     (symbol? sym) (if-let [cls (ns-resolve ns sym)]
-                     cls
-                     (throw (IllegalArgumentException. (str "Failed to resolve " sym " to class in namespace: " ns))))
+     (symbol? sym) (if-let [cls-or-var (ns-resolve ns sym)]
+                     (resolve-parameter-type ns cls-or-var)
+                     (throw (IllegalArgumentException. (str "Failed to resolve " sym " to a parameter type in namespace: " ns))))
      (keyword? sym) sym
-
      (class? sym) sym
-     :else (throw (IllegalArgumentException. (str "Unexpected type of parameter " (type sym)))))
-   ))
+     (var? sym) (resolve-parameter-type ns @sym)
+     :else (throw (IllegalArgumentException. (str "Unexpected type of parameter " (type sym)))))))
 
 (defn- get-arg-descriptor [name-sym type-sym doc doc-meta]
   (let [klass-or-kw (resolve-parameter-type type-sym)]
@@ -314,7 +327,7 @@
   the data returned from the pipeline can be appended to or deleted
   from the destination."
   [sym ns type-list metadata opts]
-  (let [def-var (resolve-parameter-type *ns* sym)
+  (let [def-var (resolve-pipeline-fn *ns* sym)
         def-meta (meta def-var)
         arg-list (first (:arglists def-meta))
         {:keys [arg-types return-type]} (parse-type-list type-list)

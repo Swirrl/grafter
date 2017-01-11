@@ -3,6 +3,18 @@
             [clojure.test :as t])
   (:import java.net.URI))
 
+(def a-class Class)
+
+(def a-keyword ::keyword)
+
+(t/deftest resolve-parameter-type-test
+  (t/is (thrown? IllegalArgumentException (= map (sut/resolve-parameter-type 'clojure.core/map)))
+        "Symbols resolve")
+  (t/is (= Class (sut/resolve-parameter-type 'grafter.pipeline.types-test/a-class))
+        "Symbols pointing to vars pointing to classes resolve to classes")
+  (t/is (= a-keyword (sut/resolve-parameter-type 'grafter.pipeline.types-test/a-keyword))
+        "Symbols to vars to keywords resolve to the keyword"))
+
 (t/deftest parse-parameter-test
   (t/testing "::primitive values"
     (t/are [type str-val coerced-val]
