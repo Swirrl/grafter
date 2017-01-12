@@ -79,9 +79,19 @@
   (io/reader val))
 
 (defmethod parse-parameter [String ::map] [_ val opts]
-  (edn/read-string val))
+  (let [m (edn/read-string val)]
+    (if-not (map? val)
+      (throw (IllegalArgumentException. "Expected to receive a map got a " (type m)))
+      m)))
+
+(defmethod parse-parameter [String ::vector] [_ val opts]
+  (let [m (edn/read-string val)]
+    (if-not (vector? val)
+      (throw (IllegalArgumentException. "Expected to receive a vector got a " (type m)))
+      m)))
 
 (defmethod parse-parameter [Map ::map] [_ val opts]
+  ;; TODO move to grafter-server?
   (edn/read-string (io/reader (:value val))))
 
 (defmethod parse-parameter [String java.net.URL] [_ val opts]
@@ -122,12 +132,6 @@
 (swap! parameter-types derive ::sparql-query-endpoint ::map)
 
 (swap! parameter-types derive ::vector ::value)
-
-(swap! parameter-types derive ::map ::json-map)
-
-(swap! parameter-types derive ::vector ::json-array)
-
-;; TODO
 
 (swap! parameter-types derive ::binary-file ::file)
 
