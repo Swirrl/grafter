@@ -100,19 +100,36 @@
           (let [klass (:class et)]
             (parse-parameter (resolve-parameter-type namespace klass) sa opts))) expected-types supplied-args)))
 
-(defn ^:no-doc coerce-pipeline-arguments
+
+(defn find-pipeline
+  "Find a pipeline by its fully qualified pipeline.  Accepts either a
+  string or a symbol identifying the pipeline
+  e.g. \"my.namespace/my-pipeline\" or 'my.namespace/my-pipeline"
+  [name]
+  (get @exported-pipelines (symbol name)))
+
+(defmulti coerce-pipeline-arguments
   "Coerce the arguments based on the pipelines stated types.  Receives
-  a fully qualified symbol identifying the pipeline and returns the
-  arguments as coerced values, or raise an error if a coercion isn't
-  possible.
+  a fully qualified name of the pipeline (a symbol or string), or a
+  pipeline-object and returns the arguments as coerced values, or
+  raise an error if a coercion isn't possible.
 
   Uses the multi-method grafter.pipeline.types/parse-parameter to coerce
   values."
-  [pipeline-sym supplied-args]
-  (let [pipeline (@exported-pipelines pipeline-sym)
-        expected-types (:args pipeline)
+  (fn [pipeline supplied-args]
+    (type pipeline)))
+
+(defmethod coerce-pipeline-arguments clojure.lang.IPersistentMap [pipeline supplied-args]
+  (let [expected-types (:args pipeline)
         namespace (:namespace pipeline)]
     (coerce-arguments namespace expected-types supplied-args)))
+
+(defmethod coerce-pipeline-arguments :default [pipeline-name supplied-args]
+  (let [pipeline (find-pipeline pipeline-name)]
+    (if pipeline
+      (coerce-pipeline-arguments pipeline supplied-args)
+      (throw (ex-info "Could not find pipeline named: " pipeline-name {:error ::pipeline-not-found
+                                                                       ::pipeline-name pipeline-name})))))
 
 (defn ^:no-doc execute-pipeline-with-coerced-arguments
   "Execute the pipeline specified by pipeline-sym by applying it to
@@ -124,10 +141,3 @@
   (let [coerced-args (coerce-pipeline-arguments pipeline-sym supplied-args)
         pipeline-fn (:var (@exported-pipelines pipeline-sym))]
     (apply pipeline-fn coerced-args)))
-
-(defn find-pipeline
-  "Find a pipeline by its fully qualified pipeline.  Accepts either a
-  string or a symbol identifying the pipeline
-  e.g. \"my.namespace/my-pipeline\" or 'my.namespace/my-pipeline"
-  [name]
-  (get @exported-pipelines (symbol name)))
