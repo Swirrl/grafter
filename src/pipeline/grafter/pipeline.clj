@@ -124,3 +124,10 @@
   (let [coerced-args (coerce-pipeline-arguments pipeline-sym supplied-args)
         pipeline-fn (:var (@exported-pipelines pipeline-sym))]
     (apply pipeline-fn coerced-args)))
+
+(defn find-pipeline
+  "Find a pipeline by its fully qualified pipeline.  Accepts either a
+  string or a symbol identifying the pipeline
+  e.g. \"my.namespace/my-pipeline\" or 'my.namespace/my-pipeline"
+  [name]
+  (get @exported-pipelines (symbol name)))

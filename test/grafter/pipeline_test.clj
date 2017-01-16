@@ -252,3 +252,8 @@
                            ~'kwd "A keyword"}
                           :supported-operations #{:delete})))
         "Raises an exception because the string in not-a-class-or-a-keyword is not a valid parameter type")))
+
+(deftest find-pipeline-test
+  (testing "find-pipeline"
+    (is (find-pipeline "grafter.pipeline-test/test-default-types"))
+    (is (find-pipeline 'grafter.pipeline-test/test-default-types))))
