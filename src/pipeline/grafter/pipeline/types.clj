@@ -94,6 +94,13 @@
   ;; TODO move to grafter-server?
   (edn/read-string (io/reader (:value val))))
 
+(defmethod parse-parameter [String ::map] [_ val opts]
+  (edn/read-string val))
+
+(defmethod parse-parameter [String ::text-file] [_ val opts]
+  ;; assume its a file path to a text file and return a reader on it
+  (io/reader val))
+
 (defmethod parse-parameter [String java.net.URL] [_ val opts]
   (URL. val))
 
@@ -142,6 +149,10 @@
 (swap! parameter-types derive ::another-file ::file)
 
 (swap! parameter-types derive java.io.Reader ::text-file)
+
+(swap! parameter-types derive ::tabular-dataset ::text-file)
+
+(prefer-method parse-parameter [String ::tabular-dataset] [String Map])
 
 (swap! parameter-types derive java.io.InputStream ::binary-file)
 
@@ -272,7 +283,9 @@
     '(Seq Quad) :graft
     '[Quad] :graft
     'Quads :graft
-    'Dataset :pipe
+    :grafter.pipeline.types/rdf-file :graft
+    'Dataset :pipe ;; deprecated
+    :grafter.pipeline.types/tabular-dataset :pipe
     (let [msg (str "Invalid return type " ret-sym " for pipeline function: required Dataset or [Quad]")]
       (throw (IllegalArgumentException. msg)))))
 

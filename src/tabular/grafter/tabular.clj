@@ -34,12 +34,10 @@
  [grafter.tabular.melt
   melt])
 
-(defmethod types/parse-parameter [String incanter.core.Dataset] [_ val opts]
+(defmethod types/parse-parameter [String ::types/tabular-dataset] [_ val opts]
   (read-dataset val))
 
-(swap! types/parameter-types derive ::tabular-file ::types/file)
-
-(swap! types/parameter-types derive incanter.core.Dataset ::tabular-file)
+(swap! types/parameter-types derive incanter.core.Dataset ::types/tabular-dataset)
 
 (defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
