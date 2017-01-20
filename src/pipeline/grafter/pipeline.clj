@@ -98,7 +98,12 @@
   ([namespace expected-types supplied-args opts]
    (map (fn [et sa]
           (let [klass (:class et)]
-            (parse-parameter (resolve-parameter-type namespace klass) sa opts))) expected-types supplied-args)))
+            (try
+              (parse-parameter (resolve-parameter-type namespace klass) sa opts)
+              (catch Exception ex
+                (throw (ex-info "Unexpected exception parsing pipeline parameter type." {:error ::coerce-argument-error
+                                                                                         :expected-type et
+                                                                                         :supplied-argument sa} ex)))))) expected-types supplied-args)))
 
 
 (defn find-pipeline
