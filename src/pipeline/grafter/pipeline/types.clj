@@ -153,6 +153,7 @@
 (swap! parameter-types derive ::tabular-dataset ::text-file)
 
 (prefer-method parse-parameter [String ::tabular-dataset] [String Map])
+(prefer-method parse-parameter [Map ::tabular-dataset] [Map Map])
 
 (swap! parameter-types derive java.io.InputStream ::binary-file)
 
