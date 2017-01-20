@@ -8,112 +8,199 @@
   of a string the target type."
   (:require [clojure.data :refer [diff]]
             [clojure.edn :as edn]
+            [clojure.instant :as inst]
             [clojure.instant :refer [read-instant-date]]
             [clojure.set :as set]
-            [grafter.tabular :as tabular]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clojure.java.io :as io]
+            [grafter.pipeline.types :as sut])
   (:import [java.net URI URL]
-           [java.util UUID Date Map]
-           [incanter.core Dataset]))
+           [java.util UUID Date Map]))
 
-;; NOTE: we could possibly have done this in a slightly more clojurey
-;; way by defining tagged literals and supplying :readers for them to
-;; clojure.edn/read-string, however we'd still need to define a
-;; mechanism for extension.
-;;
-;; This mechanism has one (minor) advantage to the approach above
-;; which is that when supplying arguments to a pipeline you don't need
-;; to provide the tag itself, just the form to interpret, as we
-;; already know the target type from the pipelines declaration.
+(def parameter-types
+  "Atom containing the parameter type hierarchy of supported pipeline
+  types.  As declared through declare-pipeline.
 
+  Types in this hierarchy should ultimately be coerceable through the
+  parse-parameter multi-method.
 
-(defmulti ^:no-doc type-reader (fn [target-type input-value]
-                                 [target-type (type input-value)]))
+  In addition to using the multi-method to introduce new types, you
+  can gain more code reuse by extending the hierarchy with:
 
-(defmulti ^:no-doc can-parse-type? identity)
+  (swap! parameter-types derive ::foo ::bar)"
+  (atom (make-hierarchy)))
 
-(defmethod can-parse-type? :default [v]
-  false)
+(defmulti parse-parameter (fn [target-type value options]
+                            (let [input-type (type value)]
+                              [input-type target-type]))
+  :hierarchy parameter-types)
 
-(defmacro deftype-reader
-  "Define a multimethod for reliably coercing types into a target type.
+(defmethod parse-parameter :default [target-type input-val opts]
+  (throw (ex-info (str "No grafter.pipeline.types/parse-parameter defined to coerce values to type " target-type)
+                  {:error :type-reader-error
+                   :target-type target-type
+                   :value input-val
+                   :options opts})))
 
-  Additionally extends the predicate method can-parse-type? to return
-  true for the newly added type."
-  [[output-type# input-type#] [output-type-arg input-value] form]
-  `(do
-     (defmethod type-reader [~output-type# ~input-type#] [~output-type-arg ~input-value]
-       (let [output-value# ~form]
-         (if (instance? ~output-type# output-value#)
-           output-value#
-           (throw (IllegalArgumentException. (str "Could not coerce value " ~input-value " into type " (.getName ~output-type#)))))))
+(defmethod parse-parameter [String ::primitive] [_ val opts]
+  (edn/read-string val))
 
-     ;; Define a fall-through for already coerced types
-     (defmethod type-reader [~output-type# ~output-type#] [~output-type-arg ~input-value]
-       ~input-value)
+(defmethod parse-parameter [String Boolean] [_ val opts]
+  (boolean (edn/read-string val)))
 
-     (defmethod can-parse-type? ~output-type# [val#] true)))
+(defmethod parse-parameter [String Integer] [_ val opts]
+  (Integer/parseInt val))
 
-(deftype-reader [Number String] [ov input-value]
-  (edn/read-string input-value))
+(defmethod parse-parameter [String clojure.lang.BigInt] [_ val opts]
+  (bigint (edn/read-string val)))
 
-(deftype-reader [Float String] [ov input-value]
-  (Float/parseFloat input-value))
+(defmethod parse-parameter [String Double] [_ val opts]
+  (Double/parseDouble val))
 
-(deftype-reader [Double String] [ov input-value]
-  (Double/parseDouble input-value))
+(defmethod parse-parameter [String String] [_ val opts]
+  val)
 
-(deftype-reader [Byte String] [_ value]
-  (Byte/parseByte value))
+(defmethod parse-parameter [String Float] [_ val opts]
+  (Float/parseFloat val))
 
-(deftype-reader [Integer String] [_ value]
-  (Integer/parseInt value))
+(defmethod parse-parameter [String ::uri] [_ val opts]
+  (java.net.URI. val))
 
-(deftype-reader [Long String] [_ value]
-  (Long/parseLong value))
+(defmethod parse-parameter [String java.util.Date] [_ val opts]
+  (inst/read-instant-date val))
 
-(deftype-reader [clojure.lang.BigInt String] [_ value]
-  (Long/parseLong value))
+(defmethod parse-parameter [String clojure.lang.Keyword] [_ val opts]
+  (keyword val))
 
-(deftype-reader [Boolean String] [_ value]
-  (Boolean/parseBoolean value))
+(defmethod parse-parameter [String java.util.UUID] [_ val opts]
+  (java.util.UUID/fromString val))
 
-(deftype-reader [String String] [_ value]
-  value)
+(defmethod parse-parameter [String java.io.Reader] [_ val opts]
+  (io/reader val))
 
-(deftype-reader [Map String] [_ value]
-  (edn/read-string value))
+(defmethod parse-parameter [String ::map] [_ val opts]
+  (let [m (edn/read-string val)]
+    (if-not (map? val)
+      (throw (IllegalArgumentException. "Expected to receive a map got a " (type m)))
+      m)))
 
-(deftype-reader [URI String] [_ value]
-  (java.net.URI. value))
+(defmethod parse-parameter [String ::vector] [_ val opts]
+  (let [m (edn/read-string val)]
+    (if-not (vector? val)
+      (throw (IllegalArgumentException. "Expected to receive a vector got a " (type m)))
+      m)))
 
-(deftype-reader [URL String] [_ value]
-  (java.net.URL. value))
+(defmethod parse-parameter [Map ::map] [_ val opts]
+  ;; TODO move to grafter-server?
+  (edn/read-string (io/reader (:value val))))
 
-(deftype-reader [UUID String] [_ value]
-  (UUID/fromString value))
+(defmethod parse-parameter [String ::map] [_ val opts]
+  (edn/read-string val))
 
-(deftype-reader [Date String] [_ value]
-  (read-instant-date value))
+(defmethod parse-parameter [String ::text-file] [_ val opts]
+  ;; assume its a file path to a text file and return a reader on it
+  (io/reader val))
 
-(deftype-reader [clojure.lang.Keyword String] [_ value]
-  (keyword (if (> (.length value) 1)
-             (let [fchar (.substring value 0 1)]
-               (if (= ":" fchar)
-                 (.substring value 1)
-                 value))
-             value)))
+(defmethod parse-parameter [String java.net.URL] [_ val opts]
+  (URL. val))
 
-(deftype-reader [incanter.core.Dataset String] [_ value]
-  (tabular/read-dataset value))
+(swap! parameter-types derive ::value ::root-type)
 
-(defmethod type-reader :default [target-type input-value]
-  (throw (ex-info (str "No grafter.pipeline.types/type-reader defined to coerce values of type " (type input-value) " into " target-type)
-                  {:error :type-reader-error})))
+(swap! parameter-types derive ::primitive ::value)
 
-(defn ^:no-doc coerce-arguments [expected-types supplied-args]
-  (map (fn [et sa]
-         (type-reader (:class et) sa)) expected-types supplied-args))
+(swap! parameter-types derive Boolean ::primitive)
+
+(swap! parameter-types derive Boolean ::primitive)
+
+(swap! parameter-types derive String ::primitive)
+
+(swap! parameter-types derive Float ::primitive)
+
+(swap! parameter-types derive Long ::primitive)
+
+(swap! parameter-types derive Integer ::primitive)
+
+(swap! parameter-types derive Double ::primitive)
+
+(swap! parameter-types derive clojure.lang.Keyword ::primitive)
+
+(swap! parameter-types derive java.util.Date ::primitive)
+
+(swap! parameter-types derive java.util.UUID ::primitive)
+
+(swap! parameter-types derive ::uri ::value)
+
+(swap! parameter-types derive ::url ::uri)
+
+(swap! parameter-types derive java.net.URI ::uri)
+
+(swap! parameter-types derive ::map ::value)
+
+(swap! parameter-types derive ::sparql-query-endpoint ::map)
+
+(swap! parameter-types derive ::vector ::value)
+
+(swap! parameter-types derive ::binary-file ::file)
+
+(swap! parameter-types derive ::text-file ::file)
+
+(swap! parameter-types derive ::rdf-file ::file)
+
+(swap! parameter-types derive ::another-file ::file)
+
+(swap! parameter-types derive java.io.Reader ::text-file)
+
+(swap! parameter-types derive ::tabular-dataset ::text-file)
+
+(prefer-method parse-parameter [String ::tabular-dataset] [String Map])
+(prefer-method parse-parameter [Map ::tabular-dataset] [Map Map])
+
+(swap! parameter-types derive java.io.InputStream ::binary-file)
+
+(defn supported-parameter?
+  "Predicate function that returns true if the parameter type is
+  a supported by parameter-type.
+
+  Supported parameters are parameter types (either classes or
+  keywords) which are supported either an explicit dispatch for the
+  parse-parameter multimethod or are reachable through
+  @parameter-types type hierarchy."
+  [p]
+  (some (partial isa? @parameter-types p)
+        (map second (remove keyword?
+                            (keys (methods parse-parameter))))))
+
+(defn preferred-type
+  "When there are multiple defmethod implementations for
+  parse-parameter this returns the prefered as declared via clojure's
+  prefer-method."
+  [t]
+  (let [prefs (prefers parse-parameter)
+        preference (or (reduce
+                        (fn [acc [pref-type types]]
+                          (if (isa? @parameter-types t pref-type)
+                            (if-let [pref (types t)]
+                              pref-type
+                              t)
+                            t))
+                        false prefs)
+                       t)]
+    preference))
+
+(defn- parameter-type-chain*
+  [t]
+  (when (supported-parameter? t)
+    (let [ps (parents @parameter-types t)]
+      (->> (cons t (lazy-seq (mapcat parameter-type-chain* ps)))
+           (map preferred-type)))))
+
+(defn ^:no-doc parameter-type-chain
+  "Interogates the parse-parameter multi-method and returns an ordered
+  sequence representing the hierarchy chain.  The order of items in
+  the chain respects both the hierarchy of parameter-types and
+  prefer-method."
+  [t]
+  (distinct (parameter-type-chain* t)))
 
 ;;[Symbol] -> {:arg-types [Symbol], :return-type Symbol]}
 (defn ^:no-doc parse-type-list
@@ -147,33 +234,44 @@
             msg (str "Too " det " argument types provided for pipeline argument list " declared-arg-list " (got " type-list ")")]
         (throw (IllegalArgumentException. msg))))))
 
+(defn ^:no-doc resolve-pipeline-fn [ns sym]
+  (if (symbol? sym)
+    (ns-resolve ns sym)
+    (throw (IllegalArgumentException. (str "Unexpected syntax for pipeline declaration.  Was expecting a symbol but got a " (type sym))))))
+
 ;;Symbol -> Class
-(defn- resolve-parameter-type
+(defn ^:no-doc resolve-parameter-type
   "Attempts to resolve a symbol representing a pipeline parameter type
-  to the class instance representing the class. Throws an exception if
-  the resolution fails."
-  [sym]
-  (if-let [cls (resolve sym)]
-    cls
-    (throw (IllegalArgumentException. (str "Failed to resolve " sym " to class")))))
+  to a class/keyword instance.  This is necessary to resolve symbols
+  in the declare-pipeline macro to their corresponding classes or
+  keyword types.
+
+  We also support resolving vars that dereference to a class or
+  keyword, which allows the declare-pipeline arguments definition to
+  also reference vars.
+
+  An IllegalArgumentException is raised if the parameter either
+  doesn't resolve or ultimately resolves to anything other than a
+  keyword or class."
+  ([sym] (resolve-parameter-type *ns* sym))
+  ([ns sym]
+   (cond
+     (symbol? sym) (if-let [cls-or-var (ns-resolve ns sym)]
+                     (resolve-parameter-type ns cls-or-var)
+                     (throw (IllegalArgumentException. (str "Failed to resolve " sym " to a parameter type in namespace: " ns))))
+     (keyword? sym) sym
+     (class? sym) sym
+     (var? sym) (resolve-parameter-type ns @sym)
+     :else (throw (IllegalArgumentException. (str "Unexpected type of parameter " (type sym)))))))
 
 (defn- get-arg-descriptor [name-sym type-sym doc doc-meta]
-  (let [param-class (resolve-parameter-type type-sym)
-        common {:name name-sym :class param-class :doc doc}]
-    (if (can-parse-type? param-class)
-      (if doc-meta
-        (assoc common :meta doc-meta)
-        common)
-      (throw (IllegalArgumentException. (str "Unsupported pipeline parameter type: " param-class))))))
-
-;;Namespace -> Symbol -> Var
-(defn ^:no-doc resolve-var
-  "Attempts to resolve a named var inside the given namespace. Throws
-  an exception if the resolution fails."
-  [ns v]
-  (if-let [rv (ns-resolve ns v)]
-    rv
-    (throw (IllegalArgumentException. (str "Cannot resolve var " v " in namespace " (.getName ns))))))
+  (let [klass-or-kw (resolve-parameter-type type-sym)]
+    (if (supported-parameter? klass-or-kw)
+      (let [common {:name name-sym :class klass-or-kw :doc doc}]
+        (if doc-meta
+          (assoc common :meta doc-meta)
+          common))
+      (throw (IllegalArgumentException. (str "Unsupported pipeline parameter type: " type-sym))))))
 
 ;;Symbol -> PipelineType
 (defn- pipeline-type-from-return-type-sym
@@ -186,7 +284,9 @@
     '(Seq Quad) :graft
     '[Quad] :graft
     'Quads :graft
-    'Dataset :pipe
+    :grafter.pipeline.types/rdf-file :graft
+    'Dataset :pipe ;; deprecated
+    :grafter.pipeline.types/tabular-dataset :pipe
     (let [msg (str "Invalid return type " ret-sym " for pipeline function: required Dataset or [Quad]")]
       (throw (IllegalArgumentException. msg)))))
 
@@ -244,8 +344,8 @@
   containing :append and/or :delete. These operations indicate whether
   the data returned from the pipeline can be appended to or deleted
   from the destination."
-  [sym type-list metadata opts]
-  (let [def-var (resolve-var *ns* sym)
+  [sym ns type-list metadata opts]
+  (let [def-var (resolve-pipeline-fn *ns* sym)
         def-meta (meta def-var)
         arg-list (first (:arglists def-meta))
         {:keys [arg-types return-type]} (parse-type-list type-list)

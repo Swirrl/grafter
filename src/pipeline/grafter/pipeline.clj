@@ -3,17 +3,19 @@
   external processes and programs such as lein-grafter and Grafter
   server."
   (:require
-   [grafter.pipeline.types :refer [resolve-var create-pipeline-declaration
-                                   coerce-arguments]]))
+   [grafter.pipeline.types :refer [resolve-parameter-type create-pipeline-declaration
+                                   parse-parameter]]))
 
 (defonce ^{:doc "Map of pipelines that have been declared and exported to the pipeline runners"} exported-pipelines (atom {}))
 
 (defn ^:no-doc register-pipeline!
-  "Registers the pipeline the exported pipelines."
-  ([sym description] (register-pipeline! sym nil description))
-  ([sym display-name description]
-   (let [pipeline (-> description
-                      (assoc :name sym)
+  "Registers the pipeline object map with the exported pipelines."
+  ([sym pipeline-obj] (register-pipeline! sym *ns* nil pipeline-obj))
+  ([sym ns pipeline-obj] (register-pipeline! sym ns nil pipeline-obj))
+  ([sym ns display-name pipeline-obj]
+   (let [pipeline (-> pipeline-obj
+                      (assoc :name sym
+                             :namespace (symbol (str ns)))
                       (cond-> display-name (assoc :display-name display-name)))]
      (swap! exported-pipelines #(assoc % sym pipeline)))))
 
@@ -75,8 +77,8 @@
   ([& args]
    (let [{:keys [sym display-name type-form metadata opts]} (parse-pipeline-declaration args)]
      (if-let [sym (qualify-symbol sym)]
-       (let [decl (create-pipeline-declaration sym type-form metadata opts)]
-         (register-pipeline! sym display-name decl))
+       (let [decl (create-pipeline-declaration sym *ns* type-form metadata opts)]
+         (register-pipeline! sym *ns* display-name decl))
        (throw (ex-info (str "The symbol " sym " could not be resolved to a var.") {:error :pipeline-declaration-error
                                                                                    :sym   sym}))))
    nil))
@@ -91,17 +93,48 @@
 
      (filter type? (sort-by (comp str :var) (vals @exported-pipelines))))))
 
-(defn ^:no-doc coerce-pipeline-arguments
-  "Coerce the arguments based on the pipelines stated types.  Receives
-  a fully qualified symbol identifying the pipeline and returns the
-  arguments as coerced values, or raise an error if a coercion isn't
-  possible.
+(defn ^:no-doc coerce-arguments
+  ([namespace expected-types supplied-args] (coerce-arguments namespace expected-types supplied-args {}))
+  ([namespace expected-types supplied-args opts]
+   (map (fn [et sa]
+          (let [klass (:class et)]
+            (try
+              (parse-parameter (resolve-parameter-type namespace klass) sa opts)
+              (catch Exception ex
+                (throw (ex-info "Unexpected exception parsing pipeline parameter type." {:error ::coerce-argument-error
+                                                                                         :expected-type et
+                                                                                         :supplied-argument sa} ex)))))) expected-types supplied-args)))
 
-  Uses the multi-method grafter.pipeline.types/type-reader to coerce
+
+(defn find-pipeline
+  "Find a pipeline by its fully qualified pipeline.  Accepts either a
+  string or a symbol identifying the pipeline
+  e.g. \"my.namespace/my-pipeline\" or 'my.namespace/my-pipeline"
+  [name]
+  (get @exported-pipelines (symbol name)))
+
+(defmulti coerce-pipeline-arguments
+  "Coerce the arguments based on the pipelines stated types.  Receives
+  a fully qualified name of the pipeline (a symbol or string), or a
+  pipeline-object and returns the arguments as coerced values, or
+  raise an error if a coercion isn't possible.
+
+  Uses the multi-method grafter.pipeline.types/parse-parameter to coerce
   values."
-  [pipeline-sym supplied-args]
-  (let [expected-types (:args (@exported-pipelines pipeline-sym))]
-    (coerce-arguments expected-types supplied-args)))
+  (fn [pipeline supplied-args]
+    (type pipeline)))
+
+(defmethod coerce-pipeline-arguments clojure.lang.IPersistentMap [pipeline supplied-args]
+  (let [expected-types (:args pipeline)
+        namespace (:namespace pipeline)]
+    (coerce-arguments namespace expected-types supplied-args)))
+
+(defmethod coerce-pipeline-arguments :default [pipeline-name supplied-args]
+  (let [pipeline (find-pipeline pipeline-name)]
+    (if pipeline
+      (coerce-pipeline-arguments pipeline supplied-args)
+      (throw (ex-info "Could not find pipeline named: " pipeline-name {:error ::pipeline-not-found
+                                                                       ::pipeline-name pipeline-name})))))
 
 (defn ^:no-doc execute-pipeline-with-coerced-arguments
   "Execute the pipeline specified by pipeline-sym by applying it to

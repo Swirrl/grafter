@@ -4,6 +4,7 @@
             [grafter.rdf]
             [me.raynes.fs :as fs]
             [grafter.rdf.protocols :as pr]
+            [grafter.pipeline.types :as types]
             [grafter.rdf.io :refer :all]
             [clojure.tools.logging :as log]
             [grafter.rdf :as rdf]
@@ -612,6 +613,10 @@
        (lazy-cat
         res
         (batched-query qstr conn limit (+ limit offset)))))))
+
+(defmethod types/parse-parameter [String ::sparql-query-endpoint] [_ val opts]
+  (let [endpoint (:endpoint val)]
+    (sparql-repo (types/parse-parameter String ::types/map val))))
 
 (extend-type RepositoryConnection
 
