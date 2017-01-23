@@ -92,6 +92,35 @@
    (pr/add target graph base-uri format triple-stream)
    target))
 
+(def default-batch-size 20000)
+
+(defn- add-batched-with [target add-fn triples batch-size]
+  (doseq [batch (partition-all batch-size triples)]
+    (add-fn target batch))
+  target)
+
+(defn add-batched
+  "Adds a collection of statements to a repository in batches. The batch size is optional and default-batch-size
+   will be used if not specified. Some repository implementations cache added statements in memory until explicitly
+   flushed which can cause out-of-memory errors if a large number of statements are added through add. Spliting the
+   input sequence into batches limits the number of cached statements and therefore can reduce memory pressure."
+  ([target triples]
+   (add-batched-with target add triples default-batch-size))
+
+  ([target graph-or-triples triples-or-batch-size]
+    (if (number? triples-or-batch-size)
+      ;;given target triples and batch-size
+      (let [triples graph-or-triples
+            batch-size triples-or-batch-size]
+        (add-batched-with target add triples batch-size))
+
+      ;;given target graph and triples
+      (let [graph graph-or-triples
+            triples triples-or-batch-size]
+        (add-batched-with target (fn [repo batch] (add repo graph batch)) triples default-batch-size))))
+
+  ([target graph triples batch-size]
+   (add-batched-with target (fn [repo batch] (add repo graph batch)) triples batch-size)))
 
 
 (defn delete

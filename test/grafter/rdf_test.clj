@@ -1,6 +1,7 @@
 (ns grafter.rdf-test
   (:require [grafter.rdf :refer :all]
-            [grafter.rdf.protocols :refer [raw-value datatype-uri]]
+            [grafter.rdf.protocols :refer [raw-value datatype-uri] :as proto]
+            [grafter.rdf.repository :as repo]
             [clojure.test :refer :all])
   (:import [java.net URI]))
 
@@ -23,3 +24,48 @@
 (deftest language-test
   (is (thrown? AssertionError
                (language "foo" nil))))
+
+(defrecord BatchSizeRecordingRepository [repo batch-sizes])
+
+(extend-type BatchSizeRecordingRepository
+  proto/ITripleWriteable
+  (proto/add
+    ([{:keys [repo batch-sizes] :as this} quads]
+     (swap! batch-sizes conj (count quads))
+     (proto/add repo quads)
+     this)
+    ([{:keys [repo batch-sizes] :as this} graph triples]
+     (swap! batch-sizes conj (count triples))
+     (proto/add repo graph triples)
+     this)))
+
+(deftest add-batched-test
+  (let [triples (map (fn [i] (->Triple (URI. (str "http://subject" i)) (URI. (str "http://predicate" i)) (URI. (str "http://object" i)))) (range 1 11))
+        graph (URI. "http://test-graph")]
+    (testing "Adds all triples"
+      (let [repo (repo/repo)]
+        (add-batched repo triples)
+        (is (= (set triples) (set (statements repo))))))
+
+    (testing "Adds all triples with graph"
+      (let [expected-quads (map #(assoc % :c graph) triples)
+            repo (repo/repo)]
+        (add-batched repo graph triples)
+        (is (= (set expected-quads) (set (statements repo))))))
+
+    (testing "Adds all triples in sized batches"
+      (let [repo (repo/repo)
+            batch-sizes (atom [])
+            recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
+        (add-batched recording-repo triples 3)
+        (is (= (set triples) (set (statements repo))))
+        (is (= [3 3 3 1] @batch-sizes))))
+
+    (testing "Adds all triples with graph in sized batches"
+      (let [expected-quads (map #(assoc % :c graph) triples)
+            repo (repo/repo)
+            batch-sizes (atom [])
+            recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
+        (add-batched recording-repo graph triples 5)
+        (is (= (set expected-quads) (set (statements repo))))
+        (is (= [5 5] @batch-sizes))))))
