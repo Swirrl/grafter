@@ -4,7 +4,8 @@
             [grafter.rdf.repository :as repo]
             [grafter.rdf.io :refer [->sesame-rdf-type]]
             [clojure.java.io :refer [resource]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.java.io :as io]))
 
 (defn- get-clause-pattern [clause-name key]
   (cond
@@ -63,7 +64,10 @@
   (spog r {:s (java.net.URI. \"http://example.org/data/a-triple\")}) ;; triples for given subject s.
   "
   ([sparql-file]
-   (partial query sparql-file))
+   (if (io/resource sparql-file)
+     (partial query sparql-file)
+     (throw (ex-info "Could not find sparql file on resource path" {:error :resource-file-not-found
+                                                                    :resource-path sparql-file}))))
   ([sparql-file repo]
    (query sparql-file {} repo))
   ([sparql-file bindings repo]
