@@ -51,7 +51,19 @@
   Which should be maps binding identifiable limits/offsets from your
   query to new values.
 
-  The final argument should be the repository to query. "
+  The final argument should be the repository to query.
+
+  If only one argument referencing a resource path to a SPARQL query
+  then a partially applied function is returned.  e.g.
+
+  (def spog (query \"grafter/rdf/sparql/select-spog.sparql\"))
+
+  (spog r) ;; ... triples ...
+
+  (spog r {:s (java.net.URI. \"http://example.org/data/a-triple\")}) ;; triples for given subject s.
+  "
+  ([sparql-file]
+   (partial query sparql-file))
   ([sparql-file repo]
    (query sparql-file {} repo))
   ([sparql-file bindings repo]
@@ -67,17 +79,17 @@
      (repo/evaluate prepped-query))))
 
 (comment
-  (def r (repo/fixture-repo "test/grafter/rdf/sparql-data.trig"))
+  (def r (repo/resource-repo "grafter/rdf/sparql/sparql-data.trig"))
 
-  (query "grafter/rdf/select-spog-pre-processed.sparql" {:p (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")} (->connection r))
+  (query "grafter/rdf/sparql/select-spog-pre-processed.sparql" {:p (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")} (->connection r))
 
-  (query "grafter/rdf/select-spog.sparql" {:p (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")} (->connection r))
+  (query "grafter/rdf/sparql/select-spog.sparql" {:p (java.net.URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")} (->connection r))
 
-  (query "grafter/rdf/select-spog-pre-processed.sparql" r)
+  (query "grafter/rdf/sparql/select-spog-pre-processed.sparql" r)
 
   ;; partial application
 
-  (def spog (partial query "grafter/rdf/select-spog.sparql"))
+  (def spog (query "grafter/rdf/sparql/select-spog.sparql"))
 
   (spog r)
 

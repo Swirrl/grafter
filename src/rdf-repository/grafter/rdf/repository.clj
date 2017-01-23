@@ -254,6 +254,25 @@
                           (seq d) d)))]
        (transduce xf add->repo repo data)))))
 
+(defn resource-repo
+  "Like fixture repo but assumes all supplied data is on the java
+  resource path.  For example:
+
+  (repo/resource-repo \"grafter/rdf/sparql/sparql-data.trig\"
+                      \"grafter/rdf/rdf-types.trig\")
+
+  Will load the supplied RDF files from the resource path into a
+  single memory repository for testing.
+
+  If you want to use a custom repository the first argument can be a
+  repository."
+  ([] (sail-repo))
+  ([repo-or-data & data]
+   (let [repo (if (instance? Repository repo-or-data)
+                repo-or-data
+                (rdf/add (sail-repo) (rdf/statements (io/resource repo-or-data))))]
+     (apply fixture-repo repo (map io/resource data)))))
+
 (defn repo
   "DEPRECATED: Use sail-repo or fixture-repo instead.
 
