@@ -94,9 +94,9 @@
 
 (def default-batch-size 20000)
 
-(defn- add-batched-with [target add-fn triples batch-size]
-  (doseq [batch (partition-all batch-size triples)]
-    (add-fn target batch))
+(defn- apply-batched [target apply-fn stmts batch-size]
+  (doseq [batch (partition-all batch-size stmts)]
+    (apply-fn target batch))
   target)
 
 (defn add-batched
@@ -105,23 +105,22 @@
    flushed which can cause out-of-memory errors if a large number of statements are added through add. Spliting the
    input sequence into batches limits the number of cached statements and therefore can reduce memory pressure."
   ([target triples]
-   (add-batched-with target add triples default-batch-size))
+   (apply-batched target add triples default-batch-size))
 
   ([target graph-or-triples triples-or-batch-size]
     (if (number? triples-or-batch-size)
       ;;given target triples and batch-size
       (let [triples graph-or-triples
             batch-size triples-or-batch-size]
-        (add-batched-with target add triples batch-size))
+        (apply-batched target add triples batch-size))
 
       ;;given target graph and triples
       (let [graph graph-or-triples
             triples triples-or-batch-size]
-        (add-batched-with target (fn [repo batch] (add repo graph batch)) triples default-batch-size))))
+        (apply-batched target (fn [repo batch] (add repo graph batch)) triples default-batch-size))))
 
   ([target graph triples batch-size]
-   (add-batched-with target (fn [repo batch] (add repo graph batch)) triples batch-size)))
-
+   (apply-batched target (fn [repo batch] (add repo graph batch)) triples batch-size)))
 
 (defn delete
   "Deletes a sequence of statements from the specified repository.
@@ -137,6 +136,27 @@
   ([target graph triples]
    (pr/delete target graph triples)
    target))
+
+(defn delete-batched
+  "Deletes a collection of statements from a repository in batches. The batch size is optional and default-batch-size
+  will be used if not specified."
+  ([target quads]
+    (apply-batched target delete quads default-batch-size))
+
+  ([target graph-or-quads triples-or-batch-size]
+   (if (number? triples-or-batch-size)
+     ;;given repo, quads and batch size
+     (let [quads graph-or-quads
+           batch-size triples-or-batch-size]
+       (apply-batched target delete quads batch-size))
+
+     ;;given repo, graph and triples
+     (let [graph graph-or-quads
+           triples triples-or-batch-size]
+       (apply-batched target (fn [repo batch] (delete repo graph batch)) triples default-batch-size))))
+
+  ([target graph triples batch-size]
+    (apply-batched target (fn [repo batch] (delete repo graph batch)) triples batch-size)))
 
 (defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a
