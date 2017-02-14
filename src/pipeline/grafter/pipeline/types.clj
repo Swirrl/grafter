@@ -42,6 +42,9 @@
                    :value input-val
                    :options opts})))
 
+(defmethod parse-parameter [String ::root-type] [_ val opts]
+  (throw (ex-info "root-type is abstract and does not correspond to any concrete object coercion." {:error ::abstract-type-error})))
+
 (defmethod parse-parameter [String ::primitive] [_ val opts]
   (edn/read-string val))
 
@@ -97,9 +100,15 @@
 (defmethod parse-parameter [String ::map] [_ val opts]
   (edn/read-string val))
 
+(defmethod parse-parameter [String ::file] [_ val opts]
+  (io/file val))
+
 (defmethod parse-parameter [String ::text-file] [_ val opts]
   ;; assume its a file path to a text file and return a reader on it
   (io/reader val))
+
+(defmethod parse-parameter [String ::binary-file] [_ val opts]
+  (io/input-stream val))
 
 (defmethod parse-parameter [String java.net.URL] [_ val opts]
   (URL. val))
@@ -140,6 +149,8 @@
 
 (swap! parameter-types derive ::vector ::value)
 
+(swap! parameter-types derive ::file ::root-type)
+
 (swap! parameter-types derive ::binary-file ::file)
 
 (swap! parameter-types derive ::text-file ::file)
@@ -153,6 +164,7 @@
 (swap! parameter-types derive ::tabular-dataset ::text-file)
 
 (prefer-method parse-parameter [String ::tabular-dataset] [String Map])
+
 (prefer-method parse-parameter [Map ::tabular-dataset] [Map Map])
 
 (swap! parameter-types derive java.io.InputStream ::binary-file)
