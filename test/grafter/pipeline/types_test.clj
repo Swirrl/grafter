@@ -56,7 +56,9 @@
   (t/testing "parameter-type-chain Reports hierarchy ordered from sub-type to super-type"
     (t/is (= [::my-new-sub-type
               ::my-new-data-type
-              :grafter.pipeline.types/primitive]
+              :grafter.pipeline.types/primitive
+              :grafter.pipeline.types/value
+              :grafter.pipeline.types/root-type]
              (sut/parameter-type-chain ::my-new-sub-type)))))
 
 
