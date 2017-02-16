@@ -1,0 +1,30 @@
+@prefix : <http://example/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://boolean> {
+  :boolean :hasValue true .
+}
+
+<http://date> {
+  :date :hasValue "2015-01-01T00:00:00Z"^^xsd:dateTime .
+}
+
+<http://decimal> {
+  :decimal :hasValue "1.2"^^xsd:decimal .}
+
+
+<http://double> {
+  :double :hasValue 1.0e6 .
+}
+
+<http://float> {
+  :float :hasValue "0.4"^^xsd:float .
+}
+
+<http://integer> {
+  :integer :hasValue 10 .
+}
+
+<http://string> {
+  :string :hasValue "hello" .
+}

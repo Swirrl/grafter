@@ -1,0 +1,3 @@
+<http://grafter.org/graph/quads> {
+   :foo :bar :baz .
+}

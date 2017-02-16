@@ -2,9 +2,9 @@
   {:no-doc true}
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
-            [grafter.tabular.common :as tab])
-  (:import [java.io File IOException]
-           [java.net URI URL]))
+            [grafter.tabular.common :as tab]
+            [grafter.rdf.protocols :refer [raw-value]])
+  (:import [java.io IOException]))
 
 (defmethod tab/read-dataset* :csv
   [source opts]
@@ -21,7 +21,7 @@
 (defmethod tab/write-dataset* :csv [destination dataset {:keys [format] :as opts}]
   (with-open [output (io/writer destination)]
     (let [rows (tab/dataset->seq-of-seqs dataset)
-          stringified-rows (map (partial map str) rows)]
+          stringified-rows (map (partial map raw-value) rows)]
       (apply csv/write-csv output
              stringified-rows
              (mapcat identity opts)))))

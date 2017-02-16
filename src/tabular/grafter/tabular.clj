@@ -1,12 +1,12 @@
-(ns ^{:doc "Functions for processing tabular data."}
-  grafter.tabular
+(ns grafter.tabular
   "Functions for processing tabular data."
   (:require [clojure
              [set :as set]
              [string :as str]]
             [grafter.tabular.common :as tabc :refer [lift->vector map-keys]]
             [incanter.core :as inc]
-            [potemkin.namespaces :refer [import-vars]]))
+            [potemkin.namespaces :refer [import-vars]]
+            [grafter.pipeline.types :as types]))
 
 ;; Load protocol definitions.  This could occur in the ns definition but putting
 ;; them in their means that namespace refactoring tools can clear them out
@@ -33,6 +33,11 @@
   resolve-column-id]
  [grafter.tabular.melt
   melt])
+
+(defmethod types/parse-parameter [String ::types/tabular-dataset] [_ val opts]
+  (read-dataset val))
+
+(swap! types/parameter-types derive incanter.core.Dataset ::types/tabular-dataset)
 
 (defn test-dataset
   "Constructs a test dataset of r rows by c cols e.g.
@@ -62,6 +67,9 @@
                              (map first))]
     not-found-items))
 
+(defn- resolve-all-col-ids [dataset source-cols]
+  (map (partial resolve-column-id dataset) source-cols))
+
 (defn- all-columns
   "Takes a dataset and a finite sequence of column identifiers.
 
@@ -74,13 +82,13 @@
   IndexOutOfBoundsException if a specified column is not actually
   found in the Dataset."
   [dataset cols]
-  (let [not-found-items (invalid-column-keys dataset cols)]
+  (let [original-meta (meta dataset)
+        not-found-items (invalid-column-keys dataset cols)]
     (if (and (empty? not-found-items)
              (some identity cols))
-      (let [inc-ds (inc/$ cols dataset)]
-        (if (inc/dataset? inc-ds)
-          (with-meta inc-ds (meta dataset))
-          (with-meta (make-dataset [inc-ds] cols) (meta dataset))))
+      (let [resolved-cols (resolve-all-col-ids dataset cols)
+            rows (->> dataset :rows (map #(select-keys % resolved-cols)))]
+        (with-meta (make-dataset rows resolved-cols) original-meta))
       (throw (IndexOutOfBoundsException. (str "The columns: "
                                               (str/join ", " not-found-items)
                                               " are not currently defined."))))))
@@ -135,12 +143,14 @@
   the function will assume it has consumed all the rows and return
   normally."
   [dataset row-numbers]
-  (let [rows (indexed (inc/to-list dataset))
+  (let [original-meta (meta dataset)
+        original-columns (column-names dataset)
+        rows (indexed (tabc/to-list dataset))
         filtered-rows (select-indexed rows row-numbers)]
 
     (-> (make-dataset filtered-rows
-                      (column-names dataset))
-        (with-meta (meta dataset)))))
+                      original-columns)
+        (with-meta original-meta))))
 
 ;; This type hint is actually correct as APersistentVector implements .indexOf
 ;; from java.util.List.
@@ -202,14 +212,32 @@
              (ifn? col-map-or-fn))]}
 
   (if (map? col-map-or-fn)
-    (inc/rename-cols col-map-or-fn dataset)
-    (let [old-key->new-key (partial map-keys col-map-or-fn)
+    (rename-columns dataset (fn [col] (col-map-or-fn col col)))
+    (let [original-meta (meta dataset)
+          old-key->new-key (partial map-keys col-map-or-fn)
           new-columns (map col-map-or-fn
                            (column-names dataset))]
 
-      (-> (make-dataset (inc/to-list dataset)
+      (-> (make-dataset (tabc/to-list dataset)
                         new-columns)
-          (with-meta (meta dataset))))))
+          (with-meta original-meta)))))
+
+(defn reorder-columns
+  "Reorder the columns in a dataset to the supplied order. An error
+  will be raised if the supplied set of columns are different to the
+  set of columns in the dataset."
+  [{:keys [column-names] :as ds} cols]
+  (let [ds-cols (set column-names)
+        supplied-cols (map (partial tabc/resolve-column-id ds) cols)]
+
+    (when (not= ds-cols (set supplied-cols))
+      (throw (ex-info (str "The set of supplied column names " supplied-cols
+                           " must be equal to those in the dataset " ds-cols
+                           " to reorder.")
+                      {:type :reorder-columns-error
+                       :dataset-columns column-names
+                       :supplied-columns supplied-cols})))
+    (assoc ds :column-names supplied-cols)))
 
 (defn drop-rows
   "Drops the first n rows from the dataset, retaining the rest."
@@ -233,9 +261,6 @@
         new-column-hash (resolve-keys new-header new-col-val)]
     (merge row new-column-hash)))
 
-(defn- resolve-all-col-ids [dataset source-cols]
-  (map (partial resolve-column-id dataset) source-cols))
-
 (defn derive-column
   "Adds a new column to the end of the row which is derived from
 column with position col-n.  f should just return the cells value.
@@ -247,7 +272,9 @@ the specified column being cloned."
      (derive-column dataset new-column-name from-cols identity))
 
   ([dataset new-column-name from-cols f]
-   (let [from-cols (lift->vector from-cols)
+   (let [original-meta (meta dataset)
+         original-columns (column-names dataset)
+         from-cols (lift->vector from-cols)
          resolved-from-cols (resolve-all-col-ids dataset from-cols)]
 
      (-> (make-dataset (->> dataset
@@ -256,8 +283,8 @@ the specified column being cloned."
                                    (let [args-from-cols (select-row-values resolved-from-cols row)
                                          new-col-val (apply f args-from-cols)]
                                      (assoc row new-column-name new-col-val)))))
-                       (concat (column-names dataset) [new-column-name]))
-         (with-meta (meta dataset))))))
+                       (concat original-columns [new-column-name]))
+         (with-meta original-meta)))))
 
 (defn add-column
   "Add a new column to a dataset with the supplied value lazily copied
@@ -331,20 +358,22 @@ the specified column being cloned."
        (add-columns dataset new-col-ids source-cols f)))
 
   ([dataset new-col-ids source-cols f]
-     (let [source-cols (lift->vector source-cols)
+     (let [original-meta (meta dataset)
+           source-cols (lift->vector source-cols)
            new-header (concat (:column-names dataset) new-col-ids)
            col-ids (resolve-all-col-ids dataset source-cols)
            apply-f-to-row (partial apply-f-to-row-hash col-ids new-header f)]
 
        (-> (make-dataset (map apply-f-to-row (:rows dataset))
                          new-header)
-           (with-meta (meta dataset))))))
+           (with-meta original-meta)))))
 
 (defn- grep-row [dataset f]
-  (let [filtered-data (filter f (:rows dataset))]
+  (let [original-meta (meta dataset)
+        filtered-data (filter f (:rows dataset))]
     (-> (make-dataset filtered-data
                       (column-names dataset))
-        (with-meta (meta dataset)))))
+        (with-meta original-meta))))
 
 (defmulti grep
   "Filters rows in the table for matches.  This is multi-method
@@ -366,7 +395,8 @@ the specified column being cloned."
 (defmethod grep clojure.lang.IFn
 
   [dataset f & cols]
-  (let [data (:rows dataset)
+  (let [original-meta (meta dataset)
+        data (:rows dataset)
         cols (if (nil? cols)
                  (column-names dataset)
                  (first cols))
@@ -377,7 +407,7 @@ the specified column being cloned."
                                      (some f
                                            (cells-from-columns col-set row)))))
                       (column-names dataset))
-        (with-meta (meta dataset)))))
+        (with-meta original-meta))))
 
 (defmethod grep java.lang.String [dataset s & cols]
   (apply grep dataset (fn [^String cell] (.contains (str cell) s)) cols))
@@ -448,7 +478,8 @@ the specified column being cloned."
   column will be created, though the supplied function will need to
   either ignore its argument or handle a nil argument."
   [dataset fs]
-  (let [functions (normalise-mapping dataset fs)
+  (let [original-meta (meta dataset)
+        functions (normalise-mapping dataset fs)
         new-columns (concat-new-columns dataset (keys functions))
         apply-functions (fn [row] ;; TODO consider using zipmap to do this job
                           (let [apply-column-f (fn [[col-id f]]
@@ -459,7 +490,7 @@ the specified column being cloned."
 
     (-> (make-dataset (->> dataset :rows (map apply-functions))
                       new-columns)
-        (with-meta (meta dataset)))))
+        (with-meta original-meta))))
 
 (defn apply-columns
   "Like mapc in that you associate functions with particular columns,
@@ -475,7 +506,8 @@ the specified column being cloned."
 
   `(apply-columns ds {:row-id (fn [_] (grafter.sequences/integers-from 0))})`"
   [dataset fs]
-  (let [functions (normalise-mapping dataset fs)
+  (let [original-meta (meta dataset)
+        functions (normalise-mapping dataset fs)
         new-columns (concat-new-columns dataset (keys functions))
         apply-columns-f (fn [rows]
                           ;; TODO consider implementing this in
@@ -492,13 +524,14 @@ the specified column being cloned."
 
     (-> (make-dataset (->> dataset :rows apply-columns-f)
                       new-columns)
-        (with-meta (meta dataset)))))
+        (with-meta original-meta))))
 
 (defn swap
   "Takes an even numer of column names and swaps each column"
 
   ([dataset first-col second-col]
-   (let [data (:rows dataset)
+   (let [original-meta (meta dataset)
+         data (:rows dataset)
          header (column-names dataset)
          swapper (fn [v i j]
                    (-> v
@@ -509,7 +542,7 @@ the specified column being cloned."
                        (-> header
                            (swapper (col-position header first-col)
                                     (col-position header second-col))))
-         (with-meta (meta dataset)))))
+         (with-meta original-meta))))
 
   ([dataset first-col second-col & more]
    (if (even? (count more))
@@ -606,20 +639,22 @@ the specified column being cloned."
 
   (let [row-sym (gensym "row")
         ds-sym (gensym "ds")]
-    `(with-meta (fn graphify-dataset [~ds-sym]
-                  (letfn [(graphify-row# [~row-sym]
-                            (let ~(if (vector? row-bindings)
-                                    (generate-vector-bindings ds-sym row-sym row-bindings)
-                                    (splice-supplied-bindings row-sym row-bindings))
-                              (->> (concat ~@forms)
-                                   (map (fn with-row-meta [triple#]
-                                          (let [meta# {::row ~row-sym}
-                                                meta# (if (meta ~ds-sym)
-                                                        (assoc meta# ::dataset (meta ~ds-sym))
-                                                        meta#)]
-                                            (with-meta triple# meta#)))))))]
+    `(with-meta (fn [~ds-sym]
+                  (let [ds-rows# (:rows ~ds-sym)
+                        ds-meta# (meta ~ds-sym)]
+                    (letfn [(graphify-row# [~row-sym]
+                              (let ~(if (vector? row-bindings)
+                                      (generate-vector-bindings ds-sym row-sym row-bindings)
+                                      (splice-supplied-bindings row-sym row-bindings))
+                                (->> (concat ~@forms)
+                                     (map (fn ~'with-row-meta [triple#]
+                                            (let [meta# {::row ~row-sym}
+                                                  meta# (if ds-meta#
+                                                          (assoc meta# ::dataset ds-meta#)
+                                                          meta#)]
+                                              (with-meta triple# meta#)))))))]
 
-                    (mapcat graphify-row# (:rows ~ds-sym))))
+                      (mapcat graphify-row# ds-rows#))))
        ;; Add metadata to function definition to support
        ;; grafter.rdf.preview/graph-preview functionality.
        ;;
