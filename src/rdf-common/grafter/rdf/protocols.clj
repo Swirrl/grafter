@@ -189,6 +189,10 @@
   (datatype-uri [t]
     (->java-uri xsd:integer))
 
+  clojure.lang.BigInt
+  (datatype-uri [t]
+    (->java-uri xsd:integer))
+
   java.math.BigDecimal
   (datatype-uri [t]
     (->java-uri xsd:decimal))
