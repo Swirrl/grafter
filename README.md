@@ -47,9 +47,9 @@ release.
 
 ## Versioning
 
-**NOTE:** We are currently following a `MAJOR.MINOR.PATCH` versioning
-scheme, but are anticipating significant breaking API changes between
-minor versions at least until we reach `1.0.0`.
+We are currently following a `MAJOR.MINOR.PATCH` versioning scheme,
+but are anticipating significant breaking API changes between minor
+versions at least until we reach `1.0.0`.
 
 `PATCH` versions should be backwardly compatible with previous `MINOR`
 versions.
