@@ -40,6 +40,13 @@ the [leiningen](http://leiningen.org/) build tool:
 
 [![Clojars Project](https://img.shields.io/clojars/v/grafter.svg)](https://clojars.org/grafter)
 
+**NOTE:** The public documentation, template projects and leiningen
+plugin have not yet been updated to conform to the latest 0.8.x
+versions of grafter.  If you wish to use these please use the `0.7.6`
+release.
+
+## Versioning
+
 **NOTE:** We are currently following a `MAJOR.MINOR.PATCH` versioning
 scheme, but are anticipating significant breaking API changes between
 minor versions at least until we reach `1.0.0`.
