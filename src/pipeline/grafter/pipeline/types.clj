@@ -143,6 +143,8 @@
 
 (swap! parameter-types derive java.net.URI ::uri)
 
+(swap! parameter-types derive java.net.URL ::url)
+
 (swap! parameter-types derive ::map ::value)
 
 (swap! parameter-types derive ::sparql-query-endpoint ::map)
