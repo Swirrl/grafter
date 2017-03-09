@@ -3,6 +3,11 @@
             [clojure.test :as t])
   (:import java.net.URI))
 
+;; require this to pull in the types from grafter.tabular (required
+;; for the parameter-type-chain-prefer-method test)
+
+(require '[grafter.tabular])
+
 (def a-class Class)
 
 (def a-keyword ::keyword)
@@ -80,4 +85,8 @@
 (t/deftest parameter-type-chain-prefer-method
   (t/testing "Uses clojure.core/prefer-method to resolve multiple-inheritance conflicts in ordering parameter-type-chain"
     (t/is (= [grafter.pipeline.types_test.TestRecordType java.util.Map]
-             (sut/parameter-type-chain grafter.pipeline.types_test.TestRecordType)))))
+             (sut/parameter-type-chain grafter.pipeline.types_test.TestRecordType))))
+
+  (t/testing "Uses clojure.core/prefer-method to resolve multiple-inheritance conflicts in ordering parameter-type-chain"
+    (t/is (= [incanter.core.Dataset :grafter.pipeline.types/tabular-dataset :grafter.pipeline.types/file :grafter.pipeline.types/root-type]
+             (sut/parameter-type-chain incanter.core.Dataset)))))

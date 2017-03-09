@@ -163,7 +163,7 @@
 
 (swap! parameter-types derive java.io.Reader ::text-file)
 
-(swap! parameter-types derive ::tabular-dataset ::text-file)
+(swap! parameter-types derive ::tabular-dataset ::file)
 
 (prefer-method parse-parameter [String ::tabular-dataset] [String Map])
 
@@ -188,25 +188,28 @@
   "When there are multiple defmethod implementations for
   parse-parameter this returns the prefered as declared via clojure's
   prefer-method."
-  [t]
-  (let [prefs (prefers parse-parameter)
-        preference (or (reduce
-                        (fn [acc [pref-type types]]
-                          (if (isa? @parameter-types t pref-type)
-                            (if-let [pref (types t)]
-                              pref-type
-                              t)
-                            t))
-                        false prefs)
-                       t)]
-    preference))
+
+  [param-hier parent-types]
+  (let [n-parents (count parent-types)
+        pref? (fn [t]
+                (when ((prefers parse-parameter) [java.util.Map t])
+                  t))]
+    (cond
+      (= 1 n-parents) (first parent-types)
+      (>= n-parents 2) (some pref? parent-types))))
 
 (defn- parameter-type-chain*
   [t]
-  (when (supported-parameter? t)
-    (let [ps (parents @parameter-types t)]
-      (->> (cons t (lazy-seq (mapcat parameter-type-chain* ps)))
-           (map preferred-type)))))
+  (let [param-hier @parameter-types]
+    (when (supported-parameter? t)
+      (let [ps (parents param-hier t)
+            supported-parents (filter supported-parameter? (parents param-hier t))
+
+            chosen-parent (if (coll? ps)
+                            (preferred-type param-hier supported-parents)
+                            ps)]
+        (cons t
+              (mapcat parameter-type-chain* [chosen-parent]))))))
 
 (defn ^:no-doc parameter-type-chain
   "Interogates the parse-parameter multi-method and returns an ordered
