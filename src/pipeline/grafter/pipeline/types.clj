@@ -12,8 +12,7 @@
             [clojure.instant :refer [read-instant-date]]
             [clojure.set :as set]
             [clojure.string :as str]
-            [clojure.java.io :as io]
-            [grafter.pipeline.types :as sut])
+            [clojure.java.io :as io])
   (:import [java.net URI URL]
            [java.util UUID Date Map]))
 
