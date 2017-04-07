@@ -8,3 +8,6 @@ before_install:
 
 script:
   - env JAVA_HOME=/usr/lib/jvm/java-8-oracle/bin/java ./travis/build.sh
+
+after_script:
+  - ./travis/coveralls.sh
