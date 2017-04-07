@@ -6,4 +6,5 @@ jdk:
 before_install:
   - sudo ./travis/setup-lein-travis.sh
 
-script: travis_retry env JAVA_HOME=/usr/lib/jvm/java-8-oracle/bin/java lein test
+script:
+  - env JAVA_HOME=/usr/lib/jvm/java-8-oracle/bin/java ./travis/build.sh

@@ -59,7 +59,8 @@
 
   :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
 
-             :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
+             :dev {:plugins [[lein-cloverage "1.0.9"]
+                             [com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
                              [codox "0.8.10"]
                              [lein-repack "0.2.10" :exclusions [org.clojure/clojure
                                                                 org.codehaus.plexus/plexus-utils]]]
