@@ -5,4 +5,4 @@
 # repo/build etc into the coveralls.json.
 
 COVERALLS_URL='https://coveralls.io/api/v1/jobs'
-curl -F 'json_file=@target/cloverage/coveralls.json' "$COVERALLS_URL"
+curl -F 'json_file=@target/coverage/coveralls.json' "$COVERALLS_URL"
