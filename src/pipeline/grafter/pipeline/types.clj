@@ -166,6 +166,8 @@
 
 (prefer-method parse-parameter [String ::tabular-dataset] [String Map])
 
+(prefer-method parse-parameter [String Map] [String ::root-type])
+
 (prefer-method parse-parameter [Map ::tabular-dataset] [Map Map])
 
 (swap! parameter-types derive java.io.InputStream ::binary-file)

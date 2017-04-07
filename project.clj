@@ -57,10 +57,7 @@
             :path "src/tabular"
             :levels 2}]
 
-
-  :profiles {:uberjar {:aot :all}
-
-             :clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
+  :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
 
              :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
                              [codox "0.8.10"]
