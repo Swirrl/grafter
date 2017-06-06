@@ -13,6 +13,7 @@
                  [grafter/vocabularies "0.2.0"]
 
                  [commons-logging "1.2"] ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
+                 [commons-io/commons-io "2.4"]
                  [org.clojure/data.csv "0.1.3"]
                  [grafter/clj-excel "0.0.9" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.6"]
