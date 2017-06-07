@@ -150,6 +150,16 @@
         (is-a-dataset? dataset)
         (has-metadata? dataset))))
 
+  (testing "Open CSV file and strip Byte-Order-Mark"
+    (testing "Strips BOM from first column name"
+      (let [dataset (read-dataset (io/resource "grafter/tabular/test-bom.csv"))
+            col-names (-> dataset (make-dataset move-first-row-to-header) (column-names))]
+        (is (= "foo" (first col-names)))))
+    (testing "Doesnt affect csv files without BOM"
+      (let [dataset (read-dataset (io/resource "grafter/tabular/test-nobom.csv"))
+            col-names (-> dataset (make-dataset move-first-row-to-header) (column-names))]
+        (is (= "foo" (first col-names))))))
+
   (testing "Open text file"
     (let [dataset (read-dataset (io/resource "grafter/tabular/test.txt") :format :csv)]
       (testing "returns a dataset"

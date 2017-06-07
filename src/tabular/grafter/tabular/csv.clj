@@ -4,11 +4,16 @@
             [clojure.java.io :as io]
             [grafter.tabular.common :as tab]
             [grafter.rdf.protocols :refer [raw-value]])
-  (:import [java.io IOException]))
+  (:import [java.io IOException]
+           [org.apache.commons.io.input BOMInputStream]))
 
 (defmethod tab/read-dataset* :csv
   [source opts]
-  (let [csv-seq (tab/mapply csv/read-csv (tab/mapply io/reader source opts) opts)]
+  (let [reader (-> source
+                   io/input-stream
+                   BOMInputStream.
+                   (#(tab/mapply io/reader % opts)))
+        csv-seq (tab/mapply csv/read-csv reader opts)]
     (if (nil? csv-seq)
       (throw (IOException. (str "There was an error loading the CSV file: " source)))
       (tab/make-dataset csv-seq))))
