@@ -395,6 +395,11 @@
   "Coerces destination into an java.io.Writer using
   clojure.java.io/writer and returns an RDFSerializer.
 
+  Use this to capture the intention to write to a location in a
+  specific RDF format, e.g.
+
+  (grafter.rdf/add (rdf-serializer \"/tmp/foo.nt\" :format :nt) quads)
+
   Accepts also the following optional options:
 
   - :append        If set to true it will append new values to the end of
