@@ -1,7 +1,8 @@
 (ns grafter.rdf.formats
   "Symbols used to specify different Linked Data Serializations."
   (:require [clojure.string :as string]
-            [grafter.url :as url])
+            [grafter.url :as url]
+            [clojure.string :as str])
   (:import [org.openrdf.rio RDFFormat RDFParser RDFParserFactory Rio]
            org.openrdf.rio.binary.BinaryRDFParserFactory
            org.openrdf.rio.jsonld.JSONLDParserFactory
@@ -51,7 +52,7 @@
 (defmethod ->rdf-format String [fmt]
   (if (re-find #"/" fmt)
     (mimetype->rdf-format fmt)
-    (->rdf-format (keyword fmt))))
+    (->rdf-format (keyword (str/replace fmt "." "")))))
 
 (defmethod ->rdf-format ::coerced [fmt] fmt)
 

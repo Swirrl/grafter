@@ -233,24 +233,29 @@
      acc
      (rdf/add acc v))))
 
-(defn fixture-repo
-  "Adds the specified data to a SPARQL repository.  If the first
-  argument is a Repository that object is used, otherwise the first
-  and remaining arguments are assumed to be
-  grafter.rdf.protocols/ITripleReadable and are loaded into a sesame
-  MemoryStore sail-repo.
+(defn- statements-with-inferred-format [res]
+  (if (seq? res)
+    res
+    (rdf/statements res :format (format/->rdf-format (fs/extension (str res))))))
 
-  This function is most useful for loading fixture data from files e.g.
+(defn fixture-repo
+  "adds the specified data to a sparql repository.  if the first
+  argument is a repository that object is used, otherwise the first
+  and remaining arguments are assumed to be
+  grafter.rdf.protocols/itriplereadable and are loaded into a sesame
+  memorystore sail-repo.
+
+  this function is most useful for loading fixture data from files e.g.
 
   (fixture-repo \"test-data.trig\" \"more-test-data.trig\")"
   ([] (sail-repo))
   ([repo-or-data & data]
    (let [repo (if (instance? Repository repo-or-data)
                 repo-or-data
-                (rdf/add (sail-repo) (rdf/statements repo-or-data)))]
+                (rdf/add (sail-repo) (statements-with-inferred-format repo-or-data)))]
      (let [xf (mapcat (fn [d]
                         (cond
-                          (satisfies? pr/ITripleReadable d) (rdf/statements d :format (format/->rdf-format (fs/extension (str d))))
+                          (satisfies? pr/ITripleReadable d) (statements-with-inferred-format repo-or-data)
                           (seq d) d)))]
        (transduce xf add->repo repo data)))))
 
