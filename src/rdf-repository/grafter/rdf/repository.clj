@@ -251,11 +251,11 @@
   ([] (sail-repo))
   ([repo-or-data & data]
    (let [repo (if (instance? Repository repo-or-data)
-                repo-or-data
-                (rdf/add (sail-repo) (statements-with-inferred-format repo-or-data)))]
+                     repo-or-data
+                     (rdf/add (sail-repo) (statements-with-inferred-format repo-or-data)))]
      (let [xf (mapcat (fn [d]
                         (cond
-                          (satisfies? pr/ITripleReadable d) (statements-with-inferred-format repo-or-data)
+                          (satisfies? pr/ITripleReadable d) (statements-with-inferred-format d)
                           (seq d) d)))]
        (transduce xf add->repo repo data)))))
 

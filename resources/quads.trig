@@ -1,3 +1,5 @@
+@prefix : <http://www.grafter.org/example#> .
+
 <http://grafter.org/graph/quads> {
    :foo :bar :baz .
 }

@@ -131,7 +131,16 @@
   (is (= (into #{} (fixture-repo (io/resource "grafter/rdf/1.nt")))
          #{(->Triple (URI. "http://one")
                      (URI. "http://lonely")
-                     (URI. "http://triple"))})))
+                     (URI. "http://triple"))}))
+
+  (testing "Calling with multiple sets of quads appends them all into the repo"
+    (is (= 2 (count (grafter.rdf/statements (fixture-repo (io/resource "quads.nq")
+                                                          (io/resource "quads.trig"))))))))
+
+(deftest resource-repo-test
+  (testing "Calling with multiple sets of quads appends them all into the repo"
+    (is (= 2 (count (grafter.rdf/statements (resource-repo "quads.nq"
+                                                           "quads.trig")))))))
 
 (deftest sail-repo-test
   (is (instance? org.openrdf.repository.Repository (sail-repo)))
