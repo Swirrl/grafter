@@ -275,7 +275,7 @@
   ([repo-or-data & data]
    (let [repo (if (instance? Repository repo-or-data)
                 repo-or-data
-                (rdf/add (sail-repo) (rdf/statements (io/resource repo-or-data))))]
+                (rdf/add (sail-repo) (statements-with-inferred-format (io/resource repo-or-data))))]
      (apply fixture-repo repo (map io/resource data)))))
 
 (defn repo
