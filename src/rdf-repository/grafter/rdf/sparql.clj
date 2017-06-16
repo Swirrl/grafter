@@ -2,10 +2,11 @@
   (:require [grafter.rdf :refer [statements]]
             [grafter.rdf.repository :refer [repo sparql-repo ->connection]]
             [grafter.rdf.repository :as repo]
-            [grafter.rdf.io :refer [->sesame-rdf-type]]
+            [grafter.rdf.io :refer [->sesame-rdf-type] :as rio]
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io])
+  (:import [org.openrdf.rio.ntriples NTriplesUtil]))
 
 (defn- get-clause-pattern [clause-name key]
   (cond
@@ -16,6 +17,53 @@
     (str "(?i)" clause-name "\\s+\\?" (name key))
 
     :else nil))
+
+(defn var-key-matcher [k]
+  (cond (keyword? k)
+        (let [k (str "\\?" (-> k
+                               name
+                               (str/replace "-" "_")))]
+          k)
+        ;; todo pad with whitespace matcher
+        (sequential? k) (str "\\s*\\(\\s*" (str/join "\\s+" (map var-key-matcher k)) "\\s*\\)")
+        :else (assert false "Error replacement not expected type")))
+
+(defn key->replacer [k]
+  (let [whitespace-pat "\\s+"
+        values-pat "(?i)values"
+        var-pat (var-key-matcher k)
+        body-mat #"\{(.*?)\}"]
+
+    (re-pattern (str "(" values-pat whitespace-pat var-pat whitespace-pat "\\{).*?(\\})"))))
+
+(defn- serialise-val [v]
+  (NTriplesUtil/toNTriplesString (rio/->sesame-rdf-type v)))
+
+(defn- ->sparql-str [k v]
+  (cond
+    (nil? v)
+    "UNDEF"
+
+    (and (sequential? k) (sequential? v)
+         (= (count k) (count v)))
+    (str "(" (str/join " " (map serialise-val v)) ")")
+
+    (and (not (sequential? k)) (not (sequential? v)))
+    (serialise-val v)
+
+    :else
+    (assert false (str "Key and value types don't match.  Key: " k " Val " v))))
+
+(defn- rewrite-values-clauses* [q [k vals :as clause]]
+  (let [regex (key->replacer k)
+        values-block (str/join " " (map (partial ->sparql-str k) vals))]
+    (str/replace q regex (str "$1 " values-block  " $2"))))
+
+(defn rewrite-values-clauses [q bindings]
+  (let [values-bindings (->> bindings
+                             (filter (comp sequential? second))
+                             (into {}))]
+    (reduce rewrite-values-clauses* q values-bindings)))
 
 (defn- rewrite-clauses
   "Rewrites each instance of CLAUSE (literal | ?varname) with CLAUSE
@@ -72,7 +120,9 @@
    (query sparql-file {} repo))
   ([sparql-file bindings repo]
    (let [sparql-query (slurp (resource sparql-file))
-         pre-processed-qry (rewrite-limit-and-offset-clauses sparql-query bindings)
+         pre-processed-qry (-> sparql-query
+                               (rewrite-limit-and-offset-clauses bindings)
+                               (rewrite-values-clauses bindings))
          prepped-query (repo/prepare-query repo pre-processed-qry)]
      (reduce (fn [pq [unbound-var val]]
                (.setBinding pq (name unbound-var) (->sesame-rdf-type val))

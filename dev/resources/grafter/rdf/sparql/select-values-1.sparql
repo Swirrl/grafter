@@ -1,0 +1,5 @@
+SELECT * WHERE {
+  VALUES ?s { }
+
+  ?s ?p ?o .
+}
