@@ -1,0 +1,11 @@
+SELECT * WHERE {
+  VALUES ?o {
+    # replace everything in this block
+    1
+    2
+    3
+    <http://and-uris>
+  }
+
+  ?s ?p ?o .
+}

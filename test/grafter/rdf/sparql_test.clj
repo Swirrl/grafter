@@ -69,7 +69,15 @@
               "?s ?p ?o ."
               "}")
          (sparql/rewrite-values-clauses q4 { [:s :p] [[(URI. "http://s1") (URI. "http://p1")]
-                                                      [(URI. "http://s2") (URI. "http://p2")]]})))))
+                                                      [(URI. "http://s2") (URI. "http://p2")]]}))))
+
+  (let [q5 (sparql-query "grafter/rdf/sparql/select-values-5.sparql")]
+    (is (same-query?
+         (str "SELECT * WHERE {"
+              "VALUES ?o { \"7\"^^<http://www.w3.org/2001/XMLSchema#long> \"8\"^^<http://www.w3.org/2001/XMLSchema#long> \"9\"^^<http://www.w3.org/2001/XMLSchema#long> <http://new-uri> }"
+              "?s ?p ?o ."
+              "}")
+         (sparql/rewrite-values-clauses q5 { :o [7 8 9 (URI. "http://new-uri")]})))))
 
 (deftest query-test
   (let [r (repo/fixture-repo (resource "grafter/rdf/sparql/sparql-data.trig"))

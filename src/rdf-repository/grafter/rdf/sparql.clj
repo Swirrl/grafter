@@ -6,7 +6,8 @@
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]
             [clojure.java.io :as io])
-  (:import [org.openrdf.rio.ntriples NTriplesUtil]))
+  (:import [org.openrdf.rio.ntriples NTriplesUtil]
+           [java.util.regex Pattern]))
 
 (defn- get-clause-pattern [clause-name key]
   (cond
@@ -34,7 +35,9 @@
         var-pat (var-key-matcher k)
         body-mat #"\{(.*?)\}"]
 
-    (re-pattern (str "(" values-pat whitespace-pat var-pat whitespace-pat "\\{).*?(\\})"))))
+    (Pattern/compile (str "(" values-pat whitespace-pat var-pat whitespace-pat "\\{).*?(\\})")
+                     ;; make . match newlines
+                     Pattern/DOTALL)))
 
 (defn- serialise-val [v]
   (NTriplesUtil/toNTriplesString (rio/->sesame-rdf-type v)))
@@ -123,9 +126,14 @@
          pre-processed-qry (-> sparql-query
                                (rewrite-limit-and-offset-clauses bindings)
                                (rewrite-values-clauses bindings))
+
          prepped-query (repo/prepare-query repo pre-processed-qry)]
      (reduce (fn [pq [unbound-var val]]
-               (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
+               (when-not (or (sequential? val) (set? val))
+                 (if (and val (satisfies? rio/ISesameRDFConverter val))
+                   (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
+                   (throw (ex-info (str "Could not coerce nil value into SPARQL binding for variable " unbound-var)
+                                   {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
                pq)
              prepped-query
              (dissoc bindings ::limits ::offsets))
