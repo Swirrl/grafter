@@ -41,7 +41,7 @@
   (let [q1 (sparql-query "grafter/rdf/sparql/select-values-1.sparql")]
     (is (same-query?
          "SELECT * WHERE { VALUES ?s { <http://s1> <http://s2> } ?s ?p ?o . }"
-         (sparql/rewrite-values-clauses q1 {:s [(URI. "http://s1") (URI. "http://s2")]}))))
+         (#'sparql/rewrite-values-clauses q1 {:s [(URI. "http://s1") (URI. "http://s2")]}))))
 
   (let [q2 (sparql-query "grafter/rdf/sparql/select-values-2.sparql")]
     (is (same-query?
@@ -50,7 +50,7 @@
               "VALUES ?p { <http://p> } "
               "VALUES ?o { \"10\"^^<http://www.w3.org/2001/XMLSchema#long> \"string\" \"bonjour\"@fr }"
               " ?s ?p ?o . }")
-         (sparql/rewrite-values-clauses q2 {:s [(URI. "http://s1") (URI. "http://s2")]
+         (#'sparql/rewrite-values-clauses q2 {:s [(URI. "http://s1") (URI. "http://s2")]
                                             :p [(URI. "http://p")]
                                             :o [10 "string" (rdf/language "bonjour" :fr)]}))))
 
@@ -60,7 +60,7 @@
               "{ VALUES ?o { \"val\" } }"
               "?s ?p ?o . "
               "}")
-         (sparql/rewrite-values-clauses q3 { :o ["val"]}))))
+         (#'sparql/rewrite-values-clauses q3 { :o ["val"]}))))
 
   (let [q4 (sparql-query "grafter/rdf/sparql/select-values-4.sparql")]
     (is (same-query?
@@ -68,7 +68,7 @@
               "VALUES (?s ?p) { (<http://s1> <http://p1>) (<http://s2> <http://p2>) }"
               "?s ?p ?o ."
               "}")
-         (sparql/rewrite-values-clauses q4 { [:s :p] [[(URI. "http://s1") (URI. "http://p1")]
+         (#'sparql/rewrite-values-clauses q4 { [:s :p] [[(URI. "http://s1") (URI. "http://p1")]
                                                       [(URI. "http://s2") (URI. "http://p2")]]}))))
 
   (let [q5 (sparql-query "grafter/rdf/sparql/select-values-5.sparql")]
@@ -77,7 +77,7 @@
               "VALUES ?o { \"7\"^^<http://www.w3.org/2001/XMLSchema#long> \"8\"^^<http://www.w3.org/2001/XMLSchema#long> \"9\"^^<http://www.w3.org/2001/XMLSchema#long> <http://new-uri> }"
               "?s ?p ?o ."
               "}")
-         (sparql/rewrite-values-clauses q5 { :o [7 8 9 (URI. "http://new-uri")]})))))
+         (#'sparql/rewrite-values-clauses q5 { :o [7 8 9 (URI. "http://new-uri")]})))))
 
 (deftest query-test
   (let [r (repo/fixture-repo (resource "grafter/rdf/sparql/sparql-data.trig"))
