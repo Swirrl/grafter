@@ -29,8 +29,6 @@
           :src-dir-uri "http://github.com/Swirrl/grafter/blob/0.8.x-SNAPSHOT/"
           :src-linenum-anchor-prefix "L"}
 
-  :source-paths ["src/common" "src/rdf-repository" "src/tabular"
-                 "src/templater" "src/rdf-common" "src/pipeline"]
 
   ;; Prevent Java process from appearing as a GUI app in OSX when
   ;; Swing classes are loaded.
