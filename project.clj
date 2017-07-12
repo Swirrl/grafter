@@ -1,5 +1,5 @@
-(defproject grafter/grafter "0.8.12-SNAPSHOT"
-  :description "Tools for the hard graft of data processing"
+(defproject grafter/grafter "0.9.0-SNAPSHOT"
+  :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
@@ -13,12 +13,8 @@
                  [grafter/vocabularies "0.2.0"]
 
                  [commons-logging "1.2"] ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
-                 [commons-io/commons-io "2.4"]
-                 [org.clojure/data.csv "0.1.3"]
-                 [grafter/clj-excel "0.0.9" :exclusions [commons-codec]]
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.3"]
-                 [incanter/incanter-core "1.5.7" :exclusions [net.sf.opencsv/opencsv commons-codec]]
                  [com.novemberain/pantomime "2.8.0"]] ;; mimetypes
 
 
@@ -44,11 +40,9 @@
 
   :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
 
-             :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
-                             [codox "0.8.10"]]
+             :dev {:plugins [[codox "0.8.10"]]
 
-                   :dependencies [[com.aphyr/prism "0.1.3"]
-                                  [org.slf4j/slf4j-simple "1.7.21"]
+                   :dependencies [[org.slf4j/slf4j-simple "1.7.21"]
                                   [prismatic/schema "1.1.3"]
                                   [criterium "0.4.4"]]
 

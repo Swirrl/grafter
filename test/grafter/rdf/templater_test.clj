@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [grafter.rdf :refer :all]
             ;[grafter.rdf.protocols :refer [->Triple]]
-            [grafter.tabular :refer [make-dataset graph-fn]]
+            #_[grafter.tabular :refer [make-dataset graph-fn]]
             [grafter.rdf.templater :refer [graph triplify]]))
 
 (def first-turtle-template ["http://example.com/subjects/1"
