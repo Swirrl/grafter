@@ -25,8 +25,7 @@
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
           :output-dir "api-docs"
-          :sources ["src/common" "src/rdf-repository" "src/tabular"
-                   "src/templater" "src/rdf-common" "src/pipeline"
+          :sources ["src/tabular" "src/rdf-common" "src/pipeline"
                    ;; Include docs from grafter-url project too
                     "../grafter-url/src"]
 
@@ -43,27 +42,10 @@
 
   :pedantic? true
 
-  :repack [{:subpackage "rdf.common"
-            :dependents #{"templater"}
-            :path "src/rdf-common"}
-           {:subpackage "templater"
-            :path "src/templater"}
-           {:type :clojure
-            :path "src/pipeline"
-            :levels 2}
-           {:type :clojure
-            :path "src/rdf-repository"
-            :levels 2}
-           {:type :clojure
-            :path "src/tabular"
-            :levels 2}]
-
   :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
 
              :dev {:plugins [[com.aphyr/prism "0.1.1"] ;; autotest support simply run: lein prism
-                             [codox "0.8.10"]
-                             [lein-repack "0.2.10" :exclusions [org.clojure/clojure
-                                                                org.codehaus.plexus/plexus-utils]]]
+                             [codox "0.8.10"]]
 
                    :dependencies [[com.aphyr/prism "0.1.3"]
                                   [org.slf4j/slf4j-simple "1.7.21"]
