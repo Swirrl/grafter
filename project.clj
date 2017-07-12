@@ -21,8 +21,7 @@
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
           :output-dir "api-docs"
-          :sources ["src/tabular" "src/rdf-common" "src/pipeline"
-                   ;; Include docs from grafter-url project too
+          :sources ["src" ;; Include docs from grafter-url project too
                     "../grafter-url/src"]
 
           ;; TODO change this when we merge back to master
