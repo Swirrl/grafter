@@ -92,57 +92,47 @@
      (doto this
        (.add triple-stream base-uri format (resource-array (->sesame-uri graph)))))))
 
+(definline throw-deprecated-exception!
+  "Throw a more helpful error message alerting people to the need to
+  change code.
+
+  This is technically a breaking change, but it should indicate sites
+  which have a bug in them anyway."
+  []
+  ;; Use a definline to remove extra stack frame from output so
+  ;; exception is closer to call site.
+  `(throw (ex-info "This function is no longer extended to Repository.  You will need to update your code to call it on a repository connection instead."
+                   {:error :deprecated-function})))
+
 (extend-type Repository
   pr/ITripleWriteable
 
   (pr/add-statement
     ([this statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement connection statement)
-         (log/debug "Closing connection" connection "on repo" this)
-         this))
+     (throw-deprecated-exception!))
 
     ([this graph statement]
-     (with-open [connection (.getConnection this)]
-       (log/debug "Opening connection" connection "on repo" this)
-       (pr/add-statement (.getConnection this) graph statement)
-       (log/debug "Closing connection" connection "on repo" this)
-       this)))
+     (throw-deprecated-exception!)))
 
   (pr/add
     ([this triples]
-     (with-open [connection (.getConnection this)]
-       (log/debug "Opening connection" connection "on repo" this)
-       (pr/add connection triples)
-       (log/debug "Closing connection" connection "on repo" this))
-     this)
+     (throw-deprecated-exception!))
 
     ([this graph triples]
-     (with-open [connection (.getConnection this)]
-       (log/debug "Opening connection" connection "on repo" this)
-       (pr/add connection graph triples)
-       (log/debug "Closing connection" connection "on repo" this)
-       this))
+     (throw-deprecated-exception!))
 
     ([this graph format triple-stream]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/add connection graph format triple-stream))
-     this)
+     (throw-deprecated-exception!))
 
     ([this graph base-uri format triple-stream]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/add connection graph base-uri format triple-stream))
-     this))
+     (throw-deprecated-exception!)))
 
   pr/ITripleDeleteable
   (pr/delete
     ([this quads]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/delete connection quads)))
+     (throw-deprecated-exception!))
     ([this graph quads]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/delete connection graph quads)))))
+     (throw-deprecated-exception!))))
 
 
 (defn memory-store
@@ -224,13 +214,17 @@
    (doto (SailRepository. sail)
      (.initialize))))
 
-(defn add->repo
-  ([] (sail-repo))
-  ([acc] acc)
-  ([acc v]
-   (if (reduced? acc)
-     acc
-     (rdf/add acc v))))
+(defn add->repo [repo]
+  (fn
+    ([] (->connection repo))
+    ([acc] (.close acc) repo)
+    ([acc v]
+     (try (if (reduced? acc)
+            acc
+            (rdf/add acc v))
+          (catch Throwable ex
+            (.close acc)
+            (throw (ex-info "Exception when adding to repository" {} acc)))))))
 
 (defn- statements-with-inferred-format [res]
   (if (seq? res)
@@ -250,13 +244,16 @@
   ([] (sail-repo))
   ([repo-or-data & data]
    (let [repo (if (instance? Repository repo-or-data)
-                     repo-or-data
-                     (rdf/add (sail-repo) (statements-with-inferred-format repo-or-data)))]
+                repo-or-data
+                (let [repo (sail-repo)]
+                  (with-open [conn (->connection repo)]
+                    (rdf/add conn (statements-with-inferred-format repo-or-data))
+                    repo)))]
      (let [xf (mapcat (fn [d]
                         (cond
                           (satisfies? pr/ITripleReadable d) (statements-with-inferred-format d)
                           (seq d) d)))]
-       (transduce xf add->repo repo data)))))
+       (transduce xf (add->repo repo) data)))))
 
 (defn resource-repo
   "Like fixture repo but assumes all supplied data is on the java
@@ -272,9 +269,13 @@
   repository."
   ([] (sail-repo))
   ([repo-or-data & data]
-   (let [repo (if (instance? Repository repo-or-data)
-                repo-or-data
-                (rdf/add (sail-repo) (statements-with-inferred-format (io/resource repo-or-data))))]
+   (let [repo (let [repo (sail-repo)]
+                (if (instance? Repository repo-or-data)
+                  repo-or-data
+                  (with-open [conn (->connection repo)]
+                    (rdf/add conn (statements-with-inferred-format (io/resource repo-or-data)))
+
+                    repo)))]
      (apply fixture-repo repo (map io/resource data)))))
 
 (defn repo
@@ -302,9 +303,10 @@
   ([rdf-data sail]
    (let [r (doto (SailRepository. sail)
              (.initialize))]
-     (pr/add r (cond
-                 (and rdf-data (satisfies? io/Coercions rdf-data)) (pr/to-statements rdf-data {})
-                 (or (seq rdf-data) (nil? rdf-data)) rdf-data))
+     (with-open [conn (->connection r)]
+       (pr/add conn (cond
+                      (and rdf-data (satisfies? io/Coercions rdf-data)) (pr/to-statements rdf-data {})
+                      (or (seq rdf-data) (nil? rdf-data)) rdf-data)))
      r)))
 
 (defn- query-bindings->map [^BindingSet qbs]
@@ -317,13 +319,13 @@
 (extend-protocol pr/ITransactable
   Repository
   (begin [repo]
-    (-> repo .getConnection (.setAutoCommit false)))
+    (throw-deprecated-exception!))
 
   (commit [repo]
-    (-> repo .getConnection .commit))
+    (throw-deprecated-exception!))
 
   (rollback [repo]
-    (-> repo .getConnection .rollback))
+    (throw-deprecated-exception!))
 
   RepositoryConnection
   (begin [repo]
@@ -352,23 +354,22 @@
   clojure.core.protocols/CollReduce
   (coll-reduce
     ([this f]
-     (reduce f (f) this))
+     (clojure.core.protocols/coll-reduce this f (f)))
     ([this f val]
      (with-open [c (.getConnection this)]
        (reduce f val c))))
 
   pr/ISPARQLable
   (pr/query-dataset [this query-str model]
-    (pr/query-dataset (.getConnection this) query-str model))
+    (throw-deprecated-exception!))
 
   pr/ISPARQLUpdateable
   (pr/update! [this query-str]
-    (with-open [connection (.getConnection this)]
-      (pr/update! connection query-str)))
+    (throw-deprecated-exception!))
 
   pr/ITripleReadable
   (pr/to-statements [this options]
-    (pr/to-statements (.getConnection this) options)))
+    (throw-deprecated-exception!)))
 
 (extend-type Graph
   pr/ITripleReadable
@@ -533,16 +534,11 @@
 
 (extend-protocol ToConnection
   RepositoryConnection
-  (->connection
-    [^Repository repo]
-    (if (instance? RepositoryConnection repo)
-      repo
-      (let [c (.getConnection repo)]
-        c)))
+  (->connection [conn]
+    conn)
 
   Repository
-  (->connection
-    [^Repository repo]
+  (->connection [^Repository repo]
     (.getConnection repo)))
 
 (defn make-restricted-dataset

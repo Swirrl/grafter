@@ -6,7 +6,8 @@
             [grafter.rdf :refer [statements]]
             [grafter.url :refer [->GrafterURL]]
             [grafter.rdf.formats :refer :all]
-            [clojure.test :refer :all])
+            [clojure.test :refer :all]
+            [grafter.rdf.repository :as repo])
   (:import org.openrdf.model.impl.GraphImpl
            org.openrdf.sail.memory.MemoryStore
            org.openrdf.repository.sparql.SPARQLRepository
@@ -29,7 +30,7 @@
            (first (grafter.rdf/statements graph))))))
 
 (deftest with-transaction-test
-  (let [test-db (repo)]
+  (with-open [test-db (repo/->connection (repo))]
     (testing "Transactions return last result of form if there's no error."
       (is (= :return-value (with-transaction test-db
                              :return-value))))
@@ -53,11 +54,13 @@
 (defn load-rdf-types-data
   ([file]
    (let [db (repo)]
-     (pr/add db (statements file))
+     (with-open [conn (->connection db)]
+       (pr/add conn (statements file)))
+
      db)))
 
 (deftest query-test
-  (let [test-db (load-rdf-types-data triple-fixture-file-path)]
+  (with-open [test-db (->connection (load-rdf-types-data triple-fixture-file-path))]
     (are [type f?]
         (is (f? (let [o (-> (query test-db (str "PREFIX : <http://example/> SELECT ?o WHERE {" type " :hasValue ?o . }"))
                             first
@@ -78,42 +81,49 @@
 
     (testing "roundtripping ttl file"
       (let [file triple-fixture-file-path]
-        (is (= (set (statements (load-rdf-types-data file)))
-               (set (statements file))))))
+        (with-open [conn (->connection (load-rdf-types-data file))]
+          (is (= (set (statements conn))
+                 (set (statements file)))))))
 
     (testing "roundtripping trig file"
       (let [file quad-fixture-file-path]
-        (is (= (set (statements (load-rdf-types-data file)))
-               (set (statements file))))))))
+        (with-open [conn (->connection (load-rdf-types-data file))]
+          (is (= (set (statements conn))
+                 (set (statements file)))))))))
 
 (deftest delete-statement-test
   (testing "arity 2 delete"
     (are [initial-data delete-form]
-        (let [test-db (load-rdf-types-data initial-data)
-              quads-to-delete (statements test-db)]
-          delete-form
-          (is (not (query test-db "ASK { ?s ?p ?o } LIMIT 1"))
-              "Should be deleted"))
+        (with-open [test-db (->connection (load-rdf-types-data initial-data))]
+          (let [quads-to-delete (statements test-db)]
+            delete-form
+            (is (not (query test-db "ASK { ?s ?p ?o } LIMIT 1"))
+                "Should be deleted")))
 
-        (load-rdf-types-data triple-fixture-file-path) (pr/delete test-db quads-to-delete)
-        (load-rdf-types-data quad-fixture-file-path) (pr/delete test-db quads-to-delete)))
+      triple-fixture-file-path (pr/delete test-db quads-to-delete)
+      quad-fixture-file-path (pr/delete test-db quads-to-delete)))
 
   (testing "arity 3 delete"
-    (let [test-db (-> (repo)
-                      (pr/add
-                       (URL. "http://a")
-                       (statements triple-fixture-file-path))
-                      (pr/add
-                       (URL. "http://b")
-                       (statements triple-fixture-file-path)))]
-      (pr/delete test-db
-                 (URL. "http://a")
-                 (statements triple-fixture-file-path))
-      (is (not (query test-db "ASK { GRAPH <http://a> { ?s ?p ?o } } LIMIT 1"))
-          "Should be deleted")
+    (let [repo (repo)]
 
-      (is (query test-db "ASK { GRAPH <http://b> { ?s ?p ?o } } LIMIT 1")
-          "Should not be deleted"))))
+      (with-open [conn (->connection repo)]
+        (-> conn
+            (pr/add
+             (URL. "http://a")
+             (statements triple-fixture-file-path))
+            (pr/add
+             (URL. "http://b")
+             (statements triple-fixture-file-path))))
+
+      (with-open [test-db (->connection repo)]
+        (pr/delete test-db
+                   (URL. "http://a")
+                   (statements triple-fixture-file-path))
+        (is (not (query test-db "ASK { GRAPH <http://a> { ?s ?p ?o } } LIMIT 1"))
+            "Should be deleted")
+
+        (is (query test-db "ASK { GRAPH <http://b> { ?s ?p ?o } } LIMIT 1")
+            "Should not be deleted")))))
 
 (deftest col-reduce-repo-test
   (is (= (into #{} (repo))
@@ -134,13 +144,15 @@
                      (URI. "http://triple"))}))
 
   (testing "Calling with multiple sets of quads appends them all into the repo"
-    (is (= 2 (count (grafter.rdf/statements (fixture-repo (io/resource "quads.nq")
-                                                          (io/resource "quads.trig"))))))))
+    (with-open [conn (->connection (fixture-repo (io/resource "quads.nq")
+                                                 (io/resource "quads.trig")))]
+      (is (= 2 (count (grafter.rdf/statements conn)))))))
 
 (deftest resource-repo-test
   (testing "Calling with multiple sets of quads appends them all into the repo"
-    (is (= 2 (count (grafter.rdf/statements (resource-repo "quads.nq"
-                                                           "quads.trig")))))))
+    (with-open [conn (->connection (resource-repo "quads.nq"
+                                                 "quads.trig"))]
+      (is (= 2 (count (grafter.rdf/statements conn)))))))
 
 (deftest sail-repo-test
   (is (instance? org.openrdf.repository.Repository (sail-repo)))
@@ -149,10 +161,11 @@
 
 
 (deftest batched-query-test
-  (let [repo (let [r (repo)]
-               (grafter.rdf/add r
-                                (grafter.rdf/statements (io/resource "grafter/rdf/triples.nt")))
-               r)]
+  (let [repo (repo)]
+    (with-open [conn (->connection repo)]
+               (grafter.rdf/add conn
+                                (grafter.rdf/statements (io/resource "grafter/rdf/triples.nt"))))
+
     (with-open [c (->connection repo)]
       (is (= 3 (count (batched-query "SELECT * WHERE { ?s ?p ?o .}"
                                      c
