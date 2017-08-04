@@ -14,11 +14,11 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log])
   (:import [java.nio.charset Charset]
-           [org.openrdf.rio RDFParserRegistry RDFFormat]
-           [org.openrdf.query.resultio TupleQueryResultFormat BooleanQueryResultFormat
+           [org.eclipse.rdf4j.rio RDFParserRegistry RDFFormat]
+           [org.eclipse.rdf4j.query.resultio TupleQueryResultFormat BooleanQueryResultFormat
             TupleQueryResultParserRegistry
             BooleanQueryResultParserRegistry]
-           [org.openrdf.query.resultio.text.csv SPARQLResultsCSVParserFactory]))
+           [org.eclipse.rdf4j.query.resultio.text.csv SPARQLResultsCSVParserFactory]))
 
 
 (defn parser-registries
@@ -81,23 +81,23 @@
 
   (registered-parser-factories) ;; =>
 
-  {:select #{org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLParserFactory
-             org.openrdf.query.resultio.text.csv.SPARQLResultsCSVParserFactory
-             org.openrdf.query.resultio.sparqljson.SPARQLResultsJSONParserFactory
-             org.openrdf.query.resultio.text.tsv.SPARQLResultsTSVParserFactory
-             org.openrdf.query.resultio.binary.BinaryQueryResultParserFactory},
-   :construct #{org.openrdf.rio.ntriples.NTriplesParserFactory
-                org.openrdf.rio.trix.TriXParserFactory
-                org.openrdf.rio.jsonld.JSONLDParserFactory
-                org.openrdf.rio.trig.TriGParserFactory
-                org.openrdf.rio.binary.BinaryRDFParserFactory
-                org.openrdf.rio.n3.N3ParserFactory
-                org.openrdf.rio.rdfjson.RDFJSONParserFactory
-                org.openrdf.rio.rdfxml.RDFXMLParserFactory
-                org.openrdf.rio.nquads.NQuadsParserFactory},
-   :ask #{org.openrdf.query.resultio.sparqljson.SPARQLBooleanJSONParserFactory
-          org.openrdf.query.resultio.text.BooleanTextParserFactory
-          org.openrdf.query.resultio.sparqlxml.SPARQLBooleanXMLParserFactory}}
+  {:select #{org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLResultsXMLParserFactory
+             org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVParserFactory
+             org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLResultsJSONParserFactory
+             org.eclipse.rdf4j.query.resultio.text.tsv.SPARQLResultsTSVParserFactory
+             org.eclipse.rdf4j.query.resultio.binary.BinaryQueryResultParserFactory},
+   :construct #{org.eclipse.rdf4j.rio.ntriples.NTriplesParserFactory
+                org.eclipse.rdf4j.rio.trix.TriXParserFactory
+                org.eclipse.rdf4j.rio.jsonld.JSONLDParserFactory
+                org.eclipse.rdf4j.rio.trig.TriGParserFactory
+                org.eclipse.rdf4j.rio.binary.BinaryRDFParserFactory
+                org.eclipse.rdf4j.rio.n3.N3ParserFactory
+                org.eclipse.rdf4j.rio.rdfjson.RDFJSONParserFactory
+                org.eclipse.rdf4j.rio.rdfxml.RDFXMLParserFactory
+                org.eclipse.rdf4j.rio.nquads.NQuadsParserFactory},
+   :ask #{org.eclipse.rdf4j.query.resultio.sparqljson.SPARQLBooleanJSONParserFactory
+          org.eclipse.rdf4j.query.resultio.text.BooleanTextParserFactory
+          org.eclipse.rdf4j.query.resultio.sparqlxml.SPARQLBooleanXMLParserFactory}}
 
 
   ;; Once you have the datastructure above, you can adjust it as
@@ -105,7 +105,7 @@
 
   (let [updated-registries (update (registered-parser-factories)
                                    ;; Force removal of TurtleParser
-                                   :construct #(disj % org.openrdf.rio.turtle.TurtleParserFactory))]
+                                   :construct #(disj % org.eclipse.rdf4j.rio.turtle.TurtleParserFactory))]
 
     ;; reset the registered parsers
     (register-parser-factories! updated-registries))

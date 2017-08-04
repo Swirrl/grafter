@@ -3,17 +3,17 @@
   (:require [clojure.string :as string]
             [grafter.url :as url]
             [clojure.string :as str])
-  (:import [org.openrdf.rio RDFFormat RDFParser RDFParserFactory Rio]
-           org.openrdf.rio.binary.BinaryRDFParserFactory
-           org.openrdf.rio.jsonld.JSONLDParserFactory
-           org.openrdf.rio.n3.N3ParserFactory
-           org.openrdf.rio.nquads.NQuadsParserFactory
-           org.openrdf.rio.ntriples.NTriplesParserFactory
-           org.openrdf.rio.rdfjson.RDFJSONParserFactory
-           org.openrdf.rio.rdfxml.RDFXMLParserFactory
-           org.openrdf.rio.trig.TriGParserFactory
-           org.openrdf.rio.trix.TriXParserFactory
-           org.openrdf.rio.turtle.TurtleParserFactory))
+  (:import [org.eclipse.rdf4j.rio RDFFormat RDFParser RDFParserFactory Rio]
+           org.eclipse.rdf4j.rio.binary.BinaryRDFParserFactory
+           org.eclipse.rdf4j.rio.jsonld.JSONLDParserFactory
+           org.eclipse.rdf4j.rio.n3.N3ParserFactory
+           org.eclipse.rdf4j.rio.nquads.NQuadsParserFactory
+           org.eclipse.rdf4j.rio.ntriples.NTriplesParserFactory
+           org.eclipse.rdf4j.rio.rdfjson.RDFJSONParserFactory
+           org.eclipse.rdf4j.rio.rdfxml.RDFXMLParserFactory
+           org.eclipse.rdf4j.rio.trig.TriGParserFactory
+           org.eclipse.rdf4j.rio.trix.TriXParserFactory
+           org.eclipse.rdf4j.rio.turtle.TurtleParserFactory))
 
 (defmulti mimetype->rdf-format
   "Extensible multimethod that accepts a mime-type string and returns
@@ -80,7 +80,7 @@
 (defmethod ->rdf-format java.net.URL [f]
   (url->rdf-format f))
 
-(defmethod ->rdf-format org.openrdf.model.URI [f]
+(defmethod ->rdf-format org.eclipse.rdf4j.model.URI [f]
   (url->rdf-format f))
 
 (defmacro def-format

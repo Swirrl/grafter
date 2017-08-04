@@ -6,7 +6,7 @@
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]
             [clojure.java.io :as io])
-  (:import [org.openrdf.rio.ntriples NTriplesUtil]
+  (:import [org.eclipse.rdf4j.rio.ntriples NTriplesUtil]
            [java.util.regex Pattern]))
 
 (defn- get-clause-pattern [clause-name key]

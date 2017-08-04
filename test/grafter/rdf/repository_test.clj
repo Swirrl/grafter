@@ -8,9 +8,9 @@
             [grafter.rdf.formats :refer :all]
             [clojure.test :refer :all]
             [grafter.rdf.repository :as repo])
-  (:import org.openrdf.model.impl.GraphImpl
-           org.openrdf.sail.memory.MemoryStore
-           org.openrdf.repository.sparql.SPARQLRepository
+  (:import org.eclipse.rdf4j.model.impl.GraphImpl
+           org.eclipse.rdf4j.sail.memory.MemoryStore
+           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
            java.net.URI
            java.net.URL))
 
@@ -155,7 +155,7 @@
       (is (= 2 (count (grafter.rdf/statements conn)))))))
 
 (deftest sail-repo-test
-  (is (instance? org.openrdf.repository.Repository (sail-repo)))
+  (is (instance? org.eclipse.rdf4j.repository.Repository (sail-repo)))
   (is (= (into #{} (sail-repo))
          #{})))
 

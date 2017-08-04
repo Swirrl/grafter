@@ -14,26 +14,25 @@
            (java.net MalformedURLException URL)
            (java.util GregorianCalendar)
            (javax.xml.datatype DatatypeFactory)
-           (org.openrdf.model BNode Literal Resource Statement URI
+           (org.eclipse.rdf4j.model BNode Literal Resource Statement URI
                               Value Graph)
-           (org.openrdf.query BooleanQuery GraphQuery QueryLanguage
+           (org.eclipse.rdf4j.query BooleanQuery GraphQuery QueryLanguage
                               Query TupleQuery Update BindingSet)
-           (org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
-                                   CalendarLiteralImpl
-                                   ContextStatementImpl
-                                   IntegerLiteralImpl LiteralImpl
-                                   NumericLiteralImpl StatementImpl
+           (org.eclipse.rdf4j.model.impl BNodeImpl BooleanLiteralImpl
+                                         ContextStatementImpl
+                                   IntegerLiteral LiteralImpl
+                                   NumericLiteral StatementImpl
                                    URIImpl)
-           (org.openrdf.query.impl DatasetImpl)
-           (org.openrdf.repository Repository RepositoryConnection)
-           (org.openrdf.repository.http HTTPRepository)
-           (org.openrdf.repository.sail SailRepository)
-           (org.openrdf.repository.sparql SPARQLRepository)
-           (org.openrdf.sail Sail)
-           (org.openrdf.sail.memory MemoryStore)
-           (org.openrdf.sail.nativerdf NativeStore)
-           (info.aduna.iteration CloseableIteration)
-           (org.openrdf.sail.inferencer.fc ForwardChainingRDFSInferencer
+           (org.eclipse.rdf4j.query.impl DatasetImpl)
+           (org.eclipse.rdf4j.repository Repository RepositoryConnection)
+           (org.eclipse.rdf4j.repository.http HTTPRepository)
+           (org.eclipse.rdf4j.repository.sail SailRepository)
+           (org.eclipse.rdf4j.repository.sparql SPARQLRepository)
+           (org.eclipse.rdf4j.sail Sail)
+           (org.eclipse.rdf4j.sail.memory MemoryStore)
+           (org.eclipse.rdf4j.sail.nativerdf NativeStore)
+           (org.eclipse.rdf4j.common.iteration CloseableIteration)
+           (org.eclipse.rdf4j.sail.inferencer.fc ForwardChainingRDFSInferencer
                                            DirectTypeHierarchyInferencer
                                            CustomGraphQueryInferencer)))
 
@@ -41,7 +40,7 @@
   (->connection [repo] "Given a sesame repository return a connection to it.
   ->connection is designed to be used with the macro with-open"))
 
-(defn- resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
+(defn- resource-array #^"[Lorg.eclipse.rdf4j.model.Resource;" [& rs]
   (into-array Resource rs))
 
 (extend-type RepositoryConnection

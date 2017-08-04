@@ -8,6 +8,7 @@
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
                  [org.openrdf.sesame/sesame-runtime "2.8.9"]
+                 [org.eclipse.rdf4j/rdf4j-runtime "2.2.2"]
                  [org.clojure/tools.logging "0.3.1"]
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.0"]

@@ -4,7 +4,7 @@
             [grafter.url :refer [->java-uri]])
   (:import [java.net URI]
            [java.util Date]
-           [org.openrdf.model Literal]))
+           [org.eclipse.rdf4j.model Literal]))
 
 (defprotocol IStatement
   "An RDF triple or quad"

@@ -15,9 +15,9 @@
            [java.net MalformedURLException URL]
            java.util.GregorianCalendar
            javax.xml.datatype.DatatypeFactory
-           [org.openrdf.model BNode Literal Resource Statement URI Value]
-           [org.openrdf.model.impl BNodeImpl BooleanLiteralImpl CalendarLiteralImpl ContextStatementImpl IntegerLiteralImpl LiteralImpl NumericLiteralImpl StatementImpl URIImpl]
-           [org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio]))
+           [org.eclipse.rdf4j.model BNode Literal Resource Statement URI Value]
+           [org.eclipse.rdf4j.model.impl SimpleValueFactory BNodeImpl BooleanLiteralImpl CalendarLiteral ContextStatementImpl IntegerLiteral LiteralImpl NumericLiteral StatementImpl URIImpl]
+           [org.eclipse.rdf4j.rio RDFFormat RDFHandler RDFWriter Rio]))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -123,63 +123,63 @@
 
   java.lang.Byte
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#byte")))
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Short
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#short")))
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.math.BigDecimal
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#decimal")))
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Double
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this))
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Float
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this))
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Integer
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this))
+    (.. (SimpleValueFactory/getInstance) (createLiteral (int this))))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.math.BigInteger
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#integer")))
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Long
   (->sesame-rdf-type [this]
-    (NumericLiteralImpl. (long this)))
+    (.. (SimpleValueFactory/getInstance) (createLiteral (long this))))
 
   (sesame-rdf-type->type [this]
     this)
 
   clojure.lang.BigInt
   (->sesame-rdf-type [this]
-    (IntegerLiteralImpl. (BigInteger. (str this))))
+    (.. (SimpleValueFactory/getInstance) (createLiteral  (BigInteger. (str this)))))
 
   (sesame-rdf-type->type [this]
     this))
@@ -213,7 +213,7 @@
 
   java.lang.Boolean
   (->sesame-rdf-type [this]
-    (BooleanLiteralImpl. this))
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
 
   (sesame-rdf-type->type [this]
     this)
@@ -287,9 +287,7 @@
   (->sesame-rdf-type [this]
     (let [cal (doto (GregorianCalendar.)
                 (.setTime this))]
-      (-> (DatatypeFactory/newInstance)
-          (.newXMLGregorianCalendar cal)
-          CalendarLiteralImpl.)))
+      (.. (SimpleValueFactory/getInstance) (createLiteral this))))
 
   clojure.lang.Keyword
   (->sesame-rdf-type [this]
@@ -322,7 +320,7 @@
 ;; Extend IURIable protocol to sesame URI's.
 (extend-protocol IURIable
 
-  org.openrdf.model.URI
+  org.eclipse.rdf4j.model.URI
 
   (->java-uri [this]
     (java.net.URI. (.stringValue this))))
@@ -587,9 +585,9 @@
   (->sesame-uri [this] (URIImpl. (str this)))
   java.net.URI
   (->sesame-uri [this] (URIImpl. (str this)))
-  org.openrdf.model.URI
+  org.eclipse.rdf4j.model.URI
   (->sesame-uri [this] this)
   GrafterURL
   (->sesame-uri [this] (URIImpl. (str this)))
-  org.openrdf.model.Graph
+  org.eclipse.rdf4j.model.Graph
   (->sesame-uri [this] (URIImpl. (str this))))
