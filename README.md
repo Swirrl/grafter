@@ -2,76 +2,32 @@
 
     "For the hard graft of linked data processing."
 
-Grafter is a library, DSL and suite of tools for flexible, efficient, ETL, data
-transformation and processing.  Its primary use is for handling Linked Data
-conversions from tabular data formats into RDF's graph data format, but it is
-equally adept at handling tabular data conversions.
+Grafter is a [Clojure](http://clojure.org/) library for linked data
+processing.  It is mature and under active development.
 
-See the official grafter website at [grafter.org](http://grafter.org/)
-for more details.
+It provides support for all common RDF serialisations and
+includes a library of functions for querying and writing to SPARQL
+repositories.
 
-For the Grafter rationale see our blog post:
-[The hard graft of Linked Data ETL](http://blog.swirrl.com/articles/linked-data-etl/).
+## FAQ
 
-## What plans are there for Grafter?
+*Where can I find the api-docs?*
 
-Grafter is currently in the early stages of development, however
-[Swirrl](http://swirrl.com/) has been using it to transform
-significant amounts of data for our clients within the government.
+[api.grafter.org](http://api.grafter.org/)
 
-Grafter is currently an API and a small DSL for converting tabular
-data into Linked Data.  However we have ambitious plans to develop a
-suite of tools on top of it.  These tools are planned to include:
+*Didn't grafter also contain tools for tabular processing?*
 
-1. Command line tools for data processing.
-1. Import services to load pipelines and execute predefined data
-   transformations.
-1. A Graphical ETL Tool to assist non-programmers in creating data
-   transformation pipelines.
+As of 0.9.0 the `grafter.tabular` library has been moved into a
+[separate repository](https://github.com/Swirrl/grafter.tabular) so
+the core grafter library can focus on processing linked data.
 
-## Development
+This part of the library is now considered deprecated.  If you depend
+on it you can still use it, and it may receive occaisional
+maintainance updates.
 
-Grafter is deployed on the standard Clojure build repository
-[Clojars](http://clojars.org/).
-
-To use the Grafter API please add the following dependency to your Clojure
-projects `project.clj` file.  For more details on how to do this see
-the [leiningen](http://leiningen.org/) build tool:
-
-[![Clojars Project](https://img.shields.io/clojars/v/grafter.svg)](https://clojars.org/grafter)
-
-**NOTE:** The public documentation, template projects and leiningen
-plugin have not yet been updated to conform to the latest 0.8.x
-versions of grafter.  If you wish to use these please use the `0.7.6`
-release.
-
-## Versioning
-
-We are currently following a `MAJOR.MINOR.PATCH` versioning scheme,
-but are anticipating significant breaking API changes between minor
-versions at least until we reach `1.0.0`.
-
-`PATCH` versions should be backwardly compatible with previous `MINOR`
-versions.
-
-Releases will be tagged with an appropriate tag indicating their
-`MAJOR.MINOR.PATCH` version.
-
-We are currently producing API docs for the master branch and all
-tagged releases.
-
-- [API docs (master branch)](http://api.grafter.org/docs/master)
-- [API docs (all releases)](http://api.grafter.org/)
-
-Additionally [grafter.org](http://grafter.org/) contains a
-[quick start guide](http://grafter.org/getting-started/index.html) and
-supplementary documentation.
-
-## Getting Started
-
-There is a comprehensive
-[getting started guide](http://grafter.org/getting-started/index.html) on the
-project website.
+If you're looking to start a greenfield project then you can easily
+wire up any capable CSV/excel parser to the RDF processing side of
+grafter.
 
 ## License
 

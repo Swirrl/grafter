@@ -2,6 +2,14 @@
 
 Copyright © 2014 Swirrl IT Ltd.
 
+## Latest Releases
+
+Release notes are no longer updated in this file, but are managed via
+github.  For information on the latest releases since 0.7.6 please
+see:
+
+https://github.com/Swirrl/grafter/releases
+
 ## 2016-08-31
 
 `VERSION 0.7.6`
