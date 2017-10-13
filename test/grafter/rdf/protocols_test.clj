@@ -3,7 +3,7 @@
             [grafter.rdf.protocols :refer :all]
             [grafter.rdf :refer [language]]
             [grafter.vocabularies.xsd :refer :all])
-  (:import [org.openrdf.model.impl LiteralImpl]))
+  (:import [org.eclipse.rdf4j.model.impl LiteralImpl]))
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])

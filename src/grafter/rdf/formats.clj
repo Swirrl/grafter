@@ -63,7 +63,7 @@
   "Given a filename we attempt to return an appropriate RDFFormat
   object based on the files extension."
   [fname]
-  (Rio/getParserFormatForFileName (str fname)))
+  (.orElse (Rio/getParserFormatForFileName (str fname)) nil))
 
 (defn url->rdf-format
   "Parse a URL for the file extension of its last path segment,

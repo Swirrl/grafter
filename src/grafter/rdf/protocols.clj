@@ -151,7 +151,7 @@
 (extend-type Literal
   IRDFString
   (lang [this]
-    (keyword (.getLanguage this)))
+    (keyword (.orElse (.getLanguage this) nil)))
 
   IRawValue
   (raw-value [this]

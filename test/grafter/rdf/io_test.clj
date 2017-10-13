@@ -9,7 +9,7 @@
             [schema.core :as s]
             [grafter.rdf.formats :as fmt]
             [clojure.java.io :as io])
-  (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]
+  (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
            [java.net URI]))
 
 ;; NOTE this function is deprecated in favour of the one in formats,
