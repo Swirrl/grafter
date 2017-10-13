@@ -6,7 +6,6 @@
             [grafter.rdf.io :refer :all]
             [grafter.url :refer :all]
             [grafter.rdf.protocols :as pr]
-            [schema.core :as s]
             [grafter.rdf.formats :as fmt]
             [clojure.java.io :as io])
   (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
@@ -129,12 +128,8 @@
                              "http" (scheme grafter-url)
                              ["ayanami"] (path-segments grafter-url)))))
 
-(def BlankObjectNode {:s URI :p URI :o s/Keyword :c (s/eq nil)})
-
-(def BlankSubjectNode {:s s/Keyword :p URI :o URI :c (s/eq nil) })
-
-
 (deftest blank-nodes-load-test
-  (let [[btriple1 btriple2] (statements (io/resource "grafter/rdf/bnodes.nt"))]
-    (is (s/validate BlankObjectNode btriple1))
-    (is (s/validate BlankSubjectNode btriple2))))
+  (testing "Blank nodes are keywords"
+    (let [[[s1 p1 o1] [s2 p2 o2]] (statements (io/resource "grafter/rdf/bnodes.nt"))]
+      (is (keyword? o1))
+      (is (keyword? s2)))))
