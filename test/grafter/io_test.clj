@@ -3,7 +3,7 @@
             [grafter.rdf.protocols :refer [->Quad]]
             [grafter.rdf :refer [add statements]]
             [grafter.rdf.templater :refer [graph]]
-            [grafter.rdf.io :refer :all]
+            [grafter.rdf4j.io :refer :all]
             [grafter.url :refer :all]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.formats :as fmt]
@@ -31,7 +31,7 @@
 
 (deftest round-trip-numeric-types-test
   (are [xsd type number]
-      (is (= number (pr/raw-value (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd)))))))
+      (is (= number (pr/raw-value (->backend-type (->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
 
     "http://www.w3.org/2001/XMLSchema#byte" Byte "10"
     "http://www.w3.org/2001/XMLSchema#short" Short "10"
@@ -62,12 +62,12 @@
     "hello"        "http://www.w3.org/2001/XMLSchema#string" String))
 
 (deftest literal-test
-  (is (instance? LiteralImpl (->sesame-rdf-type (literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
+  (is (instance? LiteralImpl (->backend-type (literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
 (deftest language-string-test
   (let [bonsoir (language "Bonsoir Mademoiselle" :fr)]
     (is (= bonsoir (literal-datatype->type bonsoir)))
-    (is (= bonsoir (sesame-rdf-type->type (->sesame-rdf-type bonsoir))))))
+    (is (= bonsoir (->grafter-type (->backend-type bonsoir))))))
 
 (deftest round-trip-quad-test
   (let [quad (->Quad (->java-uri "http://example.org/test/subject")
@@ -96,6 +96,7 @@
       (with-open [rdr (java.io.StringReader. output-str)]
         (is (= quad
                (statements rdr :format :nq)))))))
+
 
 (deftest IStatement->sesame-statement-test
   (testing "IStatement->sesame-statement"

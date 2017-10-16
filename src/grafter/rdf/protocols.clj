@@ -85,6 +85,12 @@
   ;; TODO: reimplement interfaces with proper resource handling.
   (query-dataset [this sparql-string model]))
 
+(defprotocol IGrafterRDFType
+  "This protocol coerces a backend RDF type, e.g. an RDF4j quad object
+  into an equivalent Grafter RDF type.  For example given an RDF4j
+  quad it will convert it into a Grafter Quad."
+  (->grafter-type [this] "Convert a backend RDF Type into a Native Type"))
+
 (defprotocol ISPARQLUpdateable
   (update! [this sparql-string]
     "Issue a SPARQL Update statement against the repository"))
@@ -134,8 +140,8 @@
 
   Object
   (toString [this]
-    ;; TODO consider making this output the same as .toString on a sesame
-    ;; Literal.  Advantage is its more consistent with sesame etc... The
+    ;; TODO consider making this output the same as .toString on a RDF4j
+    ;; Literal.  Advantage is its more consistent with RDF4j etc... The
     ;; disadvantage is that this implementation makes using str more intuitive
     (:string this))
 
@@ -147,6 +153,18 @@
   IDatatypeURI
   (datatype-uri [this]
     rdf:langString))
+
+(defn language
+  "Create an RDF langauge string out of a value string and a given
+  language tag.  Language tags should be keywords representing the
+  country code, e.g.
+
+  (language \"Bonsoir\" :fr)"
+  [s lang]
+  {:pre [(string? s)
+         lang
+         (keyword? lang)]}
+  (->LangString s lang))
 
 (extend-type Literal
   IRDFString
@@ -173,6 +191,16 @@
   IRDFString
   (lang [this]
     nil))
+
+
+(defn literal
+  "You can use this to declare an RDF typed literal value along with
+  its URI.  Note that there are implicit coercions already defined for
+  many core clojure/java datatypes, so for common datatypes you
+  shounld't need this."
+
+  [val datatype-uri]
+  (->RDFLiteral (str val) (->java-uri datatype-uri)))
 
 (extend-protocol IRawValue
   Object
@@ -272,3 +300,5 @@
   "Constructs a Quad from an {:s :p :o } mapwith a nil graph (context)."
   [m]
   (->Triple (:s m) (:p m) (:o m)))
+
+
