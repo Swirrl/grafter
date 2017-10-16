@@ -1,4 +1,6 @@
 (ns grafter.rdf.sparql
+  "Functions for executing SPARQL queries with grafter RDF
+  repositories, that support basic binding replacement etc."
   (:require [grafter.rdf :refer [statements]]
             [grafter.rdf.repository :refer [repo sparql-repo ->connection]]
             [grafter.rdf.repository :as repo]
