@@ -38,7 +38,10 @@
   These factories define the parsers used for content negotiation
   inside sesame."
   []
-  (let [setify-factories (fn [r] (set (map #(class (.get r %)) (.getKeys r))))]
+  (let [setify-factories (fn [r] (->> r
+                                     .getKeys
+                                     (map #(class (.orElse (.get r %) nil)))
+                                     set))]
     (apply merge
            (for [[q-type reg] (parser-registries)]
              {q-type (setify-factories reg)}))))
