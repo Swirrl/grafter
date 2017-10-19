@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.9.1-SNAPSHOT"
+(defproject grafter/grafter "0.10.0-SNAPSHOT"
   :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -7,15 +7,14 @@
   :deploy-repositories [["releases" :clojars]]
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
-                 [org.openrdf.sesame/sesame-runtime "2.8.9"]
-                 [org.clojure/tools.logging "0.3.1"]
+                 [org.eclipse.rdf4j/rdf4j-runtime "2.2.2"]
+                 [org.clojure/tools.logging "0.4.0"]
                  [grafter/url "0.2.5"]
-                 [grafter/vocabularies "0.2.0"]
+                 [grafter/vocabularies "0.2.2"]
 
-                 [commons-logging "1.2"] ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
                  [me.raynes/fs "1.4.6"]
-                 [potemkin "0.4.3"]
-                 [com.novemberain/pantomime "2.8.0"]] ;; mimetypes
+                 [potemkin "0.4.4"]
+                 [com.novemberain/pantomime "2.9.0"]] ;; mimetypes
 
 
   :codox {:defaults {:doc "FIXME: write docs"
@@ -39,8 +38,8 @@
 
              :dev {:plugins [[codox "0.8.10"]]
 
-                   :dependencies [[org.slf4j/slf4j-simple "1.7.21"]
-                                  [prismatic/schema "1.1.3"]
+                   :dependencies [[org.slf4j/slf4j-simple "1.7.25"]
+                                  [prismatic/schema "1.1.7"]
                                   [criterium "0.4.4"]]
 
                    :resource-paths ["dev/resources"]

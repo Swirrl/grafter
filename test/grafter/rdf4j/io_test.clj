@@ -1,9 +1,9 @@
-(ns grafter.rdf.io-test
+(ns grafter.rdf4j.io-test
   (:require [clojure.test :refer :all]
             [grafter.rdf.protocols :refer [->Quad]]
             [grafter.rdf :refer [add statements]]
             [grafter.rdf.templater :refer [graph]]
-            [grafter.rdf.io :refer :all]
+            [grafter.rdf4j.io :refer :all]
             [grafter.url :refer :all]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.formats :as fmt]
@@ -11,27 +11,10 @@
   (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
            [java.net URI]))
 
-;; NOTE this function is deprecated in favour of the one in formats,
-;; but unlike the variation in formats it raises an exception if the
-;; supplied argument is nil.
-(deftest mimetype->rdf-format-test
-  (testing "mimetype->rdf-format"
-
-    (is (= fmt/rdf-ntriples
-           (mimetype->rdf-format "application/n-triples; charset=UTF-8"))
-        "works with charset parameters")
-
-    (is (= fmt/rdf-xml
-           (mimetype->rdf-format "application/rdf+xml"))
-        "works without charset parameters")
-
-    (is (thrown? IllegalArgumentException
-                 (mimetype->rdf-format nil))
-        "throws on nil mime type")))
 
 (deftest round-trip-numeric-types-test
   (are [xsd type number]
-      (is (= number (pr/raw-value (->sesame-rdf-type (sesame-rdf-type->type (LiteralImpl. number (URIImpl. xsd)))))))
+      (is (= number (pr/raw-value (->backend-type (pr/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
 
     "http://www.w3.org/2001/XMLSchema#byte" Byte "10"
     "http://www.w3.org/2001/XMLSchema#short" Short "10"
@@ -41,9 +24,9 @@
     "http://www.w3.org/2001/XMLSchema#integer" BigInteger "10"
     "http://www.w3.org/2001/XMLSchema#int" Integer "10"))
 
-(deftest literal-and-literal-datatype->type-test
+(deftest backend-literal->grafter-type-test
   (are [clj-val uri klass]
-      (let [ret-val (literal-datatype->type (literal clj-val uri))]
+      (let [ret-val (backend-literal->grafter-type (pr/literal clj-val uri))]
         (is (= clj-val ret-val))
         (is (= klass (class clj-val))))
 
@@ -61,13 +44,13 @@
     (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
     "hello"        "http://www.w3.org/2001/XMLSchema#string" String))
 
-(deftest literal-test
-  (is (instance? LiteralImpl (->sesame-rdf-type (literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
-
 (deftest language-string-test
-  (let [bonsoir (language "Bonsoir Mademoiselle" :fr)]
-    (is (= bonsoir (literal-datatype->type bonsoir)))
-    (is (= bonsoir (sesame-rdf-type->type (->sesame-rdf-type bonsoir))))))
+  (let [bonsoir (pr/language "Bonsoir Mademoiselle" :fr)]
+    (is (= bonsoir (backend-literal->grafter-type bonsoir)))
+    (is (= bonsoir (pr/->grafter-type (->backend-type bonsoir))))))
+
+(deftest literal-test
+  (is (instance? LiteralImpl (->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
 (deftest round-trip-quad-test
   (let [quad (->Quad (->java-uri "http://example.org/test/subject")
@@ -75,7 +58,7 @@
                      (->java-uri "http://example.org/test/object")
                      (->java-uri "http://example.org/test/graph"))]
     (is (= quad
-           (sesame-statement->IStatement (IStatement->sesame-statement quad)))))
+           (backend-quad->grafter-quad (quad->backend-quad quad)))))
 
   (testing "with nil graph"
     (let [quad (->Quad (->java-uri "http://example.org/test/subject")
@@ -83,7 +66,7 @@
                        (->java-uri "http://example.org/test/object")
                        nil)]
       (is (= quad
-             (sesame-statement->IStatement (IStatement->sesame-statement quad)))))))
+             (backend-quad->grafter-quad (quad->backend-quad quad)))))))
 
 (deftest round-trip-quad-serialize-deserialize-test
   (let [quad (graph (->java-uri "http://example.org/test/graph")
@@ -97,15 +80,15 @@
         (is (= quad
                (statements rdr :format :nq)))))))
 
-(deftest IStatement->sesame-statement-test
+(deftest quad->backend-quad-test
   (testing "IStatement->sesame-statement"
-    (is (= (IStatement->sesame-statement (->Quad (->java-uri "http://foo.com/") (->java-uri "http://bar.com/") "a string" (->java-uri "http://blah.com/")))
+    (is (= (quad->backend-quad (->Quad (->java-uri "http://foo.com/") (->java-uri "http://bar.com/") "a string" (->java-uri "http://blah.com/")))
            (ContextStatementImpl. (URIImpl. "http://foo.com/") (URIImpl. "http://bar.com/") (LiteralImpl. "a string") (URIImpl. "http://blah.com/"))))
 
     (testing "Raising Exceptions"
       (let [broken-quad (with-meta (->Quad nil "http://bar.com/" "http://baz.com/" "http://blah.com/") {:foo :bar})
             ex (ex-data (is (thrown? clojure.lang.ExceptionInfo
-                                     (IStatement->sesame-statement broken-quad))))]
+                                     (quad->backend-quad broken-quad))))]
 
         (is (= (->Quad
                 nil

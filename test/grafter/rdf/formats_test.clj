@@ -2,7 +2,7 @@
   (:require [grafter.rdf.formats :as fmt]
             [clojure.test :refer :all]
             [clojure.java.io :as io])
-  (:import [org.openrdf.rio RDFFormat]
+  (:import [org.eclipse.rdf4j.rio RDFFormat]
            [java.net URI URL]))
 
 (deftest mimetype->rdf-format-test
@@ -25,12 +25,12 @@
          (fmt/->rdf-format "nt")
          (fmt/->rdf-format "application/n-triples")
          (fmt/->rdf-format "text/plain")
-         (fmt/->rdf-format (io/file "/tmp/foo.nt"))
-         (fmt/->rdf-format (URI. "http://foo.bar.com/tmp/foo.nt"))
-         (fmt/->rdf-format (URL. "http://foo.bar.com/tmp/foo.nt"))
-         (fmt/->rdf-format (URI. "http://foo.bar.com/tmp/foo.nt?query=string&is=ignored"))
          fmt/rdf-ntriples
          RDFFormat/NTRIPLES))
+  (is (= (fmt/->rdf-format (URI. "http://foo.bar.com/tmp/foo.nt"))
+         (fmt/->rdf-format (URL. "http://foo.bar.com/tmp/foo.nt"))
+         (fmt/->rdf-format (io/file "/tmp/foo.nt"))
+         (fmt/->rdf-format (URI. "http://foo.bar.com/tmp/foo.nt?query=string&is=ignored"))))
 
   (is (nil? (fmt/->rdf-format "/tmp/foo.nt"))
       "File path strings are not parsed for formats.  To do this provide you need to provide a File object.")

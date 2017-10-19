@@ -3,8 +3,8 @@
   Data statements (triples/quads)."
   (:require [grafter.rdf :as rdf])
   (:require [grafter.rdf.protocols :refer [->Triple ->Quad]])
-  (:import [org.openrdf.rio RDFFormat]
-           [org.openrdf.model URI]))
+  (:import [org.eclipse.rdf4j.rio RDFFormat]
+           [org.eclipse.rdf4j.model URI]))
 
 (defn- valid-uri? [node]
   (let [types [java.lang.String java.net.URL java.net.URI URI]]

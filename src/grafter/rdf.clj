@@ -9,12 +9,11 @@
 (require '[grafter.rdf.io])
 
 (import-vars
- [grafter.rdf.io
-  language
-  literal]
  [grafter.rdf.protocols
   ->Quad
   ->Triple
+  language
+  literal
   triple?])
 
 (defn subject
