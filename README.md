@@ -1,5 +1,7 @@
 # Grafter - Linked Data & RDF Processing
 
+[![Clojars Project](https://img.shields.io/clojars/v/grafter.svg)](https://clojars.org/grafter)
+
     "For the hard graft of linked data processing."
 
 Grafter is a [Clojure](http://clojure.org/) library for linked data
