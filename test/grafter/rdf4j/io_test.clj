@@ -72,7 +72,7 @@
   (let [quad (graph (->java-uri "http://example.org/test/graph")
                     [(->java-uri "http://test/subj") [(->java-uri "http://test/pred") (->java-uri "http://test/obj")]])
         string-wtr (java.io.StringWriter.)
-        serializer (rdf-serializer string-wtr :format :nq)]
+        serializer (rdf-writer string-wtr :format :nq)]
     (add serializer quad)
 
     (let [output-str (str string-wtr)]
