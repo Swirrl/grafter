@@ -157,6 +157,10 @@
 (extend-protocol IRDF4jConverter
   ;; Non numeric types
 
+  Boolean
+  (->backend-type [this]
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+  
   LangString
   (->backend-type [this]
     (.. (SimpleValueFactory/getInstance) (createLiteral (:string this) (name (:lang this)))))
@@ -172,6 +176,10 @@
   java.net.URI
   (->backend-type [this]
     (URIImpl. (str this)))
+
+  java.util.Date
+  (->backend-type [this]
+    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
   
   Quad
   (->backend-type [this]

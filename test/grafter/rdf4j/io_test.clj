@@ -26,7 +26,7 @@
 
 (deftest backend-literal->grafter-type-test
   (are [clj-val uri klass]
-      (let [ret-val (backend-literal->grafter-type (pr/literal clj-val uri))]
+      (let [ret-val (backend-literal->grafter-type (->backend-type clj-val))]
         (is (= clj-val ret-val))
         (is (= klass (class clj-val))))
 
@@ -38,6 +38,8 @@
     (float 23.8)   "http://www.w3.org/2001/XMLSchema#float" Float
     10             "http://www.w3.org/2001/XMLSchema#long" Long
 
+    #inst "2017-10-20T22:26:28.195-00:00" "http://www.w3.org/2001/XMLSchema#dateTime" java.util.Date
+    
     ;; Yes this is correct according to the XSD spec. #integer is
     ;; unbounded whereas #int is bounded
     (bigint 3)     "http://www.w3.org/2001/XMLSchema#integer" clojure.lang.BigInt

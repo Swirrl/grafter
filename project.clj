@@ -11,7 +11,6 @@
                  [org.clojure/tools.logging "0.4.0"]
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.2"]
-
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.4"]
                  [com.novemberain/pantomime "2.9.0"]] ;; mimetypes
