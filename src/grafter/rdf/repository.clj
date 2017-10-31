@@ -34,7 +34,8 @@
            (org.eclipse.rdf4j.common.iteration CloseableIteration)
            (org.eclipse.rdf4j.sail.inferencer.fc ForwardChainingRDFSInferencer
                                            DirectTypeHierarchyInferencer
-                                           CustomGraphQueryInferencer)))
+                                           CustomGraphQueryInferencer)
+           (org.eclipse.rdf4j.repository.event.base NotifyingRepositoryWrapper)))
 
 (defprotocol ToConnection
   (->connection [repo] "Given a sesame repository return a connection to it.
@@ -164,6 +165,20 @@
      (doto (SPARQLRepository. (str query-url)
                               (str update-url))
        (.initialize))))
+
+(defn notifying-repo
+  "Wrap the given repository in an RDF4j NotifyingRepositoryWrapper.
+  Once wrapped you can capture events on the underlying repository.
+
+  Supports two arities:
+
+  - Takes just a repo to wrap.
+  - Takes a repo to wrap and a boolean indicating whether to report 
+    deltas on operations."
+  ([^Repository repo]
+   (NotifyingRepositoryWrapper. repo))
+  ([repo report-deltas]
+   (NotifyingRepositoryWrapper. repo report-deltas)))
 
 (defn rdfs-inferencer
   "Returns a Sesame ForwardChainingRDFSInferencer using the rules from
