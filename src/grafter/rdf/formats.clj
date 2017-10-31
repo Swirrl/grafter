@@ -1,5 +1,21 @@
 (ns grafter.rdf.formats
-  "Symbols used to specify different Linked Data Serializations."
+  "Symbols used to specify different Linked Data Serializations.
+
+  Includes functions to coerce formats from clojure keywords / file
+  extension strings into their underlying RDF4j RDFFormat object.  
+
+  Supported format keywords are:
+
+  :brf 
+  :json
+  :n3
+  :nq
+  :nt
+  :rdf (also :owl :rdfs :xml) 
+  :rj
+  :trig
+  :trix
+  :ttl"
   (:require [clojure.string :as string]
             [grafter.url :as url]
             [clojure.string :as str]

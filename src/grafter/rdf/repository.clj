@@ -1,5 +1,5 @@
 (ns grafter.rdf.repository
-  "Functions for constructing and working with various Sesame repositories."
+  "Functions for constructing and working with various RDF4j repositories."
   (:require [clojure.java.io :as io]
             [grafter.rdf]
             [me.raynes.fs :as fs]
@@ -38,7 +38,7 @@
            (org.eclipse.rdf4j.repository.event.base NotifyingRepositoryWrapper)))
 
 (defprotocol ToConnection
-  (->connection [repo] "Given a sesame repository return a connection to it.
+  (->connection [repo] "Given an RDF4j repository return a connection to it.
   ->connection is designed to be used with the macro with-open"))
 
 (defn- resource-array #^"[Lorg.eclipse.rdf4j.model.Resource;" [& rs]
