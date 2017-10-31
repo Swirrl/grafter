@@ -2,7 +2,8 @@
   "Symbols used to specify different Linked Data Serializations."
   (:require [clojure.string :as string]
             [grafter.url :as url]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clojure.java.io :as io])
   (:import [org.eclipse.rdf4j.rio RDFFormat RDFParser RDFParserFactory Rio]
            org.eclipse.rdf4j.rio.binary.BinaryRDFParserFactory
            org.eclipse.rdf4j.rio.jsonld.JSONLDParserFactory
@@ -82,6 +83,22 @@
 
 (defmethod ->rdf-format org.eclipse.rdf4j.model.URI [f]
   (url->rdf-format f))
+
+(defn select-input-coercer
+  "Depending on whether the format is text or binary returns either a
+  Reader or an InputStream."
+  [fmt]
+  (if (= RDFFormat/BINARY (->rdf-format fmt))
+    io/input-stream ;; If we're a binary format we need to use an outputstream not a writer
+    io/reader))
+
+(defn select-output-coercer
+  "Depending on whether the format is text or binary returns either a
+  Writer or an OutputStream."
+  [fmt]
+  (if (= RDFFormat/BINARY (->rdf-format fmt))
+    io/output-stream ;; If we're a binary format we need to use an outputstream not a writer
+    io/writer))
 
 (defmacro def-format
   "Define a bunch of format coercions from mime-type and file

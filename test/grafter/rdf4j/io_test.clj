@@ -82,6 +82,18 @@
         (is (= quad
                (statements rdr :format :nq)))))))
 
+(deftest binary-rdf-test
+  (testing "round trip quads via binary RDF"
+    (let [baos (java.io.ByteArrayOutputStream. 8192)
+          quads (graph (->java-uri "http://example.org/test/graph")
+                       [(->java-uri "http://test/subj") [(->java-uri "http://test/pred") (->java-uri "http://test/obj")]])]
+
+      (add (rdf-writer baos :format :brf) quads)
+
+      (let [bais (java.io.ByteArrayInputStream. (.toByteArray baos))]
+        (is (= (statements bais :format :brf)
+               quads))))))
+
 (deftest quad->backend-quad-test
   (testing "IStatement->sesame-statement"
     (is (= (quad->backend-quad (->Quad (->java-uri "http://foo.com/") (->java-uri "http://bar.com/") "a string" (->java-uri "http://blah.com/")))

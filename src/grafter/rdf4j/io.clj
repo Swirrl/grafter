@@ -296,7 +296,7 @@
   Use this to capture the intention to write to a location in a
   specific RDF format, e.g.
 
-  (grafter.rdf/add (rdf-serializer \"/tmp/foo.nt\" :format :nt) quads)
+  (grafter.rdf/add (rdf-writer \"/tmp/foo.nt\" :format :nt) quads)
 
   Accepts also the following optional options:
 
@@ -317,15 +317,15 @@
                                                                 prefixes default-prefixes}}]
 
    (let [^RDFFormat format (resolve-format-preference destination format)
-         writer (Rio/createWriter format
-                                  (io/writer destination
-                                             :append append
-                                             :encoding encoding))]
+              iowriter (fmt/select-output-coercer format)
+              writer (Rio/createWriter format
+                                       (iowriter destination
+                                                 :append append
+                                                 :encoding encoding))]
 
-
-     (reduce (fn [acc [name prefix]]
-               (doto writer
-                 (.handleNamespace name prefix))) writer prefixes))))
+          (reduce (fn [acc [name prefix]]
+                    (doto writer
+                      (.handleNamespace name prefix))) writer prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
@@ -343,7 +343,7 @@
   (.endRDF target))
 
 (extend-protocol pr/ITripleWriteable
-  RDFWriter
+  RDFHandler
   (pr/add-statement [this statement]
     (.handleStatement this (->backend-type statement)))
 
@@ -378,6 +378,52 @@
                                     (when-not (= EOQ x)
                                       (cons (when-not (= NIL x) x) (pull))))))]
     [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
+
+  ;; WARNING: This implementation is necessarily a little convoluted
+  ;; as we hack around Sesame to generate a lazy sequence of results.
+  ;; Sesame's parse methods always assume you want to consume the
+  ;; whole file of triples, so we spawn a thread to consume through
+  ;; the file and use a blocking queue of buffer-size elements to pass elements
+  ;; back into a lazy sequence on the calling thread.
+  ;;
+  ;; NOTE also none of these functions really allow for proper
+  ;; resource clean-up unless the whole sequence is consumed.
+  ;;
+  ;; So, the good news is that this means you should be able to read
+  ;; and stream huge files.  The bad news is that might leak a file
+  ;; handle, unless you consume the whole sequence.
+  ;;
+  ;; TODO: consider how to support proper resource cleanup.
+(defn- to-statements* [is-or-rdr {:keys [format buffer-size base-uri] :or {buffer-size 32
+                                                                           base-uri "http://example.org/base-uri"} :as options}]
+  (let [coercer (fmt/select-input-coercer format)
+        reader (coercer is-or-rdr :buffer-size buffer-size)]
+    (if-not format
+      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:error :no-format-supplied}))
+      (let [[statements put!] (pipe buffer-size)
+            parser (doto (fmt/format->parser (fmt/->rdf-format format))
+                     (.setRDFHandler (reify RDFHandler
+                                       (startRDF [this])
+                                       (endRDF [this]
+                                         (put!)
+                                         (.close reader))
+                                       (handleStatement [this statement]
+                                         (put! statement))
+                                       (handleComment [this comment])
+                                       (handleNamespace [this prefix-str uri-str]))))]
+        (future
+          (try
+            (.parse parser reader (str base-uri))
+            (catch Exception ex
+              (put! ex))))
+        (let [read-rdf (fn read-rdf [msg]
+                         (if (instance? Throwable msg)
+                           ;; if the other thread puts an Exception on
+                           ;; the pipe, raise it here.
+                           (throw (ex-info "Reading triples aborted."
+                                           {:error :reading-aborted} msg))
+                           (backend-quad->grafter-quad msg)))]
+          (map read-rdf statements))))))
 
 (extend-protocol pr/ITripleReadable
   clojure.lang.Sequential
@@ -417,56 +463,17 @@
   File
   (pr/to-statements [this {:keys [format] :as opts}]
     (let [format (resolve-format-preference this format)]
-      (pr/to-statements (io/reader this) (assoc opts :format format))))
+      (to-statements* this (assoc opts :format format))))
 
   java.io.InputStream
   (pr/to-statements [this opts]
-    (pr/to-statements (io/reader this) opts))
+    (to-statements* this opts))
 
   java.io.Reader
-  ;; WARNING: This implementation is necessarily a little convoluted
-  ;; as we hack around Sesame to generate a lazy sequence of results.
-  ;; Sesame's parse methods always assume you want to consume the
-  ;; whole file of triples, so we spawn a thread to consume through
-  ;; the file and use a blocking queue of buffer-size elements to pass elements
-  ;; back into a lazy sequence on the calling thread.
-  ;;
-  ;; NOTE also none of these functions really allow for proper
-  ;; resource clean-up unless the whole sequence is consumed.
-  ;;
-  ;; So, the good news is that this means you should be able to read
-  ;; and stream huge files.  The bad news is that might leak a file
-  ;; handle, unless you consume the whole sequence.
-  ;;
-  ;; TODO: consider how to support proper resource cleanup.
-  (pr/to-statements [reader {:keys [format buffer-size base-uri] :or {buffer-size 32
-                                                                      base-uri "http://example.org/base-uri"} :as options}]
-    (if-not format
-      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:error :no-format-supplied}))
-      (let [[statements put!] (pipe buffer-size)
-            parser (doto (fmt/format->parser (fmt/->rdf-format format))
-                     (.setRDFHandler (reify RDFHandler
-                                       (startRDF [this])
-                                       (endRDF [this]
-                                         (put!)
-                                         (.close reader))
-                                       (handleStatement [this statement]
-                                         (put! statement))
-                                       (handleComment [this comment])
-                                       (handleNamespace [this prefix-str uri-str]))))]
-        (future
-          (try
-            (.parse parser reader (str base-uri))
-            (catch Exception ex
-              (put! ex))))
-        (let [read-rdf (fn read-rdf [msg]
-                         (if (instance? Throwable msg)
-                           ;; if the other thread puts an Exception on
-                           ;; the pipe, raise it here.
-                           (throw (ex-info "Reading triples aborted."
-                                           {:error :reading-aborted} msg))
-                           (backend-quad->grafter-quad msg)))]
-          (map read-rdf statements))))))
+  (pr/to-statements [this opts]
+    (to-statements* this opts)))
+
+
 
 (extend-protocol ToGrafterURL
   URI
