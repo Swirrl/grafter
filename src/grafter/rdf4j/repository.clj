@@ -1,14 +1,14 @@
-(ns grafter.rdf.repository
+(ns grafter.rdf4j.repository
   "Functions for constructing and working with various RDF4j repositories."
   (:require [clojure.java.io :as io]
             [grafter.rdf]
             [me.raynes.fs :as fs]
             [grafter.rdf.protocols :as pr]
-            [grafter.rdf.io :refer :all]
+            [grafter.rdf4j.io :as rio]
             [clojure.tools.logging :as log]
             [grafter.rdf :as rdf]
             [clojure.string :as string]
-            [grafter.rdf.formats :as format])
+            [grafter.rdf4j.formats :as format])
   (:import (grafter.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
@@ -49,28 +49,28 @@
 
   (pr/add-statement
     ([this statement]
-       {:pre [(instance? IStatement statement)]}
-       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
-             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
-         (doto this (.add sesame-statement resources))))
+     {:pre [(instance? IStatement statement)]}
+     (let [^Statement sesame-statement (rio/quad->backend-quad statement)
+           resources (if-let [graph (pr/context statement)] (resource-array (rio/->rdf4j-uri graph)) (resource-array))]
+       (doto this (.add sesame-statement resources))))
 
     ([this graph statement]
-       {:pre [(instance? IStatement statement)]}
-       (let [^Statement stm (IStatement->sesame-statement statement)
-             resources (resource-array (->sesame-uri graph))]
-         (doto this
-           (.add stm resources)))))
+     {:pre [(instance? IStatement statement)]}
+     (let [^Statement stm (rio/quad->backend-quad statement)
+           resources (resource-array (rio/->rdf4j-uri graph))]
+       (doto this
+         (.add stm resources)))))
 
   (pr/add
     ([this triples]
-       {:pre [(or (nil? triples)
-                  (seq triples)
-                  (instance? IStatement triples))]}
-       (if (not (instance? IStatement triples))
-         (when (seq triples)
-               (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-                 (.add this stmts (resource-array))))
-         (pr/add-statement this triples))
+     {:pre [(or (nil? triples)
+                (seq triples)
+                (instance? IStatement triples))]}
+     (if (not (instance? IStatement triples))
+       (when (seq triples)
+         (let [^Iterable stmts (map rio/quad->backend-quad triples)]
+           (.add this stmts (resource-array))))
+       (pr/add-statement this triples))
      this)
 
     ([this graph triples]
@@ -79,18 +79,18 @@
                 (instance? IStatement triples))]}
      (if (not (instance? IStatement triples))
        (when (seq triples)
-         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-           (.add this stmts (resource-array (->sesame-uri graph)))))
+         (let [^Iterable stmts (map rio/quad->backend-quad triples)]
+           (.add this stmts (resource-array (rio/->rdf4j-uri graph)))))
        (pr/add-statement this triples))
      this)
 
     ([this graph format triple-stream]
      (doto this
-       (.add triple-stream nil format (resource-array (->sesame-uri graph)))))
+       (.add triple-stream nil format (resource-array (rio/->rdf4j-uri graph)))))
 
     ([this graph base-uri format triple-stream]
      (doto this
-       (.add triple-stream base-uri format (resource-array (->sesame-uri graph)))))))
+       (.add triple-stream base-uri format (resource-array (rio/->rdf4j-uri graph)))))))
 
 (definline throw-deprecated-exception!
   "Throw a more helpful error message alerting people to the need to
@@ -238,7 +238,7 @@
             (rdf/add acc v))
           (catch Throwable ex
             (.close acc)
-            (throw (ex-info "Exception when adding to repository" {} acc)))))))
+            (throw (ex-info "Exception when adding to repository" {} ex)))))))
 
 (defn- statements-with-inferred-format [res]
   (if (seq? res)
@@ -292,42 +292,11 @@
                     repo)))]
      (apply fixture-repo repo (map io/resource data)))))
 
-(defn repo
-  "DEPRECATED: Use sail-repo or fixture-repo instead.
-
-  Given a sesame Sail of some type, return a sesame SailRepository.
-
-  This function also supports initialising the repository with some
-  data that can be loaded from anything grafter.rdf/statements can
-  coerce.  Additionally the data can also be a sequence of
-  grafter.rdf.protocols/Quad's.
-
-  Finally you can also optionally supply a sesame sail to wrap the
-  repository, which can be used to configure a sesame NativeStore.
-
-  By default this function will return a repository initialised with a
-  Sesame MemoryStore."
-  {:deprecated "0.8.0"}
-  ([] (sail-repo))
-  ([sail-or-rdf-file]
-   (if (instance? Sail sail-or-rdf-file)
-     (repo nil sail-or-rdf-file)
-     (repo sail-or-rdf-file (MemoryStore.))))
-
-  ([rdf-data sail]
-   (let [r (doto (SailRepository. sail)
-             (.initialize))]
-     (with-open [conn (->connection r)]
-       (pr/add conn (cond
-                      (and rdf-data (satisfies? io/Coercions rdf-data)) (pr/to-statements rdf-data {})
-                      (or (seq rdf-data) (nil? rdf-data)) rdf-data)))
-     r)))
-
 (defn- query-bindings->map [^BindingSet qbs]
   (let [boundvars (.getBindingNames qbs)]
     (->> boundvars
          (mapcat (fn [k]
-                   [(keyword k) (-> qbs (.getBinding k) .getValue sesame-rdf-type->type)]))
+                   [(keyword k) (-> qbs (.getBinding k) .getValue pr/->grafter-type)]))
          (apply hash-map))))
 
 (extend-protocol pr/ITransactable
@@ -388,17 +357,17 @@
 (extend-type Graph
   pr/ITripleReadable
   (pr/to-statements [this options]
-    (map sesame-statement->IStatement (iterator-seq (.match this nil nil nil (resource-array)))))
+    (map rio/backend-quad->grafter-quad (iterator-seq (.match this nil nil nil (resource-array)))))
 
   pr/ITripleWriteable
 
   (pr/add-statement
     ([this graph statement]
      (.add this
-           (->sesame-rdf-type (pr/subject statement))
-           (->sesame-rdf-type (pr/predicate statement))
-           (->sesame-rdf-type (pr/object statement))
-           (resource-array (->sesame-uri graph)))))
+           (rio/->backend-type (pr/subject statement))
+           (rio/->backend-type (pr/predicate statement))
+           (rio/->backend-type (pr/object statement))
+           (resource-array (rio/->rdf4j-uri graph)))))
 
   (pr/add
     ([this triples]
@@ -451,7 +420,7 @@
 
   GraphQuery
   (evaluate [this]
-    (sesame-results->seq this sesame-statement->IStatement))
+    (sesame-results->seq this rio/backend-quad->grafter-quad))
 
   Update
   (evaluate [this]
@@ -513,14 +482,14 @@
   (pr/delete-statement
     ([this statement]
        {:pre [(instance? IStatement statement)]}
-       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
-             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
+     (let [^Statement sesame-statement (rio/quad->backend-quad statement)
+           resources (if-let [graph (pr/context statement)] (resource-array (rio/->rdf4j-uri graph)) (resource-array))]
          (doto this (.remove sesame-statement resources))))
 
     ([this graph statement]
      {:pre [(instance? IStatement statement)]}
-     (let [^Statement stm (IStatement->sesame-statement statement)
-             resources (resource-array (->sesame-uri graph))]
+     (let [^Statement stm (rio/quad->backend-quad statement)
+           resources (resource-array (rio/->rdf4j-uri graph))]
          (doto this
            (.remove stm resources)))))
 
@@ -531,7 +500,8 @@
                   (instance? IStatement quads))]}
      (if (not (instance? IStatement quads))
        (when (seq quads)
-         (let [^Iterable stmts (map IStatement->sesame-statement quads)]
+         (let [^Iterable stmts
+               (map rio/quad->backend-quad quads)]
                  (.remove this stmts (resource-array))))
          (pr/delete-statement this quads)))
 
@@ -542,8 +512,8 @@
                 (instance? IStatement triples))]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
-             (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-               (.remove this stmts (resource-array (->sesame-uri graph)))))
+           (let [^Iterable stmts (map rio/quad->backend-quad triples)]
+             (.remove this stmts (resource-array (rio/->rdf4j-uri graph)))))
          (pr/delete-statement this triples)))))
 
 (extend-protocol ToConnection
@@ -654,7 +624,7 @@
     (let [f (fn next-item [i]
               (when (.hasNext i)
                 (let [v (.next i)]
-                  (lazy-seq (cons (sesame-statement->IStatement v) (next-item i))))))]
+                  (lazy-seq (cons (rio/backend-quad->grafter-quad v) (next-item i))))))]
       (let [iter (.getStatements this nil nil nil true (into-array Resource []))]
         (f iter)))))
 

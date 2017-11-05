@@ -1,12 +1,12 @@
-(ns grafter.rdf.sparql-test
-  (:require [grafter.rdf.sparql :refer :all :as sparql]
+(ns grafter.rdf4j.sparql-test
+  (:require [grafter.rdf4j.sparql :refer :all :as sparql]
             [grafter.rdf :as rdf]
             [clojure.test :refer :all]
             [clojure.java.io :refer [resource]]
-            [grafter.rdf.repository :as repo]
+            [grafter.rdf4j.repository :as repo]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [grafter.rdf.io :as rio]
+            [grafter.rdf4j.io :as rio]
             [grafter.rdf.protocols :as pr])
   (:import java.net.URI))
 
@@ -15,7 +15,7 @@
         processed-sparql-file (slurp (resource "grafter/rdf/sparql/select-spog-pre-processed.sparql"))]
 
     (are [limitsoffsets]
-        (let [rewritten (#'grafter.rdf.sparql/rewrite-limit-and-offset-clauses sparql-file limitsoffsets)]
+        (let [rewritten (#'sparql/rewrite-limit-and-offset-clauses sparql-file limitsoffsets)]
           (is (= rewritten processed-sparql-file)))
 
       {::sparql/limits {:myLimitVar 55

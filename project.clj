@@ -6,7 +6,7 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-  :dependencies [[org.clojure/clojure "1.9.0-beta2"]
+  :dependencies [[org.clojure/clojure "1.9.0-beta4"]
                  [org.eclipse.rdf4j/rdf4j-runtime "2.2.2"]
                  [org.clojure/tools.logging "0.4.0"]
                  [grafter/url "0.2.5"]
@@ -15,6 +15,7 @@
                  [potemkin "0.4.4"]
                  [com.novemberain/pantomime "2.9.0"]] ;; mimetypes
 
+  :source-paths ["src" #_"deprecated/src"]
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
@@ -35,12 +36,17 @@
 
   :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
 
-             :dev {:plugins [[codox "0.8.10"]]
+             ;; expect upstream projects to provide this explicity if they want sesame
+             :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]]}
+             
+             :dev [:provided :dev-deps]
 
-                   :dependencies [[org.slf4j/slf4j-simple "1.7.25"]
-                                  [prismatic/schema "1.1.7"]
-                                  [criterium "0.4.4"]]
+             :dev-deps {:plugins [[codox "0.8.10"]]
 
-                   :resource-paths ["dev/resources"]
+                        :dependencies [[org.slf4j/slf4j-simple "1.7.25"]
+                                       [prismatic/schema "1.1.7"]
+                                       [criterium "0.4.4"]]
 
-                   :env {:dev true}}})
+                        :resource-paths ["dev/resources"]
+
+                        :env {:dev true}}})

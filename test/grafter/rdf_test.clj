@@ -1,7 +1,7 @@
 (ns grafter.rdf-test
   (:require [grafter.rdf :refer :all]
             [grafter.rdf.protocols :as proto]
-            [grafter.rdf.repository :as repo]
+            [grafter.rdf4j.repository :as repo]
             [clojure.test :refer :all])
   (:import [java.net URI]))
 
@@ -53,18 +53,18 @@
   (let [triples (map (fn [i] (->Triple (URI. (str "http://subject" i)) (URI. (str "http://predicate" i)) (URI. (str "http://object" i)))) (range 1 11))
         graph (URI. "http://test-graph")]
     (testing "Adds all triples"
-      (with-open [repo (repo/->connection (repo/repo))]
+      (with-open [repo (repo/->connection (repo/sail-repo))]
         (add-batched repo triples)
         (is (= (set triples) (set (statements repo))))))
 
     (testing "Adds all triples with graph"
       (let [expected-quads (map #(assoc % :c graph) triples)]
-        (with-open [repo (repo/->connection (repo/repo))]
+        (with-open [repo (repo/->connection (repo/sail-repo))]
           (add-batched repo graph triples)
           (is (= (set expected-quads) (set (statements repo)))))))
 
     (testing "Adds all triples in sized batches"
-      (with-open [repo (repo/->connection (repo/repo))]
+      (with-open [repo (repo/->connection (repo/sail-repo))]
         (let [batch-sizes (atom [])
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
           (add-batched recording-repo triples 3)
@@ -72,7 +72,7 @@
           (is (= [3 3 3 1] @batch-sizes)))))
 
     (testing "Adds all triples with graph in sized batches"
-      (with-open [repo (repo/->connection (repo/repo))]
+      (with-open [repo (repo/->connection (repo/sail-repo))]
         (let [expected-quads (map #(assoc % :c graph) triples)
               batch-sizes (atom [])
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
@@ -89,19 +89,19 @@
         graph (URI. "http://test-graph")
         make-quads (fn [triples] (map #(triple->quad graph %) triples))]
     (testing "Deletes all triples"
-      (with-open [repo (repo/->connection (repo/repo))]
+      (with-open [repo (repo/->connection (repo/sail-repo))]
         (add repo initial-triples)
         (delete-batched repo to-delete)
         (is (= (set to-keep) (set (statements repo))))))
 
     (testing "Deletes all triples with graph"
-      (with-open [repo (repo/->connection (repo/repo))]
+      (with-open [repo (repo/->connection (repo/sail-repo))]
         (add repo (make-quads initial-triples))
         (delete-batched repo graph to-delete)
         (is (= (set (make-quads to-keep)) (set (statements repo))))))
 
     (testing "Deletes all triples in sized batches"
-      (with-open [repo (repo/->connection (repo/repo))]
+      (with-open [repo (repo/->connection (repo/sail-repo))]
         (let [batch-sizes (atom [])
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
           (add repo initial-triples)
@@ -110,7 +110,7 @@
           (is (= [4 2] @batch-sizes)))))
 
     (testing "Deletes all triples with graph in sized batches"
-      (with-open [repo (repo/->connection (repo/repo))]
+      (with-open [repo (repo/->connection (repo/sail-repo))]
         (let [batch-sizes (atom [])
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
           (add repo (make-quads initial-triples))

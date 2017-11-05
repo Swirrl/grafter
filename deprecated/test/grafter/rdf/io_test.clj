@@ -1,14 +1,14 @@
 (ns grafter.rdf.io-test
   (:require [clojure.test :refer :all]
             [grafter.rdf.protocols :refer [->Quad]]
-            [grafter.rdf :refer [add statements]]
+            [grafter.rdf :refer [add statements datatype-uri]]
             [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.io :refer :all]
             [grafter.url :refer :all]
             [grafter.rdf.protocols :as pr]
             [grafter.rdf.formats :as fmt]
             [clojure.java.io :as io])
-  (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
+  (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]
            [java.net URI]))
 
 ;; NOTE this function is deprecated in favour of the one in formats,

@@ -1,12 +1,12 @@
 (ns grafter.rdf4j.io-test
   (:require [clojure.test :refer :all]
+            [grafter.rdf4j.io :as sut]
             [grafter.rdf.protocols :refer [->Quad]]
             [grafter.rdf :refer [add statements]]
             [grafter.rdf.templater :refer [graph]]
-            [grafter.rdf4j.io :refer :all]
-            [grafter.url :refer :all]
+            [grafter.url :as url]
             [grafter.rdf.protocols :as pr]
-            [grafter.rdf.formats :as fmt]
+            [grafter.rdf4j.formats :as fmt]
             [clojure.java.io :as io])
   (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
            [java.net URI]))
@@ -14,7 +14,7 @@
 
 (deftest round-trip-numeric-types-test
   (are [xsd type number]
-      (is (= number (pr/raw-value (->backend-type (pr/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
+      (is (= number (pr/raw-value (sut/->backend-type (pr/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
 
     "http://www.w3.org/2001/XMLSchema#byte" Byte "10"
     "http://www.w3.org/2001/XMLSchema#short" Short "10"
@@ -26,7 +26,7 @@
 
 (deftest backend-literal->grafter-type-test
   (are [clj-val uri klass]
-      (let [ret-val (backend-literal->grafter-type (->backend-type clj-val))]
+      (let [ret-val (sut/backend-literal->grafter-type (sut/->backend-type clj-val))]
         (is (= clj-val ret-val))
         (is (= klass (class clj-val))))
 
@@ -48,33 +48,33 @@
 
 (deftest language-string-test
   (let [bonsoir (pr/language "Bonsoir Mademoiselle" :fr)]
-    (is (= bonsoir (backend-literal->grafter-type bonsoir)))
-    (is (= bonsoir (pr/->grafter-type (->backend-type bonsoir))))))
+    (is (= bonsoir (sut/backend-literal->grafter-type bonsoir)))
+    (is (= bonsoir (pr/->grafter-type (sut/->backend-type bonsoir))))))
 
 (deftest literal-test
-  (is (instance? LiteralImpl (->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
+  (is (instance? LiteralImpl (sut/->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
 (deftest round-trip-quad-test
-  (let [quad (->Quad (->java-uri "http://example.org/test/subject")
-                     (->java-uri "http://example.org/test/predicate")
-                     (->java-uri "http://example.org/test/object")
-                     (->java-uri "http://example.org/test/graph"))]
+  (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
+                     (url/->java-uri "http://example.org/test/predicate")
+                     (url/->java-uri "http://example.org/test/object")
+                     (url/->java-uri "http://example.org/test/graph"))]
     (is (= quad
-           (backend-quad->grafter-quad (quad->backend-quad quad)))))
+           (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad)))))
 
   (testing "with nil graph"
-    (let [quad (->Quad (->java-uri "http://example.org/test/subject")
-                       (->java-uri "http://example.org/test/predicate")
-                       (->java-uri "http://example.org/test/object")
+    (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
+                       (url/->java-uri "http://example.org/test/predicate")
+                       (url/->java-uri "http://example.org/test/object")
                        nil)]
       (is (= quad
-             (backend-quad->grafter-quad (quad->backend-quad quad)))))))
+             (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad)))))))
 
 (deftest round-trip-quad-serialize-deserialize-test
-  (let [quad (graph (->java-uri "http://example.org/test/graph")
-                    [(->java-uri "http://test/subj") [(->java-uri "http://test/pred") (->java-uri "http://test/obj")]])
+  (let [quad (graph (url/->java-uri "http://example.org/test/graph")
+                    [(url/->java-uri "http://test/subj") [(url/->java-uri "http://test/pred") (url/->java-uri "http://test/obj")]])
         string-wtr (java.io.StringWriter.)
-        serializer (rdf-writer string-wtr :format :nq)]
+        serializer (sut/rdf-writer string-wtr :format :nq)]
     (add serializer quad)
 
     (let [output-str (str string-wtr)]
@@ -85,10 +85,10 @@
 (deftest binary-rdf-test
   (testing "round trip quads via binary RDF"
     (let [baos (java.io.ByteArrayOutputStream. 8192)
-          quads (graph (->java-uri "http://example.org/test/graph")
-                       [(->java-uri "http://test/subj") [(->java-uri "http://test/pred") (->java-uri "http://test/obj")]])]
+          quads (graph (url/->java-uri "http://example.org/test/graph")
+                       [(url/->java-uri "http://test/subj") [(url/->java-uri "http://test/pred") (url/->java-uri "http://test/obj")]])]
 
-      (add (rdf-writer baos :format :brf) quads)
+      (add (sut/rdf-writer baos :format :brf) quads)
 
       (let [bais (java.io.ByteArrayInputStream. (.toByteArray baos))]
         (is (= (statements bais :format :brf)
@@ -96,13 +96,13 @@
 
 (deftest quad->backend-quad-test
   (testing "IStatement->sesame-statement"
-    (is (= (quad->backend-quad (->Quad (->java-uri "http://foo.com/") (->java-uri "http://bar.com/") "a string" (->java-uri "http://blah.com/")))
+    (is (= (sut/quad->backend-quad (->Quad (url/->java-uri "http://foo.com/") (url/->java-uri "http://bar.com/") "a string" (url/->java-uri "http://blah.com/")))
            (ContextStatementImpl. (URIImpl. "http://foo.com/") (URIImpl. "http://bar.com/") (LiteralImpl. "a string") (URIImpl. "http://blah.com/"))))
 
     (testing "Raising Exceptions"
       (let [broken-quad (with-meta (->Quad nil "http://bar.com/" "http://baz.com/" "http://blah.com/") {:foo :bar})
             ex (ex-data (is (thrown? clojure.lang.ExceptionInfo
-                                     (quad->backend-quad broken-quad))))]
+                                     (sut/quad->backend-quad broken-quad))))]
 
         (is (= (->Quad
                 nil
@@ -117,12 +117,12 @@
 (deftest to-grafter-url-protocol-test
   (testing "extends RDF Model URI"
     (let [uri (URIImpl. "http://www.tokyo-3.com:777/ayanami?geofront=retracted")
-          grafter-url (->grafter-url uri)]
+          grafter-url (url/->grafter-url uri)]
       (are [expected actual] (= expected actual)
-                             777 (port grafter-url)
-                             "www.tokyo-3.com" (host grafter-url)
-                             "http" (scheme grafter-url)
-                             ["ayanami"] (path-segments grafter-url)))))
+                             777 (url/port grafter-url)
+                             "www.tokyo-3.com" (url/host grafter-url)
+                             "http" (url/scheme grafter-url)
+                             ["ayanami"] (url/path-segments grafter-url)))))
 
 (deftest blank-nodes-load-test
   (testing "Blank nodes are keywords"

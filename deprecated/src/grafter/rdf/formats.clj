@@ -1,36 +1,19 @@
 (ns grafter.rdf.formats
-  "Symbols used to specify different Linked Data Serializations.
-
-  Includes functions to coerce formats from clojure keywords / file
-  extension strings into their underlying RDF4j RDFFormat object.  
-
-  Supported format keywords are:
-
-  :brf 
-  :json
-  :n3
-  :nq
-  :nt
-  :rdf (also :owl :rdfs :xml) 
-  :rj
-  :trig
-  :trix
-  :ttl"
+  "Symbols used to specify different Linked Data Serializations."
   (:require [clojure.string :as string]
             [grafter.url :as url]
-            [clojure.string :as str]
-            [clojure.java.io :as io])
-  (:import [org.eclipse.rdf4j.rio RDFFormat RDFParser RDFParserFactory Rio]
-           org.eclipse.rdf4j.rio.binary.BinaryRDFParserFactory
-           org.eclipse.rdf4j.rio.jsonld.JSONLDParserFactory
-           org.eclipse.rdf4j.rio.n3.N3ParserFactory
-           org.eclipse.rdf4j.rio.nquads.NQuadsParserFactory
-           org.eclipse.rdf4j.rio.ntriples.NTriplesParserFactory
-           org.eclipse.rdf4j.rio.rdfjson.RDFJSONParserFactory
-           org.eclipse.rdf4j.rio.rdfxml.RDFXMLParserFactory
-           org.eclipse.rdf4j.rio.trig.TriGParserFactory
-           org.eclipse.rdf4j.rio.trix.TriXParserFactory
-           org.eclipse.rdf4j.rio.turtle.TurtleParserFactory))
+            [clojure.string :as str])
+  (:import [org.openrdf.rio RDFFormat RDFParser RDFParserFactory Rio]
+           org.openrdf.rio.binary.BinaryRDFParserFactory
+           org.openrdf.rio.jsonld.JSONLDParserFactory
+           org.openrdf.rio.n3.N3ParserFactory
+           org.openrdf.rio.nquads.NQuadsParserFactory
+           org.openrdf.rio.ntriples.NTriplesParserFactory
+           org.openrdf.rio.rdfjson.RDFJSONParserFactory
+           org.openrdf.rio.rdfxml.RDFXMLParserFactory
+           org.openrdf.rio.trig.TriGParserFactory
+           org.openrdf.rio.trix.TriXParserFactory
+           org.openrdf.rio.turtle.TurtleParserFactory))
 
 (defmulti mimetype->rdf-format
   "Extensible multimethod that accepts a mime-type string and returns
@@ -80,7 +63,7 @@
   "Given a filename we attempt to return an appropriate RDFFormat
   object based on the files extension."
   [fname]
-  (.orElse (Rio/getParserFormatForFileName (str fname)) nil))
+  (Rio/getParserFormatForFileName (str fname)))
 
 (defn url->rdf-format
   "Parse a URL for the file extension of its last path segment,
@@ -97,24 +80,8 @@
 (defmethod ->rdf-format java.net.URL [f]
   (url->rdf-format f))
 
-(defmethod ->rdf-format org.eclipse.rdf4j.model.URI [f]
+(defmethod ->rdf-format org.openrdf.model.URI [f]
   (url->rdf-format f))
-
-(defn select-input-coercer
-  "Depending on whether the format is text or binary returns either a
-  Reader or an InputStream."
-  [fmt]
-  (if (= RDFFormat/BINARY (->rdf-format fmt))
-    io/input-stream ;; If we're a binary format we need to use an outputstream not a writer
-    io/reader))
-
-(defn select-output-coercer
-  "Depending on whether the format is text or binary returns either a
-  Writer or an OutputStream."
-  [fmt]
-  (if (= RDFFormat/BINARY (->rdf-format fmt))
-    io/output-stream ;; If we're a binary format we need to use an outputstream not a writer
-    io/writer))
 
 (defmacro def-format
   "Define a bunch of format coercions from mime-type and file

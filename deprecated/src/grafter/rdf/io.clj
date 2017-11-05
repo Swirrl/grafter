@@ -1,7 +1,5 @@
-(ns ^{:deprecated "0.10.0"} grafter.rdf.io
-  "DEPRECATED: Please use grafter.rdf4j.io instead.
-
-  Functions & Protocols for serializing Grafter Statements to (and from)
+(ns grafter.rdf.io
+  "Functions & Protocols for serializing Grafter Statements to (and from)
   any Linked Data format supported by Sesame."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
@@ -17,9 +15,9 @@
            [java.net MalformedURLException URL]
            java.util.GregorianCalendar
            javax.xml.datatype.DatatypeFactory
-           [org.eclipse.rdf4j.model BNode Literal Resource Statement URI Value]
-           [org.eclipse.rdf4j.model.impl SimpleValueFactory BNodeImpl BooleanLiteralImpl CalendarLiteral ContextStatementImpl IntegerLiteral LiteralImpl NumericLiteral StatementImpl URIImpl]
-           [org.eclipse.rdf4j.rio RDFFormat RDFHandler RDFWriter Rio]))
+           [org.openrdf.model BNode Literal Resource Statement URI Value]
+           [org.openrdf.model.impl BNodeImpl BooleanLiteralImpl CalendarLiteralImpl ContextStatementImpl IntegerLiteralImpl LiteralImpl NumericLiteralImpl StatementImpl URIImpl]
+           [org.openrdf.rio RDFFormat RDFHandler RDFWriter Rio]))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -33,7 +31,17 @@
   (->sesame-rdf-type [this] "Convert a native type into a Sesame RDF Type")
   (sesame-rdf-type->type [this] "Convert a Sesame RDF Type into a Native Type"))
 
-(def language pr/language)
+(defn language
+  "Create an RDF langauge string out of a value string and a given
+  language tag.  Language tags should be keywords representing the
+  country code, e.g.
+
+  (language \"Bonsoir\" :fr)"
+  [s lang]
+  {:pre [(string? s)
+         lang
+         (keyword? lang)]}
+  (pr/->LangString s lang))
 
 (defn literal
   "You can use this to declare an RDF typed literal value along with
@@ -53,7 +61,7 @@
       (str datatype))))
 
 (defmethod literal-datatype->type nil [literal]
-  (pr/language (pr/raw-value literal) (pr/lang literal)))
+  (language (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#boolean" [literal]
   (Boolean/parseBoolean (pr/raw-value literal)))
@@ -85,13 +93,13 @@
   (java.lang.Long/parseLong (pr/raw-value literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/TR/xmlschema11-2/#string" [literal]
-  (pr/language (pr/raw-value literal) (pr/lang literal)))
+  (language (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#string" [literal]
   (pr/raw-value literal))
 
 (defmethod literal-datatype->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [literal]
-  (pr/language (pr/raw-value literal) (pr/lang literal)))
+  (language (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
@@ -115,63 +123,63 @@
 
   java.lang.Byte
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#byte")))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Short
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#short")))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.math.BigDecimal
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#decimal")))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Double
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+    (NumericLiteralImpl. this))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Float
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+    (NumericLiteralImpl. this))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Integer
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral (int this))))
+    (NumericLiteralImpl. this))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.math.BigInteger
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+    (NumericLiteralImpl. this (URIImpl. "http://www.w3.org/2001/XMLSchema#integer")))
 
   (sesame-rdf-type->type [this]
     this)
 
   java.lang.Long
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral (long this))))
+    (NumericLiteralImpl. (long this)))
 
   (sesame-rdf-type->type [this]
     this)
 
   clojure.lang.BigInt
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral  (BigInteger. (str this)))))
+    (IntegerLiteralImpl. (BigInteger. (str this))))
 
   (sesame-rdf-type->type [this]
     this))
@@ -205,7 +213,7 @@
 
   java.lang.Boolean
   (->sesame-rdf-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral this)))
+    (BooleanLiteralImpl. this))
 
   (sesame-rdf-type->type [this]
     this)
@@ -279,7 +287,9 @@
   (->sesame-rdf-type [this]
     (let [cal (doto (GregorianCalendar.)
                 (.setTime this))]
-      (.. (SimpleValueFactory/getInstance) (createLiteral this))))
+      (-> (DatatypeFactory/newInstance)
+          (.newXMLGregorianCalendar cal)
+          CalendarLiteralImpl.)))
 
   clojure.lang.Keyword
   (->sesame-rdf-type [this]
@@ -312,7 +322,7 @@
 ;; Extend IURIable protocol to sesame URI's.
 (extend-protocol IURIable
 
-  org.eclipse.rdf4j.model.URI
+  org.openrdf.model.URI
 
   (->java-uri [this]
     (java.net.URI. (.stringValue this))))
@@ -366,7 +376,6 @@
          (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object dest}))))
 
 (def default-prefixes
-  "A map of common prefixes and their URIs as strings."
   {
    "dcat" "http://www.w3.org/ns/dcat#"
    "dcterms" "http://purl.org/dc/terms/"
@@ -578,9 +587,9 @@
   (->sesame-uri [this] (URIImpl. (str this)))
   java.net.URI
   (->sesame-uri [this] (URIImpl. (str this)))
-  org.eclipse.rdf4j.model.URI
+  org.openrdf.model.URI
   (->sesame-uri [this] this)
   GrafterURL
   (->sesame-uri [this] (URIImpl. (str this)))
-  org.eclipse.rdf4j.model.Graph
+  org.openrdf.model.Graph
   (->sesame-uri [this] (URIImpl. (str this))))

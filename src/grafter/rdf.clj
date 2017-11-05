@@ -6,7 +6,7 @@
 
 ;; Force loading the required protocol implementations.  Keep separate from ns
 ;; definition to prevent ns refactoring tools cleaning it away.
-(require '[grafter.rdf.io])
+(require '[grafter.rdf4j.io])
 
 (import-vars
  [grafter.rdf.protocols
@@ -59,7 +59,7 @@
   implement `grafter.rdf.protocols/ITripleWriteable`.
 
   Datasinks include sesame RDF repositories, connections and anything
-  built by rdf-serializer.
+  built by rdf-writer.
 
   Takes an optional string/URI to use as a graph."
   ([target statement]
@@ -76,7 +76,7 @@
   Takes an optional string/URI to use as a graph.
 
   Depending on the target, this function will also write any prefixes
-  associated with the rdf-serialiser to the target.
+  associated with the rdf-writer to the target.
 
   Returns target."
   ([target triples]
@@ -95,7 +95,7 @@
    (pr/add target graph base-uri format triple-stream)
    target))
 
-(def default-batch-size 20000)
+(def ^:private default-batch-size 20000)
 
 (defn- apply-batched [target apply-fn stmts batch-size]
   (doseq [batch (partition-all batch-size stmts)]

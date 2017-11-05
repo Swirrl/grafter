@@ -1,14 +1,16 @@
 (ns grafter.rdf.templater
   "Functions for converting tree's of turtle-like data into Linked
   Data statements (triples/quads)."
-  (:require [grafter.rdf :as rdf])
-  (:require [grafter.rdf.protocols :refer [->Triple ->Quad]])
-  (:import [org.eclipse.rdf4j.rio RDFFormat]
-           [org.eclipse.rdf4j.model URI]))
+  (:require [grafter.rdf :as rdf]
+            [grafter.url :as url]
+            [grafter.rdf.protocols :refer [->Triple ->Quad]])
+  (:import [org.eclipse.rdf4j.model URI]))
 
 (defn- valid-uri? [node]
   (let [types [java.lang.String java.net.URL java.net.URI URI]]
-    (some (fn [t] (instance? t node)) types)))
+    (some (fn [t] (instance? t node)) types))
+  ;; todo consider replacing with...
+  #_(or (= java.lang.String node) (satisfies? url/IURIable)))
 
 (defn- is-literal? [node]
   (not (or (nil? node)

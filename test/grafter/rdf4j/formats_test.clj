@@ -1,5 +1,5 @@
-(ns grafter.rdf.formats-test
-  (:require [grafter.rdf.formats :as fmt]
+(ns grafter.rdf4j.formats-test
+  (:require [grafter.rdf4j.formats :as fmt]
             [clojure.test :refer :all]
             [clojure.java.io :as io])
   (:import [org.eclipse.rdf4j.rio RDFFormat]
@@ -8,11 +8,11 @@
 (deftest mimetype->rdf-format-test
   (testing "mimetype->rdf-format"
 
-    (is (= fmt/rdf-ntriples
+    (is (= RDFFormat/NTRIPLES
            (fmt/mimetype->rdf-format "application/n-triples; charset=UTF-8"))
         "works with charset parameters")
 
-    (is (= fmt/rdf-xml
+    (is (= RDFFormat/RDFXML
            (fmt/mimetype->rdf-format "application/rdf+xml"))
         "works without charset parameters")
 
@@ -25,7 +25,6 @@
          (fmt/->rdf-format "nt")
          (fmt/->rdf-format "application/n-triples")
          (fmt/->rdf-format "text/plain")
-         fmt/rdf-ntriples
          RDFFormat/NTRIPLES))
   (is (= (fmt/->rdf-format (URI. "http://foo.bar.com/tmp/foo.nt"))
          (fmt/->rdf-format (URL. "http://foo.bar.com/tmp/foo.nt"))
@@ -38,14 +37,12 @@
   (is (= (fmt/->rdf-format :ttl)
          (fmt/->rdf-format "ttl")
          (fmt/->rdf-format "text/turtle")
-         fmt/rdf-turtle
          RDFFormat/TURTLE))
 
   (is (= (fmt/->rdf-format :trig)
          (fmt/->rdf-format "trig")
          (fmt/->rdf-format "application/trig")
          (fmt/->rdf-format "application/x-trig")
-         fmt/rdf-trig
          RDFFormat/TRIG))
 
   (is (= (fmt/->rdf-format :nq)
@@ -53,7 +50,6 @@
          (fmt/->rdf-format "application/n-quads")
          (fmt/->rdf-format "text/x-nquads")
          (fmt/->rdf-format "text/nquads")
-         fmt/rdf-nquads
          RDFFormat/NQUADS))
 
   (is (= (fmt/->rdf-format :rdf)
@@ -63,5 +59,4 @@
          (fmt/->rdf-format :owl)
          (fmt/->rdf-format "application/rdf+xml")
          (fmt/->rdf-format "application/xml")
-         fmt/rdf-xml
          RDFFormat/RDFXML)))

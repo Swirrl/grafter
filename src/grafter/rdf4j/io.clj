@@ -3,8 +3,9 @@
   any Linked Data format supported by RDF4j."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
+            [grafter.rdf4j
+             [formats :as fmt]]
             [grafter.rdf
-             [formats :as fmt]
              [protocols :as pr :refer [->Quad ->grafter-type IGrafterRDFType]]]
             [grafter.url
              :refer
@@ -184,6 +185,14 @@
   Quad
   (->backend-type [this]
     (quad->backend-quad this))
+
+  URI
+  (->backend-type [this]
+    this)
+
+  Literal
+  (->backend-type [this]
+    this)
   
   RDFLiteral
   (->backend-type [this]

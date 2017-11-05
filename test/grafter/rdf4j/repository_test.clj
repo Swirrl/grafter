@@ -1,13 +1,12 @@
-(ns grafter.rdf.repository-test
+(ns grafter.rdf4j.repository-test
   (:require [grafter.rdf.templater :refer [graph]]
             [clojure.java.io :refer [file] :as io]
             [grafter.rdf.protocols :as pr :refer [->Triple]]
-            [grafter.rdf.repository :refer :all]
+            [grafter.rdf4j.repository :as repo :refer :all]
             [grafter.rdf :refer [statements]]
             [grafter.url :refer [->GrafterURL]]
-            [grafter.rdf.formats :refer :all]
-            [clojure.test :refer :all]
-            [grafter.rdf.repository :as repo])
+            [grafter.rdf4j.formats :refer :all]
+            [clojure.test :refer :all])
   (:import org.eclipse.rdf4j.model.impl.GraphImpl
            org.eclipse.rdf4j.sail.memory.MemoryStore
            org.eclipse.rdf4j.repository.sparql.SPARQLRepository
@@ -30,7 +29,7 @@
            (first (grafter.rdf/statements graph))))))
 
 (deftest with-transaction-test
-  (with-open [test-db (repo/->connection (repo))]
+  (with-open [test-db (repo/->connection (sail-repo))]
     (testing "Transactions return last result of form if there's no error."
       (is (= :return-value (with-transaction test-db
                              :return-value))))
@@ -53,7 +52,7 @@
 
 (defn load-rdf-types-data
   ([file]
-   (let [db (repo)]
+   (let [db (sail-repo)]
      (with-open [conn (->connection db)]
        (pr/add conn (statements file)))
 
@@ -104,7 +103,7 @@
       quad-fixture-file-path (pr/delete test-db quads-to-delete)))
 
   (testing "arity 3 delete"
-    (let [repo (repo)]
+    (let [repo (sail-repo)]
 
       (with-open [conn (->connection repo)]
         (-> conn
@@ -126,10 +125,10 @@
             "Should not be deleted")))))
 
 (deftest col-reduce-repo-test
-  (is (= (into #{} (repo))
+  (is (= (into #{} (sail-repo))
          #{}))
 
-  (is (= (into #{} (repo (io/resource "grafter/rdf/1.nt")))
+  (is (= (into #{} (fixture-repo (io/resource "grafter/rdf/1.nt")))
          #{(->Triple (URI. "http://one")
                      (URI. "http://lonely")
                      (URI. "http://triple"))})))
@@ -161,7 +160,7 @@
 
 
 (deftest batched-query-test
-  (let [repo (repo)]
+  (let [repo (sail-repo)]
     (with-open [conn (->connection repo)]
                (grafter.rdf/add conn
                                 (grafter.rdf/statements (io/resource "grafter/rdf/triples.nt"))))

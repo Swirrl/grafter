@@ -1,10 +1,9 @@
-(ns grafter.rdf.sparql
+(ns grafter.rdf4j.sparql
   "Functions for executing SPARQL queries with grafter RDF
   repositories, that support basic binding replacement etc."
   (:require [grafter.rdf :refer [statements]]
-            [grafter.rdf.repository :refer [repo sparql-repo ->connection]]
-            [grafter.rdf.repository :as repo]
-            [grafter.rdf.io :refer [->sesame-rdf-type] :as rio]
+            [grafter.rdf4j.repository  :as repo :refer [sparql-repo ->connection]]
+            [grafter.rdf4j.io :refer [->backend-type] :as rio]
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]
             [clojure.java.io :as io])
@@ -42,7 +41,7 @@
                      Pattern/DOTALL)))
 
 (defn- serialise-val [v]
-  (NTriplesUtil/toNTriplesString (rio/->sesame-rdf-type v)))
+  (NTriplesUtil/toNTriplesString (rio/->backend-type v)))
 
 (defn- ->sparql-str [k v]
   (cond
@@ -132,8 +131,8 @@
          prepped-query (repo/prepare-query repo pre-processed-qry)]
      (reduce (fn [pq [unbound-var val]]
                (when-not (or (sequential? val) (set? val))
-                 (if (and val (satisfies? rio/ISesameRDFConverter val))
-                   (.setBinding pq (name unbound-var) (->sesame-rdf-type val))
+                 (if (and val (satisfies? rio/IRDF4jConverter val))
+                   (.setBinding pq (name unbound-var) (->backend-type val))
                    (throw (ex-info (str "Could not coerce nil value into SPARQL binding for variable " unbound-var)
                                    {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
                pq)
