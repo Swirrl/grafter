@@ -473,7 +473,10 @@
   (pr/to-statements [this opts]
     (to-statements* this opts)))
 
-
+(extend-protocol IURIable
+  org.eclipse.rdf4j.model.URI
+  (->java-uri [t]
+    (java.net.URI. (str t))))
 
 (extend-protocol ToGrafterURL
   URI
