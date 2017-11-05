@@ -13,8 +13,12 @@
   ->Quad
   ->Triple
   language
+  lang
   literal
-  triple?])
+  triple?
+  datatype-uri
+  raw-value
+  ])
 
 (defn subject
   "Return the RDF subject from a statement."
