@@ -144,14 +144,14 @@
                      (URI. "http://triple"))}))
 
   (testing "Calling with multiple sets of quads appends them all into the repo"
-    (with-open [conn (->connection (fixture-repo (io/resource "quads.nq")
-                                                 (io/resource "quads.trig")))]
+    (with-open [conn (->connection (fixture-repo (io/resource "grafter/rdf4j/repository/quads.nq")
+                                                 (io/resource "grafter/rdf4j/repository/quads.trig")))]
       (is (= 2 (count (rdf/statements conn)))))))
 
 (deftest resource-repo-test
   (testing "Calling with multiple sets of quads appends them all into the repo"
-    (with-open [conn (->connection (resource-repo "quads.nq"
-                                                 "quads.trig"))]
+    (with-open [conn (->connection (resource-repo "grafter/rdf4j/repository/quads.nq"
+                                                  "grafter/rdf4j/repository/quads.trig"))]
       (is (= 2 (count (rdf/statements conn)))))))
 
 (deftest sail-repo-test
@@ -175,8 +175,8 @@
 (deftest rdfs-inferencer-test
   (let [r (sail-repo (rdfs-inferencer (memory-store)))]
     (with-open [c (->connection r)]
-      (rdf/add c (rdf/statements (io/resource "foaf.ttl"))) ;; add foaf vocab for reasoning...
-      (rdf/add c (rdf/statements (io/resource "rdfs-inferencing.trig")))) ;; add data to reason about...
+      (rdf/add c (rdf/statements (io/resource "grafter/rdf4j/repository/rdfs/foaf.ttl"))) ;; add foaf vocab for reasoning...
+      (rdf/add c (rdf/statements (io/resource "grafter/rdf4j/repository/rdfs/rdfs-inferencing.trig")))) ;; add data to reason about...
     
     (let [prefixes {"" "http://www.grafter.org/example#"
                     "foaf" "http://xmlns.com/foaf/0.1/"
