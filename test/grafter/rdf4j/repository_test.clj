@@ -2,8 +2,9 @@
   (:require [grafter.rdf.templater :refer [graph]]
             [clojure.java.io :refer [file] :as io]
             [grafter.rdf.protocols :as pr :refer [->Triple]]
+            [grafter.rdf4j.io :as rio]
             [grafter.rdf4j.repository :as repo :refer :all]
-            [grafter.rdf :refer [statements]]
+            [grafter.rdf :as rdf]
             [grafter.url :refer [->GrafterURL]]
             [grafter.rdf4j.formats :refer :all]
             [clojure.test :refer :all])
@@ -54,7 +55,7 @@
   ([file]
    (let [db (sail-repo)]
      (with-open [conn (->connection db)]
-       (pr/add conn (statements file)))
+       (pr/add conn (rdf/statements file)))
 
      db)))
 
@@ -81,20 +82,20 @@
     (testing "roundtripping ttl file"
       (let [file triple-fixture-file-path]
         (with-open [conn (->connection (load-rdf-types-data file))]
-          (is (= (set (statements conn))
-                 (set (statements file)))))))
+          (is (= (set (rdf/statements conn))
+                 (set (rdf/statements file)))))))
 
     (testing "roundtripping trig file"
       (let [file quad-fixture-file-path]
         (with-open [conn (->connection (load-rdf-types-data file))]
-          (is (= (set (statements conn))
-                 (set (statements file)))))))))
+          (is (= (set (rdf/statements conn))
+                 (set (rdf/statements file)))))))))
 
 (deftest delete-statement-test
   (testing "arity 2 delete"
     (are [initial-data delete-form]
         (with-open [test-db (->connection (load-rdf-types-data initial-data))]
-          (let [quads-to-delete (statements test-db)]
+          (let [quads-to-delete (rdf/statements test-db)]
             delete-form
             (is (not (query test-db "ASK { ?s ?p ?o } LIMIT 1"))
                 "Should be deleted")))
@@ -109,15 +110,15 @@
         (-> conn
             (pr/add
              (URL. "http://a")
-             (statements triple-fixture-file-path))
+             (rdf/statements triple-fixture-file-path))
             (pr/add
              (URL. "http://b")
-             (statements triple-fixture-file-path))))
+             (rdf/statements triple-fixture-file-path))))
 
       (with-open [test-db (->connection repo)]
         (pr/delete test-db
                    (URL. "http://a")
-                   (statements triple-fixture-file-path))
+                   (rdf/statements triple-fixture-file-path))
         (is (not (query test-db "ASK { GRAPH <http://a> { ?s ?p ?o } } LIMIT 1"))
             "Should be deleted")
 
@@ -145,13 +146,13 @@
   (testing "Calling with multiple sets of quads appends them all into the repo"
     (with-open [conn (->connection (fixture-repo (io/resource "quads.nq")
                                                  (io/resource "quads.trig")))]
-      (is (= 2 (count (grafter.rdf/statements conn)))))))
+      (is (= 2 (count (rdf/statements conn)))))))
 
 (deftest resource-repo-test
   (testing "Calling with multiple sets of quads appends them all into the repo"
     (with-open [conn (->connection (resource-repo "quads.nq"
                                                  "quads.trig"))]
-      (is (= 2 (count (grafter.rdf/statements conn)))))))
+      (is (= 2 (count (rdf/statements conn)))))))
 
 (deftest sail-repo-test
   (is (instance? org.eclipse.rdf4j.repository.Repository (sail-repo)))
@@ -162,11 +163,45 @@
 (deftest batched-query-test
   (let [repo (sail-repo)]
     (with-open [conn (->connection repo)]
-               (grafter.rdf/add conn
-                                (grafter.rdf/statements (io/resource "grafter/rdf/triples.nt"))))
+      (rdf/add conn
+               (rdf/statements (io/resource "grafter/rdf/triples.nt"))))
 
     (with-open [c (->connection repo)]
       (is (= 3 (count (batched-query "SELECT * WHERE { ?s ?p ?o .}"
                                      c
                                      1
                                      0)))))))
+
+(deftest rdfs-inferencer-test
+  (let [r (sail-repo (rdfs-inferencer (memory-store)))]
+    (with-open [c (->connection r)]
+      (rdf/add c (rdf/statements (io/resource "foaf.ttl"))) ;; add foaf vocab for reasoning...
+      (rdf/add c (rdf/statements (io/resource "rdfs-inferencing.trig")))) ;; add data to reason about...
+    
+    (let [prefixes {"" "http://www.grafter.org/example#"
+                    "foaf" "http://xmlns.com/foaf/0.1/"
+                    "geopos" "http://www.w3.org/2003/01/geo/wgs84_pos#"}]
+      (with-open [c (->connection r)]
+        (testing "RDFS Inference"
+          (is (query c "ASK { :rick a foaf:Person . }" :prefixes prefixes))
+          (is (query c "ASK { :manchester a geopos:SpatialThing . }" :prefixes prefixes))
+          (is (query c "ASK { :swirrl a foaf:Agent . }" :prefixes prefixes))
+          (is (query c "ASK { <http://swirrl.com/> a foaf:Document . }" :prefixes prefixes)))))))
+
+
+(comment
+  
+  (do
+    ;; convert foaf RDFXML into Turtle as it's easier on the eyes...
+    (def prefixes (-> rio/default-prefixes
+                      (select-keys ["owl" "rdf" "rdfs"])
+                      (assoc "ns" "http://www.w3.org/2003/06/sw-vocab-status/ns#"
+                             "geopos" "http://www.w3.org/2003/01/geo/wgs84_pos#"
+                             "foaf" "http://xmlns.com/foaf/0.1/"
+                             "dce" "http://purl.org/dc/elements/1.1/"
+                             "dcterms" "http://purl.org/dc/terms/"
+                             "schema" "http://schema.org/")))
+    
+    (let [foaf (rio/rdf-writer "resources/foaf.ttl" :format :ttl :prefixes prefixes)]
+      (rdf/add foaf (rdf/statements "http://xmlns.com/foaf/spec/index.rdf" :format :rdf))))
+  )
