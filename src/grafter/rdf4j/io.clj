@@ -193,6 +193,10 @@
   Literal
   (->backend-type [this]
     this)
+
+  Statement
+  (->backend-type [this]
+    this)
   
   RDFLiteral
   (->backend-type [this]
