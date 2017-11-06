@@ -534,7 +534,7 @@
                 (if (instance? URI graph)
                   graph
                   (URIImpl. graph)))]
-    (when options
+    (when (or (:named-graphs options) (:default-graph options))
       (let [{:keys [default-graph named-graphs]
              :or   {default-graph [] named-graphs []}} options
             private-graph "urn:private-graph-to-force-restrictions-when-no-graphs-are-listed"
@@ -552,6 +552,11 @@
 
 (defn- mapply [f & args]
   (apply f (apply concat (butlast args) (last args))))
+
+(defn- build-sparql-prefixes-block [prefix-map]
+  (str (reduce (fn [sb [prefix uri]]
+                 (.append sb (str "PREFIX " prefix ": <" uri ">\n")))
+               (StringBuffer.) prefix-map)))
 
 (defn query
   "Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
@@ -586,8 +591,12 @@
 
   If no options are passed then we use the default of no graph
   restrictions whilst the union graph is the union of all graphs."
-  [repo sparql & {:as options}]
-  (let [dataset (mapply make-restricted-dataset (or options {}))]
+  [repo sparql & {:as options :keys [prefixes]}]
+  ;; we could call .setNamespace on the connection, but
+  ;; connection/namespaces are mutable so better to prepend the
+  ;; prefixes onto the SPARQL string ourselves.
+  (let [sparql (str (build-sparql-prefixes-block prefixes) sparql)
+        dataset (mapply make-restricted-dataset (or options {}))]
     (pr/query-dataset repo sparql dataset)))
 
 (def ^:private batched-results-size 10000)

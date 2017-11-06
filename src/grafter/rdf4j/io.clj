@@ -286,7 +286,7 @@
          fmt
          (throw (ex-info "Could not infer file format, please supply a :format parameter" {:error :could-not-infer-file-format :object dest}))))
 
-(def ^:private default-prefixes
+(def default-prefixes "A default set of common prefixes"
   {
    "dcat" "http://www.w3.org/ns/dcat#"
    "dcterms" "http://purl.org/dc/terms/"
