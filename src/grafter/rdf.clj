@@ -58,7 +58,7 @@
   "Add an RDF statement to the target datasink.  Datasinks must
   implement `grafter.rdf.protocols/ITripleWriteable`.
 
-  Datasinks include sesame RDF repositories, connections and anything
+  Datasinks include RDF4j RDF repositories, connections and anything
   built by rdf-writer.
 
   Takes an optional string/URI to use as a graph."
