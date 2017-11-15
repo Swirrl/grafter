@@ -311,7 +311,7 @@
 
 (defn rdf-writer
   "Coerces destination into an java.io.Writer using
-  clojure.java.io/writer and returns an RDFSerializer.
+  clojure.java.io/writer and returns an RDFWriter.
 
   Use this to capture the intention to write to a location in a
   specific RDF format, e.g.
@@ -337,15 +337,15 @@
                                                                 prefixes default-prefixes}}]
 
    (let [^RDFFormat format (resolve-format-preference destination format)
-              iowriter (fmt/select-output-coercer format)
-              writer (Rio/createWriter format
-                                       (iowriter destination
-                                                 :append append
-                                                 :encoding encoding))]
+         iowriter (fmt/select-output-coercer format)
+         writer (Rio/createWriter format
+                                  (iowriter destination
+                                            :append append
+                                            :encoding encoding))]
 
-          (reduce (fn [acc [name prefix]]
-                    (doto writer
-                      (.handleNamespace name (str prefix)))) writer prefixes))))
+     (reduce (fn [writer [name prefix]]
+               (doto writer
+                 (.handleNamespace name (str prefix)))) writer prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
