@@ -28,6 +28,9 @@
   (object [this] (.getObject this))
   (context [this] (.getContext this)))
 
+(defmethod pr/blank-node? BNode [_]
+  true)
+
 (defprotocol IRDF4jConverter
   (->backend-type [this] "Convert an arbitrary statement type into an RDF4j Statement type"))
 

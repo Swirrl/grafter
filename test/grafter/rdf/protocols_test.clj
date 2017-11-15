@@ -3,7 +3,9 @@
             [grafter.rdf.protocols :refer :all]
             [grafter.vocabularies.xsd :refer :all]
             [grafter.rdf.protocols :as pr])
-  (:import [org.eclipse.rdf4j.model.impl LiteralImpl]))
+  (:import [org.eclipse.rdf4j.model.impl LiteralImpl BNodeImpl]))
+
+(require 'grafter.rdf4j.io) ;; force loading of rdf4j backend
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])
@@ -53,3 +55,10 @@
   (testing "RDF Literals"
     (is (= "I stepped into an avalanche"
            (raw-value (LiteralImpl. "I stepped into an avalanche"))))))
+
+(deftest blank-node?-test
+  (is (not (blank-node? "not a blank node")))
+  (is (not (blank-node? (java.net.URI. "http://foo"))))
+  (is (blank-node? :keywords-are-treated-as-blank-nodes))
+  (is (blank-node? :keywords-are-treated-as-blank-nodes))
+  (is (blank-node? (BNodeImpl. "foo"))))

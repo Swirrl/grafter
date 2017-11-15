@@ -302,3 +302,13 @@
   (->Triple (:s m) (:p m) (:o m)))
 
 
+(defmulti blank-node?
+  "Predicate function that tests whether the supplied value is
+  considered to be a blank node type."
+  type)
+
+(defmethod blank-node? clojure.lang.Keyword [_]
+  true)
+
+(defmethod blank-node? :default [_]
+  false)

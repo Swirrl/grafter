@@ -16,9 +16,9 @@
   lang
   literal
   triple?
+  blank-node?
   datatype-uri
-  raw-value
-  ])
+  raw-value])
 
 (defn subject
   "Return the RDF subject from a statement."

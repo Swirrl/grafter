@@ -539,11 +539,12 @@
              :or   {default-graph [] named-graphs []}} options
             private-graph "urn:private-graph-to-force-restrictions-when-no-graphs-are-listed"
             dataset (DatasetImpl.)]
+
         (if (string? default-graph)
           (.addDefaultGraph dataset (->uri default-graph))
-
           (doseq [graph (conj default-graph private-graph)]
             (.addDefaultGraph dataset (->uri graph))))
+
         (if (string? named-graphs)
           (.addNamedGraph dataset (->uri named-graphs))
           (doseq [graph named-graphs]
