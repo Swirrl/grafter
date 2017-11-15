@@ -345,7 +345,7 @@
 
           (reduce (fn [acc [name prefix]]
                     (doto writer
-                      (.handleNamespace name prefix))) writer prefixes))))
+                      (.handleNamespace name (str prefix)))) writer prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
