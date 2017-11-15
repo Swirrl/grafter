@@ -55,20 +55,30 @@
   (is (instance? LiteralImpl (sut/->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
 (deftest round-trip-quad-test
-  (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
-                     (url/->java-uri "http://example.org/test/predicate")
-                     (url/->java-uri "http://example.org/test/object")
-                     (url/->java-uri "http://example.org/test/graph"))]
-    (is (= quad
-           (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad)))))
+  (testing "round trips"
+    (testing "quad"
+      (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
+                         (url/->java-uri "http://example.org/test/predicate")
+                         (url/->java-uri "http://example.org/test/object")
+                         (url/->java-uri "http://example.org/test/graph"))]
+        (is (= quad
+               (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad))))))
 
-  (testing "with nil graph"
-    (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
-                       (url/->java-uri "http://example.org/test/predicate")
-                       (url/->java-uri "http://example.org/test/object")
-                       nil)]
-      (is (= quad
-             (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad)))))))
+    (testing "quad with bnode"
+      (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
+                         (url/->java-uri "http://example.org/test/predicate")
+                         :bnode-1
+                         (url/->java-uri "http://example.org/test/graph"))]
+        (is (= quad
+               (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad))))))
+
+    (testing "triple (nil graph)"
+      (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
+                         (url/->java-uri "http://example.org/test/predicate")
+                         (url/->java-uri "http://example.org/test/object")
+                         nil)]
+        (is (= quad
+               (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad))))))))
 
 (deftest round-trip-quad-serialize-deserialize-test
   (let [quad (graph (url/->java-uri "http://example.org/test/graph")

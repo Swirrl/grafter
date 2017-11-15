@@ -200,6 +200,10 @@
   Statement
   (->backend-type [this]
     this)
+
+  clojure.lang.Keyword
+  (->backend-type [this]
+    (BNodeImpl. (name this)))
   
   RDFLiteral
   (->backend-type [this]
