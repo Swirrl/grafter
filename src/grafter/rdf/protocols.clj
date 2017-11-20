@@ -4,6 +4,7 @@
             [grafter.url :refer [->java-uri]])
   (:import [java.net URI]
            [java.util Date]
+           [java.sql Time]
            [org.eclipse.rdf4j.model Literal]))
 
 (defprotocol IStatement
@@ -234,6 +235,10 @@
     (->java-uri xsd:byte))
 
   Date
+  (datatype-uri [t]
+    (->java-uri xsd:date))
+
+  Time
   (datatype-uri [t]
     (->java-uri xsd:dateTime))
 

@@ -9,7 +9,9 @@
             [grafter.rdf4j.formats :as fmt]
             [clojure.java.io :as io])
   (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
-           [java.net URI]))
+           [java.net URI]
+           [java.sql Time]
+           [java.util Date]))
 
 
 (deftest round-trip-numeric-types-test
@@ -44,7 +46,10 @@
     ;; unbounded whereas #int is bounded
     (bigint 3)     "http://www.w3.org/2001/XMLSchema#integer" clojure.lang.BigInt
     (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
-    "hello"        "http://www.w3.org/2001/XMLSchema#string" String))
+    "hello"        "http://www.w3.org/2001/XMLSchema#string" String
+    (Time. (.getTime #inst "2017-11-20T10:38:22.143-00:00")) "http://www.w3.org/2001/XMLSchema#dateTime" Time
+    #inst "2017-01-01" "http://www.w3.org/2001/XMLSchema#date" Date))
+
 
 (deftest language-string-test
   (let [bonsoir (pr/language "Bonsoir Mademoiselle" :fr)]

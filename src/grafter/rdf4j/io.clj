@@ -85,6 +85,9 @@
   (pr/language (pr/raw-value literal) (pr/lang literal)))
 
 (defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
+  (java.sql.Time. (-> literal .calendarValue .toGregorianCalendar .getTime .getTime)))
+
+(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#date" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
 
 (defmethod backend-literal->grafter-type :default [literal]
