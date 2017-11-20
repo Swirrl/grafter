@@ -63,9 +63,12 @@
         values-block (str/join " " (map (partial ->sparql-str k) vals))]
     (str/replace q regex (str "$1 " values-block  " $2"))))
 
+(defn- sequential-or-set? [c]
+  (or (sequential? c) (set? c)))
+
 (defn- rewrite-values-clauses [q bindings]
   (let [values-bindings (->> bindings
-                             (filter (comp sequential? second))
+                             (filter (comp sequential-or-set? second))
                              (into {}))]
     (reduce rewrite-values-clauses* q values-bindings)))
 
