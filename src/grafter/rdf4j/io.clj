@@ -5,12 +5,12 @@
             [clojure.string :as string]
             [grafter.rdf4j
              [formats :as fmt]]
-            [grafter.rdf
-             [protocols :as pr :refer [->Quad ->grafter-type IGrafterRDFType]]]
+            [grafter
+             [core :as pr :refer [->Quad ->grafter-type IGrafterRDFType]]]
             [grafter.url
              :refer
              [->grafter-url ->java-uri ->url IURIable ToGrafterURL]])
-  (:import [grafter.rdf.protocols IStatement Quad RDFLiteral LangString]
+  (:import [grafter.core IStatement Quad RDFLiteral LangString]
            grafter.url.GrafterURL
            java.io.File
            [java.net MalformedURLException URL]
@@ -255,7 +255,7 @@
   (->grafter-type [this]
     this)
 
-  grafter.rdf.protocols.LangString
+  LangString
   (->grafter-type [t]
     t))
 

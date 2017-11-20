@@ -1,8 +1,7 @@
 (ns grafter.rdf4j.sparql
   "Functions for executing SPARQL queries with grafter RDF
   repositories, that support basic binding replacement etc."
-  (:require [grafter.rdf :refer [statements]]
-            [grafter.rdf4j.repository  :as repo :refer [sparql-repo ->connection]]
+  (:require [grafter.rdf4j.repository  :as repo :refer [sparql-repo ->connection]]
             [grafter.rdf4j.io :refer [->backend-type] :as rio]
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]

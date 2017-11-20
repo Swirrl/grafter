@@ -1,15 +1,13 @@
 (ns grafter.rdf4j.repository
   "Functions for constructing and working with various RDF4j repositories."
   (:require [clojure.java.io :as io]
-            [grafter.rdf]
             [me.raynes.fs :as fs]
-            [grafter.rdf.protocols :as pr]
+            [grafter.core :as pr]
             [grafter.rdf4j.io :as rio]
             [clojure.tools.logging :as log]
-            [grafter.rdf :as rdf]
             [clojure.string :as string]
             [grafter.rdf4j.formats :as format])
-  (:import (grafter.rdf.protocols IStatement Quad)
+  (:import (grafter.core IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
            (java.util GregorianCalendar)
@@ -235,7 +233,7 @@
     ([acc v]
      (try (if (reduced? acc)
             acc
-            (rdf/add acc v))
+            (pr/add acc v))
           (catch Throwable ex
             (.close acc)
             (throw (ex-info "Exception when adding to repository" {} ex)))))))
@@ -243,7 +241,7 @@
 (defn- statements-with-inferred-format [res]
   (if (seq? res)
     res
-    (rdf/statements res :format (format/->rdf-format (fs/extension (str res))))))
+    (pr/statements res :format (format/->rdf-format (fs/extension (str res))))))
 
 (defn fixture-repo
   "adds the specified data to a sparql repository.  if the first
@@ -261,7 +259,7 @@
                 repo-or-data
                 (let [repo (sail-repo)]
                   (with-open [conn (->connection repo)]
-                    (rdf/add conn (statements-with-inferred-format repo-or-data))
+                    (pr/add conn (statements-with-inferred-format repo-or-data))
                     repo)))]
      (let [xf (mapcat (fn [d]
                         (cond
@@ -287,7 +285,7 @@
                 (if (instance? Repository repo-or-data)
                   repo-or-data
                   (with-open [conn (->connection repo)]
-                    (rdf/add conn (statements-with-inferred-format (io/resource repo-or-data)))
+                    (pr/add conn (statements-with-inferred-format (io/resource repo-or-data)))
 
                     repo)))]
      (apply fixture-repo repo (map io/resource data)))))
