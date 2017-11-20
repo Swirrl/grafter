@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.11.0.3-drafter-rdf4j-SNAPSHOT"
+(defproject grafter/grafter "0.12.1-SNAPSHOT"
   :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -15,7 +15,8 @@
                  [potemkin "0.4.4"]
                  [com.novemberain/pantomime "2.9.0"]] ;; mimetypes
 
-  :source-paths ["src" #_"deprecated/src"]
+  :source-paths ["src" "deprecated/src"]
+  :test-paths ["test" "deprecated/test"]
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
@@ -38,7 +39,7 @@
 
              ;; expect upstream projects to provide this explicity if they want sesame
              :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]]}
-             
+
              :dev [:provided :dev-deps]
 
              :dev-deps {:plugins [[codox "0.8.10"]]
