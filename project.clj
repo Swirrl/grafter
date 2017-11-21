@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.9.0"
+(defproject grafter/grafter "0.11.0-SNAPSHOT"
   :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -6,7 +6,7 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-  :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
+  :dependencies [[org.clojure/clojure "1.9.0-RC1"]
                  [org.openrdf.sesame/sesame-runtime "2.8.9"]
                  [org.clojure/tools.logging "0.3.1"]
                  [grafter/url "0.2.5"]
@@ -35,7 +35,7 @@
 
   :pedantic? true
 
-  :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
+  :profiles {
 
              :dev {:plugins [[codox "0.8.10"]]
 
