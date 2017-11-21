@@ -20,7 +20,7 @@
 
     :else nil))
 
-(defn var-key-matcher [k]
+(defn ^:no-doc var-key-matcher [k]
   (cond (keyword? k)
         (let [k (str "\\?" (-> k
                                name
@@ -30,7 +30,7 @@
         (sequential? k) (str "\\s*\\(\\s*" (str/join "\\s+" (map var-key-matcher k)) "\\s*\\)")
         :else (assert false "Error replacement not expected type")))
 
-(defn key->replacer [k]
+(defn ^:no-doc key->replacer [k]
   (let [whitespace-pat "\\s+"
         values-pat "(?i)values"
         var-pat (var-key-matcher k)
