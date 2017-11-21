@@ -7,7 +7,7 @@
   :deploy-repositories [["releases" :clojars]]
 
   :dependencies [[org.clojure/clojure "1.9.0-beta4"]
-                 [org.eclipse.rdf4j/rdf4j-runtime "2.2.2"]
+                 [org.eclipse.rdf4j/rdf4j-runtime "2.2.3"]
                  [org.clojure/tools.logging "0.4.0"]
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.2"]
