@@ -1,0 +1,9 @@
+SELECT * WHERE {
+  {
+    SELECT DISTINCT ?s WHERE {
+      ?s ?p ?o
+    } ORDER BY ?s LIMIT ?batchLimit OFFSET ?batchOffset
+  }
+
+  ?s ?p ?o .
+}

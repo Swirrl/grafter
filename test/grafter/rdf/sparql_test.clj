@@ -92,3 +92,13 @@
       (is (= 2 (count (spog {:s (URI. "http://example.org/data/another-triple")
                              ::sparql/offsets {0 1}}
                             r)))))))
+
+(deftest paged-query-test
+  (let [r (repo/fixture-repo (resource "grafter/rdf/sparql/sparql-data.trig"))
+        results (paged-query "grafter/rdf/sparql/select-spog-paginated.sparql" {} r 1 0)]
+    (testing "returns pages of results (one per subject)"
+      (is (= 5 (count results))))
+    (testing "page lengths can differ (pageing is in subquery)"
+      (is (= [1 3 1 1 1] (map count results))))
+    (testing "is exhaustive (gets all of the results)"
+      (is (= 7 (count (mapcat identity results)))))))

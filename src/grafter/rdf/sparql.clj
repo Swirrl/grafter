@@ -142,6 +142,27 @@
 
      (repo/evaluate prepped-query))))
 
+(defn paged-query
+  "Returns a lazy-sequence of pages of e.g. 1000 results
+   (or whatever fraction remains on the last page).
+
+   Use the vars ?batchLimit and ?batchOffset in your query
+   to specify how it should be paged.
+
+   You can use (mapcat identity pages) to get a continuous
+   sequence of results while still having the query submitted
+   in batches."
+  ([query-file bindings repository]
+   (paged-query query-file bindings repository 1000 0))
+  ([query-file bindings repository limit offset]
+   (lazy-seq
+    (let [paged-bindings (merge bindings {::limits {:batchLimit limit}
+                                          ::offsets {:batchOffset offset} })
+          results (query query-file paged-bindings repository)]
+      (if (not (nil? results))
+        (cons results (paged-query query-file bindings repository limit (+ offset limit))))))))
+
+
 (comment
   (def r (repo/resource-repo "grafter/rdf/sparql/sparql-data.trig"))
 
