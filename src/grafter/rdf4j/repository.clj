@@ -649,12 +649,12 @@
 (extend-type RepositoryConnection
 
   pr/ITripleReadable
-  (pr/to-statements [this _]
+  (pr/to-statements [this {:keys [:grafter.repository/infer] :or {infer true}}]
     (let [f (fn next-item [i]
               (when (.hasNext i)
                 (let [v (.next i)]
                   (lazy-seq (cons (rio/backend-quad->grafter-quad v) (next-item i))))))]
-      (let [iter (.getStatements this nil nil nil true (into-array Resource []))]
+      (let [iter (.getStatements this nil nil nil infer (into-array Resource []))]
         (f iter)))))
 
 (defn shutdown
