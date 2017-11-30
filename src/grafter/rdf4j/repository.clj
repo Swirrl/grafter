@@ -426,6 +426,31 @@
   (evaluate [this]
     (.execute this)))
 
+(defprotocol IPrepareQuery
+  (prepare-query* [this sparql-string restriction]
+    "Low level function to prepare (parse, but not process) a sesame RDF
+  query.  Takes a repository a query string and an optional sesame
+  Dataset to act as a query restriction.
+
+  Prepared queries still need to be evaluated with evaluate."))
+
+(extend-protocol IPrepareQuery
+  Repository
+  (prepare-query* [repo sparql-string restriction]
+    (println "WARNING: prepare-query* was called on a repository not a connection.  This usage is deprecated and will be removed.")
+    (let [conn (->connection repo)]
+      (prepare-query* conn sparql-string restriction)))
+  
+  RepositoryConnection
+  (prepare-query* [repo sparql-string restriction]
+    (let [conn (->connection repo)]
+      (let [pq (.prepareQuery conn
+                              QueryLanguage/SPARQL
+                              sparql-string)]
+
+        (when restriction (.setDataset pq restriction))
+        pq))))
+
 (defn prepare-query
   "Low level function to prepare (parse, but not process) a sesame RDF
   query.  Takes a repository a query string and an optional sesame
@@ -434,13 +459,7 @@
   Prepared queries still need to be evaluated with evaluate."
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string restriction]
-     (let [conn (->connection repo)]
-       (let [pq (.prepareQuery conn
-                               QueryLanguage/SPARQL
-                               sparql-string)]
-
-         (when restriction (.setDataset pq restriction))
-         pq))))
+   (prepare-query* repo sparql-string restriction)))
 
 (defn prepare-update
   "Prepare (parse but don't process) a SPARQL update request.
