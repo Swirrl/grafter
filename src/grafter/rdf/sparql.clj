@@ -91,6 +91,20 @@
       (rewrite-clauses "LIMIT" (::limits bindings))
       (rewrite-clauses "OFFSET" (::offsets bindings))))
 
+(defn- strip-comments
+  "Strip comments from a SPARQL query string"
+  [query-str]
+  (-> (str/replace query-str
+                   #"(\s+#\s*[^\n]+)|(^#\s*[^\n]+)"
+                   "")
+      (str/trim)))
+
+(defn- pre-process-query [sparql-query bindings]
+  (-> sparql-query
+      (strip-comments)
+      (rewrite-limit-and-offset-clauses bindings)
+      (rewrite-values-clauses bindings)))
+
 (defn query
   "Takes a string reference to a sparql-file on the resource path and
   optionally a map of bindings that should map SPARQL variables from
@@ -125,10 +139,7 @@
    (query sparql-file {} repo))
   ([sparql-file bindings repo]
    (let [sparql-query (slurp (resource sparql-file))
-         pre-processed-qry (-> sparql-query
-                               (rewrite-limit-and-offset-clauses bindings)
-                               (rewrite-values-clauses bindings))
-
+         pre-processed-qry (pre-process-query sparql-query bindings)
          prepped-query (repo/prepare-query repo pre-processed-qry)]
      (reduce (fn [pq [unbound-var val]]
                (when-not (or (sequential? val) (set? val))
@@ -139,7 +150,6 @@
                pq)
              prepped-query
              (dissoc bindings ::limits ::offsets))
-
      (repo/evaluate prepped-query))))
 
 (comment
@@ -160,7 +170,5 @@
   (def pog (partial spog {:s (java.net.URI. "http://example.org/data/a-triple")}))
 
   (pog r)
-
-
 
   )
