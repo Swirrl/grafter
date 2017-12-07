@@ -1,6 +1,5 @@
 SELECT * WHERE {
-  # comment 1
   VALUES ?s { }
-  # comment 2
+
   ?s ?p ?o .
 }
