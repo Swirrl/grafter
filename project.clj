@@ -20,7 +20,7 @@
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
-          :output-dir "api-docs"
+          :output-path "api-docs"
           :sources ["src" ;; Include docs from grafter-url project too
                     "../grafter-url/src"]
 
