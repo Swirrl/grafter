@@ -443,13 +443,13 @@
   
   RepositoryConnection
   (prepare-query* [repo sparql-string restriction]
-    (let [conn (->connection repo)]
-      (let [pq (.prepareQuery conn
-                              QueryLanguage/SPARQL
-                              sparql-string)]
+    (let [conn (->connection repo)
+          pq (.prepareQuery conn
+                            QueryLanguage/SPARQL
+                            sparql-string)]
 
-        (when restriction (.setDataset pq restriction))
-        pq))))
+      (when restriction (.setDataset pq restriction))
+      pq)))
 
 (defn prepare-query
   "Low level function to prepare (parse, but not process) a sesame RDF
@@ -497,7 +497,6 @@
       (.execute prepared-query)))
 
   pr/ITripleDeleteable
-
   (pr/delete-statement
     ([this statement]
        {:pre [(instance? IStatement statement)]}
