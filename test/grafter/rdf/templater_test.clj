@@ -155,4 +155,20 @@
           (is (= "http://example.com/p1" p))
           (is (keyword? o))
           (is (= "http://example.com/graphs/1" c))
-          (is (some (fn [[k v]] (= k o)) quads)))))))
+          (is (some (fn [[k v]] (= k o)) quads)))))
+    (testing "with a seq input"
+      (let [quads (graph "http://example.com/graphs/1" (seq [first-turtle-template second-turtle-template]))]
+        (is (= 6
+               (count quads)))
+        (is (= (->Quad "http://example.com/subjects/1" "http://example.com/p1" "http://example.com/o1" "http://example.com/graphs/1")
+               (first quads)))
+        (let [[s p o c] (first quads)]
+          (is (= "http://example.com/subjects/1" s))
+          (is (= "http://example.com/p1" p))
+          (is (= "http://example.com/o1" o))
+          (is (= "http://example.com/graphs/1" c))
+          (testing "accessor methods"
+            (is (= "http://example.com/subjects/1" (subject (first quads))))
+            (is (= "http://example.com/p1" (predicate (first quads))))
+            (is (= "http://example.com/o1" (object (first quads))))
+            (is (= "http://example.com/graphs/1" (context (first quads))))))))))

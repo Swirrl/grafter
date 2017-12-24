@@ -92,9 +92,12 @@
   and are cast as such, as URI's are the most common type in linked
   data.  If you want an RDF string you should use the s function to
   build one."
-  [graph-uri & triples]
-  (map (partial quad graph-uri)
-       (apply triplify triples)))
+  ([graph-uri triples]
+   (map (partial quad graph-uri)
+        (apply triplify triples)))
+  ([graph-uri & triples]
+   (map (partial quad graph-uri)
+        (apply triplify triples))))
 
 (defn add-properties
   "Appends the key/value pairs from the supplied hash-map into the
