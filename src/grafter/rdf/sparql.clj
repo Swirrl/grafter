@@ -71,11 +71,11 @@
 
                 (nil? v)
                 (throw
-                  (ex-info (str "Nil value SPARQL binding found for key " k
-                                ". Consider explicitly binding value as ::sparql/undef")
-                           {:bindings bindings
-                            :sparql-query q
-                            :error :nil-sparql-binding}))
+                 (ex-info (str "nil value SPARQL binding found for key " k
+                               ". Consider explicitly binding value as ::sparql/undef")
+                          {:bindings bindings
+                           :sparql-query q
+                           :error :nil-sparql-binding}))
                 :else
                 [k v])))
        (filter (comp sequential? second))
