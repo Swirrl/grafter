@@ -312,7 +312,7 @@
 
   RepositoryConnection
   (begin [repo]
-    (-> repo (.setAutoCommit false)))
+    (-> repo .begin))
 
   (commit [repo]
     (-> repo .commit))
