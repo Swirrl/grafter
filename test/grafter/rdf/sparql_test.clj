@@ -69,6 +69,13 @@
           (#'sparql/rewrite-values-clauses q3 {:o ["val"]})))
 
     (is (same-query?
+         (str "SELECT * WHERE {"
+               "{ VALUES ?o { \"val\" } }"
+               "?s ?p ?o . "
+               "}")
+         (#'sparql/rewrite-values-clauses q3 {:s (URI. "http://foo/") :o ["val"]})))
+
+    (is (same-query?
           (str "SELECT * WHERE {"
                "{ VALUES ?o {} }"
                "?s ?p ?o . "
