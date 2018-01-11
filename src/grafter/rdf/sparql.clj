@@ -131,10 +131,22 @@
   Which should be maps binding identifiable limits/offsets from your
   query to new values.
 
-  VALUES clause bindings are supported. Nil values for keys in the VALUES
-  bindings map are not allowed. However, it's possible to explicitly set
-  a value of ::undef that will be translated to a value of UNDEF in the
-  bound SPARQL VALUES clause.
+  VALUES clause bindings are supported like normal ?var bindings when
+  there is just one VALUES binding.  When there are more than one, you
+  should provide a vector containing the component var names as the
+  key in the map, with a sequence of sequences as the values
+  themselves.  e.g. to override a clause like this:
+
+  VALUES ?a ?b { (1 2) (3 4) }
+
+  You would provide a map that looked like this:
+
+  {[:a :b] [[1 1] [2 2] [3 3]]}
+
+  nil's inside the VALUES row's themselves will raise an error.  
+
+  The clojure keyword :grafter.rdf.sparql/undef can be used to
+  represent a SPARQL UNDEF, in the bound VALUES data.
 
   The final argument `repo` should be the repository to query.
 
