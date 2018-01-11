@@ -8,7 +8,8 @@
             [clojure.string :as str]
             [grafter.rdf.io :as rio]
             [grafter.rdf.protocols :as pr])
-  (:import java.net.URI))
+  (:import java.net.URI
+           clojure.lang.ExceptionInfo))
 
 (deftest pre-process-limit-clauses-test
   (let [sparql-file (slurp (resource "grafter/rdf/sparql/select-spog-unprocessed.sparql"))
@@ -54,22 +55,77 @@
                                             :p [(URI. "http://p")]
                                             :o [10 "string" (rdf/language "bonjour" :fr)]}))))
 
-  (let [q3 (sparql-query "grafter/rdf/sparql/select-values-3.sparql")]
+  (let [q3 (sparql-query "grafter/rdf/sparql/select-values-3.sparql")
+        q3-ex-info (is (thrown? ExceptionInfo
+                             (#'sparql/rewrite-values-clauses q3 {:o nil})))]
+    (is (= (:error (ex-data q3-ex-info))
+           :nil-sparql-binding))
+
+    (is (same-query?
+          (str "SELECT * WHERE {"
+               "{ VALUES ?o { \"val\" } }"
+               "?s ?p ?o . "
+               "}")
+          (#'sparql/rewrite-values-clauses q3 {:o ["val"]})))
+
     (is (same-query?
          (str "SELECT * WHERE {"
-              "{ VALUES ?o { \"val\" } }"
-              "?s ?p ?o . "
-              "}")
-         (#'sparql/rewrite-values-clauses q3 { :o ["val"]}))))
+               "{ VALUES ?o { \"val\" } }"
+               "?s ?p ?o . "
+               "}")
+         (#'sparql/rewrite-values-clauses q3 {:s (URI. "http://foo/") :o ["val"]})))
 
-  (let [q4 (sparql-query "grafter/rdf/sparql/select-values-4.sparql")]
+    (is (same-query?
+          (str "SELECT * WHERE {"
+               "{ VALUES ?o {} }"
+               "?s ?p ?o . "
+               "}")
+          (#'sparql/rewrite-values-clauses q3 {:o []})))
+
+    (is (same-query?
+          (str "SELECT * WHERE {"
+               "{ VALUES ?o { UNDEF } }"
+               "?s ?p ?o . "
+               "}")
+          (#'sparql/rewrite-values-clauses q3 {:o ::sparql/undef}))))
+
+  (let [q4 (sparql-query "grafter/rdf/sparql/select-values-4.sparql")
+        q4-ex-info (is (thrown? ExceptionInfo
+                                (#'sparql/rewrite-values-clauses q4 {[:s :p] nil})))]
+    (is (= (:error (ex-data q4-ex-info))
+           :nil-sparql-binding))
+
     (is (same-query?
          (str "SELECT * WHERE {"
               "VALUES (?s ?p) { (<http://s1> <http://p1>) (<http://s2> <http://p2>) }"
               "?s ?p ?o ."
               "}")
          (#'sparql/rewrite-values-clauses q4 { [:s :p] [[(URI. "http://s1") (URI. "http://p1")]
-                                                      [(URI. "http://s2") (URI. "http://p2")]]}))))
+                                                      [(URI. "http://s2") (URI. "http://p2")]]})))
+    (is (same-query?
+          (str "SELECT * WHERE {"
+               "VALUES (?s ?p) { (UNDEF UNDEF) }"
+               "?s ?p ?o ."
+               "}")
+          (#'sparql/rewrite-values-clauses q4 {[:s :p] [[::sparql/undef ::sparql/undef]]})))
+
+    (is (same-query?
+          (str "SELECT * WHERE {"
+               "VALUES (?s ?p) { (UNDEF <http://p1>) (<http://s1> UNDEF) }"
+               "?s ?p ?o ."
+               "}")
+          (#'sparql/rewrite-values-clauses q4 {[:s :p] [[::sparql/undef (URI. "http://p1")]
+                                                        [(URI. "http://s1") ::sparql/undef]]})))
+
+    (is (same-query?
+          (str "SELECT * WHERE {"
+               "VALUES (?s ?p) {}"
+               "?s ?p ?o ."
+               "}")
+          (#'sparql/rewrite-values-clauses q4 {[:s :p] []})))
+
+    (is (thrown-with-msg? AssertionError #"VALUES clause keys & vals don't match up"
+          (#'sparql/rewrite-values-clauses q4 {[:s :p] [::sparql/undef]}))))
 
   (let [q5 (sparql-query "grafter/rdf/sparql/select-values-5.sparql")]
     (is (same-query?

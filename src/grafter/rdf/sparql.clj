@@ -40,13 +40,12 @@
                      Pattern/DOTALL)))
 
 (defn- serialise-val [v]
-  (NTriplesUtil/toNTriplesString (rio/->sesame-rdf-type v)))
+  (if (= ::undef v)
+    "UNDEF"
+    (NTriplesUtil/toNTriplesString (rio/->sesame-rdf-type v))))
 
 (defn- ->sparql-str [k v]
   (cond
-    (nil? v)
-    "UNDEF"
-
     (and (sequential? k) (sequential? v)
          (= (count k) (count v)))
     (str "(" (str/join " " (map serialise-val v)) ")")
@@ -55,7 +54,8 @@
     (serialise-val v)
 
     :else
-    (assert false (str "Key and value types don't match.  Key: " k " Val " v))))
+    (assert false
+            (str "VALUES clause keys & vals don't match up.  Key: " k " Val " v))))
 
 (defn- rewrite-values-clauses* [q [k vals :as clause]]
   (let [regex (key->replacer k)
@@ -63,22 +63,36 @@
     (str/replace q regex (str "$1 " values-block  " $2"))))
 
 (defn- rewrite-values-clauses [q bindings]
-  (let [values-bindings (->> bindings
-                             (filter (comp sequential? second))
-                             (into {}))]
-    (reduce rewrite-values-clauses* q values-bindings)))
+  (->> bindings
+       (map (fn [[k v]]
+              (cond
+                (= ::undef v)
+                [k [v]]
+
+                (nil? v)
+                (throw
+                 (ex-info (str "nil value SPARQL binding found for key " k
+                               ". Consider explicitly binding value as ::sparql/undef")
+                          {:bindings bindings
+                           :sparql-query q
+                           :error :nil-sparql-binding}))
+                :else
+                [k v])))
+       (filter (comp sequential? second))
+       (into {})
+       (reduce rewrite-values-clauses* q)))
 
 (defn- rewrite-clauses
   "Rewrites each instance of CLAUSE (literal | ?varname) with CLAUSE
   value with the given mappings."
-  [sparl-query clause-name mappings]
+  [sparql-query clause-name mappings]
   (reduce (fn [memo [key val]]
             (if-let [pattern (get-clause-pattern clause-name key)]
               (str/replace memo
                            (re-pattern pattern)
                            (str clause-name " " val))
               memo))
-          sparl-query
+          sparql-query
           mappings))
 
 (defn- rewrite-limit-and-offset-clauses
@@ -112,19 +126,38 @@
   The bindings map is optional, and if it's not provided then the
   query in the file is run as is.
 
-  Additionally if your sparql query specifies a LIMIT or OFFSET the
-  bindings map supports the special keys ::limits and ::offstets.
+  Additionally, if your sparql query specifies a LIMIT or OFFSET the
+  bindings map supports the special keys ::limits and ::offsets.
   Which should be maps binding identifiable limits/offsets from your
   query to new values.
 
-  The final argument should be the repository to query.
+  VALUES clause bindings are supported like normal ?var bindings when
+  there is just one VALUES binding.  When there are more than one, you
+  should provide a vector containing the component var names as the
+  key in the map, with a sequence of sequences as the values
+  themselves.  e.g. to override a clause like this:
+
+  VALUES ?a ?b { (1 2) (3 4) }
+
+  You would provide a map that looked like this:
+
+  {[:a :b] [[1 1] [2 2] [3 3]]}
+
+  nil's inside the VALUES row's themselves will raise an error.  
+
+  The clojure keyword :grafter.rdf.sparql/undef can be used to
+  represent a SPARQL UNDEF, in the bound VALUES data.
+
+  The final argument `repo` should be the repository to query.
 
   If only one argument referencing a resource path to a SPARQL query
-  then a partially applied function is returned.  e.g.
+  then a partially applied function is returned. e.g.
 
   (def spog (query \"grafter/rdf/sparql/select-spog.sparql\"))
 
   (spog r) ;; ... triples ...
+
+  (spog r {:s [(URI. \"http://s1\") (URI. \"http://s2\")]}) ;; triples for VALUES clause subjects s.
 
   (spog r {:s (java.net.URI. \"http://example.org/data/a-triple\")}) ;; triples for given subject s.
   "
