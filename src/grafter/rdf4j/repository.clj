@@ -296,7 +296,7 @@
   (let [boundvars (.getBindingNames qbs)]
     (->> boundvars
          (mapcat (fn [k]
-                   [(keyword k) (-> qbs (.getBinding k) .getValue pr/->grafter-type)]))
+                   [(keyword k) (some-> qbs (.getBinding k) .getValue pr/->grafter-type)]))
          (apply hash-map))))
 
 (extend-protocol pr/ITransactable
