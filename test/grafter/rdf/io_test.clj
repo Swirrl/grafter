@@ -61,6 +61,17 @@
     (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
     "hello"        "http://www.w3.org/2001/XMLSchema#string" String))
 
+(deftest literal-datatype->type-special-floating-values-test
+  (is (Double/isNaN (literal-datatype->type (literal "NaN" "http://www.w3.org/2001/XMLSchema#double"))))
+  (is (= Double/POSITIVE_INFINITY (literal-datatype->type (literal "INF" "http://www.w3.org/2001/XMLSchema#double"))))
+  (is (= Double/POSITIVE_INFINITY (literal-datatype->type (literal "+INF" "http://www.w3.org/2001/XMLSchema#double"))))
+  (is (= Double/NEGATIVE_INFINITY (literal-datatype->type (literal "-INF" "http://www.w3.org/2001/XMLSchema#double"))))
+
+  (is (Float/isNaN (literal-datatype->type (literal "NaN" "http://www.w3.org/2001/XMLSchema#float"))))
+  (is (= Float/POSITIVE_INFINITY (literal-datatype->type (literal "INF" "http://www.w3.org/2001/XMLSchema#float"))))
+  (is (= Float/POSITIVE_INFINITY (literal-datatype->type (literal "+INF" "http://www.w3.org/2001/XMLSchema#float"))))
+  (is (= Float/NEGATIVE_INFINITY (literal-datatype->type (literal "-INF" "http://www.w3.org/2001/XMLSchema#float")))))
+
 (deftest literal-test
   (is (instance? LiteralImpl (->sesame-rdf-type (literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
