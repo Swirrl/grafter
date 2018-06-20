@@ -78,10 +78,20 @@
   (bigdec (pr/raw-value literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [literal]
-  (Double/parseDouble (pr/raw-value literal)))
+  (let [raw (pr/raw-value literal)]
+    (case raw
+      "INF" Double/POSITIVE_INFINITY
+      "+INF" Double/POSITIVE_INFINITY
+      "-INF" Double/NEGATIVE_INFINITY
+      (Double/parseDouble raw))))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [literal]
-  (Float/parseFloat (pr/raw-value literal)))
+  (let [raw (pr/raw-value literal)]
+    (case raw
+      "INF" Float/POSITIVE_INFINITY
+      "+INF" Float/POSITIVE_INFINITY
+      "-INF" Float/NEGATIVE_INFINITY
+      (Float/parseFloat raw))))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [literal]
   (bigint (pr/raw-value literal)))
