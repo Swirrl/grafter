@@ -3,6 +3,8 @@
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
+  :scm {:name "git"
+        :url "https://github.com/Swirrl/grafter"}
 
   :deploy-repositories [["releases" :clojars]]
 
