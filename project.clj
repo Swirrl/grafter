@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.11.0.2-drafter-rdf4j-SNAPSHOT"
+(defproject grafter/grafter "0.11.0.2-drafter-rdf4j"
   :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
