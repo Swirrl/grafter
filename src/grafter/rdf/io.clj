@@ -232,6 +232,9 @@
   (->sesame-rdf-type [this]
     this)
 
+  (sesame-rdf-type->type [this]
+    (.booleanValue this))
+
   Statement
   (->sesame-rdf-type [this]
     this)
