@@ -13,6 +13,8 @@
            grafter.url.GrafterURL
            java.io.File
            [java.net MalformedURLException URL]
+           [java.sql Time]
+           [java.text SimpleDateFormat]
            java.util.GregorianCalendar
            javax.xml.datatype.DatatypeFactory
            [org.openrdf.model BNode Literal Resource Statement URI Value]
@@ -110,6 +112,11 @@
 
 (defmethod literal-datatype->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [literal]
   (language (pr/raw-value literal) (pr/lang literal)))
+
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#date" [literal]
+  (let [calendar (doto (.toGregorianCalendar (.calendarValue literal))
+                   (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))]
+    (-> calendar .getTime)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
   (-> literal .calendarValue .toGregorianCalendar .getTime))
@@ -219,6 +226,8 @@
                                               :quad is
                                               :quad-meta (meta is)} ex)))))
 
+(def ^:private xsd-date-format (SimpleDateFormat. "yyyy-MM-dd"))
+
 (extend-protocol ISesameRDFConverter
 
   java.lang.Boolean
@@ -295,8 +304,10 @@
 
   java.util.Date
   (->sesame-rdf-type [this]
-    this)
+    (let [date-string (.format xsd-date-format this)]
+      (LiteralImpl. date-string (URIImpl. "http://www.w3.org/2001/XMLSchema#date"))))
 
+  java.sql.Time
   (->sesame-rdf-type [this]
     (let [cal (doto (GregorianCalendar.)
                 (.setTime this))]

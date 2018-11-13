@@ -62,6 +62,14 @@
     (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
     "hello"        "http://www.w3.org/2001/XMLSchema#string" String))
 
+(deftest date-and-datetimes-test
+  (let [unix-time-1970 0
+        a-date (java.util.Date. unix-time-1970)
+        now-time (java.sql.Time. (.getTime a-date))]
+
+    (is (= a-date (sesame-rdf-type->type (->sesame-rdf-type a-date))))
+    (is (= now-time (sesame-rdf-type->type (->sesame-rdf-type now-time))))))
+
 (deftest literal-datatype->type-special-floating-values-test
   (is (Double/isNaN (literal-datatype->type (literal "NaN" "http://www.w3.org/2001/XMLSchema#double"))))
   (is (= Double/POSITIVE_INFINITY (literal-datatype->type (literal "INF" "http://www.w3.org/2001/XMLSchema#double"))))
