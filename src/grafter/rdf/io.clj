@@ -119,7 +119,7 @@
     (-> calendar .getTime)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
-  (-> literal .calendarValue .toGregorianCalendar .getTime))
+  (-> literal .calendarValue .toGregorianCalendar .getTime .getTime Time.))
 
 (defmethod literal-datatype->type :default [literal]
   ;; If we don't have a type conversion for it, let the sesame type

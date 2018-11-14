@@ -10,7 +10,10 @@
             [grafter.rdf.formats :as fmt]
             [clojure.java.io :as io])
   (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]
-           [java.net URI]))
+           [java.net URI]
+           [javax.xml.datatype DatatypeFactory]
+           [org.openrdf.model.impl CalendarLiteralImpl]
+           [java.util GregorianCalendar]))
 
 ;; NOTE this function is deprecated in favour of the one in formats,
 ;; but unlike the variation in formats it raises an exception if the
@@ -62,13 +65,39 @@
     (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
     "hello"        "http://www.w3.org/2001/XMLSchema#string" String))
 
-(deftest date-and-datetimes-test
-  (let [unix-time-1970 0
-        a-date (java.util.Date. unix-time-1970)
-        now-time (java.sql.Time. (.getTime a-date))]
+(defn make-sesame-calendar-literal [date-object]
+  (let [gregorian (doto (GregorianCalendar. )
+                    (.setTime date-object))
+        xml-cal (-> (DatatypeFactory/newInstance) (.newXMLGregorianCalendar gregorian))]
+    (CalendarLiteralImpl. xml-cal)))
 
-    (is (= a-date (sesame-rdf-type->type (->sesame-rdf-type a-date))))
-    (is (= now-time (sesame-rdf-type->type (->sesame-rdf-type now-time))))))
+(deftest date-and-datetimes-test
+  (let [unix-epoch 0
+        a-date (java.util.Date. unix-epoch)
+        a-time (java.sql.Time. (.getTime a-date))
+        xsd-date-literal (literal "2017-01-01" (URIImpl. "http://www.w3.org/2001/XMLSchema#date"))]
+
+    (let [ret (sesame-rdf-type->type (->sesame-rdf-type xsd-date-literal))]
+      (is (instance? java.util.Date ret))
+      (is (= #inst "2017-01-01" ret)))
+
+    (let [ret (sesame-rdf-type->type (->sesame-rdf-type a-date))]
+      (is (instance? java.util.Date ret))
+      (is (= ret a-date)))
+
+    (let [ses-callit (make-sesame-calendar-literal a-date)
+          ret (sesame-rdf-type->type ses-callit)]
+      (is (instance? java.sql.Time ret))
+      (is (= (java.sql.Time. (.getTime a-date))
+             ret)))
+
+    (let [ret (sesame-rdf-type->type (->sesame-rdf-type a-time))]
+      (is (instance? java.sql.Time ret))
+      (is (= a-time ret)))
+
+    (let [loaded-date (:o (first (statements (io/resource "grafter/rdf/date.ttl"))))]
+      (is (instance? java.util.Date loaded-date))
+      (is (= a-date loaded-date)))))
 
 (deftest literal-datatype->type-special-floating-values-test
   (is (Double/isNaN (literal-datatype->type (literal "NaN" "http://www.w3.org/2001/XMLSchema#double"))))
