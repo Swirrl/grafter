@@ -10,7 +10,7 @@
                  [org.openrdf.sesame/sesame-runtime "2.8.9"]
                  [org.clojure/tools.logging "0.3.1"]
                  [grafter/url "0.2.5"]
-                 [grafter/vocabularies "0.2.0"]
+                 [grafter/vocabularies "0.2.4-SNAPSHOT"]
 
                  [commons-logging "1.2"] ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
                  [me.raynes/fs "1.4.6"]
