@@ -14,8 +14,7 @@
 
                  [commons-logging "1.2"] ;; Shouldn't need this, but somehow excluded and required by SPARQLRepository
                  [me.raynes/fs "1.4.6"]
-                 [potemkin "0.4.3"]
-                 [com.novemberain/pantomime "2.8.0"]] ;; mimetypes
+                 [potemkin "0.4.3"]]
 
 
   :codox {:defaults {:doc "FIXME: write docs"
