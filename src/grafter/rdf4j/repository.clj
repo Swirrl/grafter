@@ -6,7 +6,6 @@
             [grafter.core :as pr]
             [grafter.rdf4j.io :as rio]
             [grafter.rdf4j :as rdf4j]
-            [clojure.tools.logging :as log]
             [clojure.string :as string]
             [grafter.rdf4j.formats :as format])
   (:import (grafter.core IStatement Quad)

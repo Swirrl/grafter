@@ -8,7 +8,6 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.eclipse.rdf4j/rdf4j-runtime "2.5.0"]
-                 [org.clojure/tools.logging "0.4.0"]
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.5"]
                  [me.raynes/fs "1.4.6"]
@@ -40,7 +39,8 @@
   :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
 
              ;; expect upstream projects to provide this explicity if they want sesame
-             :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]]}
+             :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]
+                                       [org.clojure/tools.logging "0.4.0"]]}
 
              :dev [:provided :dev-deps]
 

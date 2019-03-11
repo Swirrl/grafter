@@ -12,8 +12,7 @@
 
   Be warned though, these registries apply globally (process wide), so
   altering them may have unintended consequences."
-  (:require [clojure.string :as str]
-            [clojure.tools.logging :as log])
+  (:require [clojure.string :as str])
   (:import [java.nio.charset Charset]
            [org.eclipse.rdf4j.rio RDFParserRegistry RDFFormat]
            [org.eclipse.rdf4j.query.resultio TupleQueryResultFormat BooleanQueryResultFormat
