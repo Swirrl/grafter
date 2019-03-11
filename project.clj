@@ -6,13 +6,13 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-  :dependencies [[org.clojure/clojure "1.9.0-beta4"]
-                 [org.eclipse.rdf4j/rdf4j-runtime "2.2.3"]
+  :dependencies [[org.clojure/clojure "1.10.0"]
+                 [org.eclipse.rdf4j/rdf4j-runtime "2.5.0"]
                  [org.clojure/tools.logging "0.4.0"]
                  [grafter/url "0.2.5"]
-                 [grafter/vocabularies "0.2.3"]
+                 [grafter/vocabularies "0.2.5"]
                  [me.raynes/fs "1.4.6"]
-                 [potemkin "0.4.4"]
+                 [potemkin "0.4.5"]
                  [com.novemberain/pantomime "2.9.0"]] ;; mimetypes
 
   :source-paths ["src" "deprecated/src"]
@@ -43,6 +43,7 @@
              :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]]}
 
              :dev [:provided :dev-deps]
+
 
              :dev-deps {
 
