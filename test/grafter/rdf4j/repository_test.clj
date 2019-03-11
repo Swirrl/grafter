@@ -160,18 +160,6 @@
          #{})))
 
 
-(deftest batched-query-test
-  (let [repo (sail-repo)]
-    (with-open [conn (->connection repo)]
-      (core/add conn
-               (rdf4j/statements (io/resource "grafter/rdf/triples.nt"))))
-
-    (with-open [c (->connection repo)]
-      (is (= 3 (count (batched-query "SELECT * WHERE { ?s ?p ?o .}"
-                                     c
-                                     1
-                                     0)))))))
-
 (deftest rdfs-inferencer-test
   (let [r (sail-repo (rdfs-inferencer (memory-store)))]
     (with-open [c (->connection r)]
