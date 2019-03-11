@@ -9,7 +9,7 @@
   (:import [java.net URI]
            [java.util Date]
            [java.sql Time]
-           [org.eclipse.rdf4j.model Literal]))
+           [org.openrdf.model Literal BNode]))
 
 (defprotocol IStatement
   "An RDF triple or quad"
@@ -174,7 +174,8 @@
 (extend-type Literal
   IRDFString
   (lang [this]
-    (keyword (.orElse (.getLanguage this) nil)))
+    (when-let [lang-str (.getLanguage this)]
+      (keyword lang-str)))
 
   IRawValue
   (raw-value [this]
@@ -317,6 +318,9 @@
   type)
 
 (defmethod blank-node? clojure.lang.Keyword [_]
+  true)
+
+(defmethod blank-node? BNode [_]
   true)
 
 (defmethod blank-node? :default [_]

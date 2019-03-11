@@ -1,13 +1,13 @@
 (ns grafter.rdf4j.sparql-test
   (:require [grafter.rdf4j.sparql :refer :all :as sparql]
-            [grafter.rdf :as rdf]
             [clojure.test :refer :all]
             [clojure.java.io :refer [resource]]
             [grafter.rdf4j.repository :as repo]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [grafter.rdf4j.io :as rio]
-            [grafter.rdf.protocols :as pr])
+            [grafter.core :as rdf]
+            [grafter.rdf4j :as rdf4j])
   (:import java.net.URI))
 
 (deftest pre-process-limit-clauses-test
@@ -51,8 +51,8 @@
               "VALUES ?o { \"10\"^^<http://www.w3.org/2001/XMLSchema#long> \"string\" \"bonjour\"@fr }"
               " ?s ?p ?o . }")
          (#'sparql/rewrite-values-clauses q2 {:s [(URI. "http://s1") (URI. "http://s2")]
-                                            :p [(URI. "http://p")]
-                                            :o [10 "string" (rdf/language "bonjour" :fr)]}))))
+                                              :p [(URI. "http://p")]
+                                              :o [10 "string" (rdf/language "bonjour" :fr)]}))))
 
   (let [q3 (sparql-query "grafter/rdf/sparql/select-values-3.sparql")]
     (is (same-query?

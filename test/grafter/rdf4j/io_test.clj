@@ -1,11 +1,10 @@
 (ns grafter.rdf4j.io-test
   (:require [clojure.test :refer :all]
             [grafter.rdf4j.io :as sut]
-            [grafter.rdf.protocols :refer [->Quad]]
-            [grafter.rdf :refer [add statements]]
-            [grafter.rdf.templater :refer [graph]]
+            [grafter.rdf4j :refer [statements]]
+            [grafter.core :refer [->Quad add] :as core]
+            [grafter.rdf4j.templater :refer [graph]]
             [grafter.url :as url]
-            [grafter.rdf.protocols :as pr]
             [grafter.rdf4j.formats :as fmt]
             [clojure.java.io :as io])
   (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
@@ -16,7 +15,7 @@
 
 (deftest round-trip-numeric-types-test
   (are [xsd type number]
-      (is (= number (pr/raw-value (sut/->backend-type (pr/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
+      (is (= number (core/raw-value (sut/->backend-type (core/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
 
     "http://www.w3.org/2001/XMLSchema#byte" Byte "10"
     "http://www.w3.org/2001/XMLSchema#short" Short "10"
@@ -41,7 +40,7 @@
     10             "http://www.w3.org/2001/XMLSchema#long" Long
 
     #inst "2017-10-20T22:26:28.195-00:00" "http://www.w3.org/2001/XMLSchema#dateTime" java.util.Date
-    
+
     ;; Yes this is correct according to the XSD spec. #integer is
     ;; unbounded whereas #int is bounded
     (bigint 3)     "http://www.w3.org/2001/XMLSchema#integer" clojure.lang.BigInt
@@ -52,12 +51,12 @@
 
 
 (deftest language-string-test
-  (let [bonsoir (pr/language "Bonsoir Mademoiselle" :fr)]
+  (let [bonsoir (core/language "Bonsoir Mademoiselle" :fr)]
     (is (= bonsoir (sut/backend-literal->grafter-type bonsoir)))
-    (is (= bonsoir (pr/->grafter-type (sut/->backend-type bonsoir))))))
+    (is (= bonsoir (core/->grafter-type (sut/->backend-type bonsoir))))))
 
 (deftest literal-test
-  (is (instance? LiteralImpl (sut/->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
+  (is (instance? LiteralImpl (sut/->backend-type (core/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
 (deftest round-trip-quad-test
   (testing "round trips"

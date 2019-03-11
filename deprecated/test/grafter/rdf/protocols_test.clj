@@ -3,7 +3,7 @@
             [grafter.rdf.protocols :refer :all]
             [grafter.vocabularies.xsd :refer :all]
             [grafter.rdf.protocols :as pr])
-  (:import [org.eclipse.rdf4j.model.impl LiteralImpl BNodeImpl]))
+  (:import [org.openrdf.model.impl LiteralImpl BNodeImpl]))
 
 (require 'grafter.rdf4j.io) ;; force loading of rdf4j backend
 

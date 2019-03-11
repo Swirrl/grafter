@@ -338,7 +338,7 @@
 
 (defn add-statement
   "Add an RDF statement to the target datasink.  Datasinks must
-  implement `grafter.rdf.protocols/ITripleWriteable`.
+  implement `grafter.core/ITripleWriteable`.
 
   Datasinks include RDF4j RDF repositories, connections and anything
   built by rdf-writer.
@@ -446,7 +446,7 @@
 
 ;; TODO TOOD TODO
 
-(defn ^:no-doc statements
+#_(defn ^:no-doc statements
   "Attempts to coerce an arbitrary source of RDF statements into a
   sequence of grafter Statements.
 

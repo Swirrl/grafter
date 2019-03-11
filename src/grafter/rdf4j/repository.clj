@@ -5,6 +5,7 @@
             [me.raynes.fs :as fs]
             [grafter.core :as pr]
             [grafter.rdf4j.io :as rio]
+            [grafter.rdf4j :as rdf4j]
             [clojure.tools.logging :as log]
             [clojure.string :as string]
             [grafter.rdf4j.formats :as format])
@@ -242,13 +243,13 @@
 (defn- statements-with-inferred-format [res]
   (if (seq? res)
     res
-    (pr/statements res :format (format/->rdf-format (fs/extension (str res))))))
+    (rdf4j/statements res :format (format/->rdf-format (fs/extension (str res))))))
 
 (defn fixture-repo
   "adds the specified data to a sparql repository.  if the first
   argument is a repository that object is used, otherwise the first
   and remaining arguments are assumed to be
-  grafter.rdf.protocols/itriplereadable and are loaded into a sesame
+  grafter.core/ITripleWriteable and are loaded into a sesame
   memorystore sail-repo.
 
   this function is most useful for loading fixture data from files e.g.

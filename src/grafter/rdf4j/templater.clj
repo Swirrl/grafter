@@ -1,13 +1,10 @@
- (ns ^{:deprecated "0.12.0"}
-    grafter.rdf.templater
-  "DEPRECATED.  Use grafter.rdf4j.templater instead this namespace
-  contains the old sesame implementation.
-
-  Functions for converting tree's of turtle-like data into Linked
+(ns ^{:deprecated "0.12.0"}
+    grafter.rdf4j.templater
+  "Functions for converting tree's of turtle-like data into Linked
   Data statements (triples/quads)."
-  (:require [grafter.rdf :as rdf]
+  (:require [grafter.core :as rdf]
             [grafter.url :as url]
-            [grafter.rdf.protocols :refer [->Triple ->Quad]])
+            )
   (:import [org.eclipse.rdf4j.model URI]))
 
 (defn- valid-uri? [node]
@@ -51,10 +48,10 @@
       (-> (mapcat (partial make-triples bnode-resource)
                   (map first nested-pairs)
                   (map second nested-pairs))
-          (conj (->Triple subject predicate bnode-resource))))
+          (conj (rdf/->Triple subject predicate bnode-resource))))
 
     (let [object object-or-nested-subject]
-      [(->Triple subject predicate object)])))
+      [(rdf/->Triple subject predicate object)])))
 
 (defn- expand-subj
   "Takes a turtle like data structure, like that passed to graph and
@@ -74,7 +71,7 @@
 (defn- quad
   "Build a quad from a graph and a grafter.rdf.protocols/Triple."
   [graph triple]
-  (->Quad (rdf/subject triple)
+  (rdf/->Quad (rdf/subject triple)
           (rdf/predicate triple)
           (rdf/object triple)
           graph))
