@@ -40,7 +40,7 @@
 (deftest pre-process-values-clauses-test
   (let [q1 (sparql-query "grafter/rdf/sparql/select-values-1.sparql")]
     (is (same-query?
-         "SELECT * WHERE { VALUES ?s { <http://s1> <http://s2> } ?s ?p ?o . }"
+         "SELECT * WHERE { # comment 1 VALUES ?s { <http://s1> <http://s2> } # comment 2 ?s ?p ?o . }"
          (#'sparql/rewrite-values-clauses q1 {:s [(URI. "http://s1") (URI. "http://s2")]}))))
 
   (let [q2 (sparql-query "grafter/rdf/sparql/select-values-2.sparql")]
@@ -95,3 +95,23 @@
                  (count (spog {:s (URI. "http://example.org/data/another-triple")
                                ::sparql/offsets {0 1}}
                               c))))))))
+
+(deftest strip-comments-test
+  (let [q1 (sparql-query "grafter/rdf/sparql/select-prefixes-comments.sparql")]
+    (is (same-query?
+          (str "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>"
+               "PREFIX foi: <http://publishmydata.com/def/ontology/foi/>"
+               "SELECT * WHERE {"
+               "  GRAPH ?g {"
+               "    ?s ?p ?o ."
+               "  }"
+               "}"
+               "LIMIT 7")
+          (#'sparql/strip-comments q1)))))
+
+(deftest pre-process-query-test
+  (testing "the combined query pre-processing steps"
+    (let [q1 (sparql-query "grafter/rdf/sparql/select-values-1.sparql")]
+      (is (same-query?
+            (str "SELECT * WHERE { VALUES ?s { <http://s1> <http://s2> } ?s ?p ?o . }")
+            (#'sparql/pre-process-query q1 {:s [(URI. "http://s1") (URI. "http://s2")]}))))))
