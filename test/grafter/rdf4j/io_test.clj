@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [grafter.rdf4j.io :as sut]
             [grafter.rdf4j :refer [statements]]
-            [grafter.core :refer [->Quad add] :as core]
+            [grafter.core :refer [->Quad add literal] :as core]
             [grafter.rdf4j.templater :refer [graph]]
             [grafter.url :as url]
             [grafter.rdf4j.formats :as fmt]
@@ -48,6 +48,17 @@
     "hello"        "http://www.w3.org/2001/XMLSchema#string" String
     (Time. (.getTime #inst "2017-11-20T10:38:22.143-00:00")) "http://www.w3.org/2001/XMLSchema#dateTime" Time
     #inst "2017-01-01" "http://www.w3.org/2001/XMLSchema#date" Date))
+
+(deftest literal-datatype->type-special-floating-values-test
+  (is (Double/isNaN (sut/backend-literal->grafter-type (literal "NaN" "http://www.w3.org/2001/XMLSchema#double"))))
+  (is (= Double/POSITIVE_INFINITY (sut/backend-literal->grafter-type (literal "INF" "http://www.w3.org/2001/XMLSchema#double"))))
+  (is (= Double/POSITIVE_INFINITY (sut/backend-literal->grafter-type (literal "+INF" "http://www.w3.org/2001/XMLSchema#double"))))
+  (is (= Double/NEGATIVE_INFINITY (sut/backend-literal->grafter-type (literal "-INF" "http://www.w3.org/2001/XMLSchema#double"))))
+
+  (is (Float/isNaN (sut/backend-literal->grafter-type (literal "NaN" "http://www.w3.org/2001/XMLSchema#float"))))
+  (is (= Float/POSITIVE_INFINITY (sut/backend-literal->grafter-type (literal "INF" "http://www.w3.org/2001/XMLSchema#float"))))
+  (is (= Float/POSITIVE_INFINITY (sut/backend-literal->grafter-type (literal "+INF" "http://www.w3.org/2001/XMLSchema#float"))))
+  (is (= Float/NEGATIVE_INFINITY (sut/backend-literal->grafter-type (literal "-INF" "http://www.w3.org/2001/XMLSchema#float")))))
 
 
 (deftest language-string-test
