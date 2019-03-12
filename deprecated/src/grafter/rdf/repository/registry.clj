@@ -1,5 +1,9 @@
-(ns grafter.rdf.repository.registry
-  "Namespace containing functions to manage the global registry of
+(ns ^{:deprecated "0.12.0"}
+    grafter.rdf.repository.registry
+  "DEPRECATED.  Use grafter.rdf4j.repository.registry instead, this namespace
+  contains the old sesame implementation.
+
+  Namespace containing functions to manage the global registry of
   Sesame parsers.
 
   Normally you should not need to adjust the default global

@@ -1,4 +1,5 @@
-(ns grafter.rdf4j.io
+(ns ^{:added "0.12.1"}
+    grafter.rdf4j.io
   "Functions & Protocols for serializing Grafter Statements to (and from)
   any Linked Data format supported by RDF4j."
   (:require [clojure.java.io :as io]
@@ -167,19 +168,19 @@
   Boolean
   (->backend-type [this]
     (.. (SimpleValueFactory/getInstance) (createLiteral this)))
-  
+
   LangString
   (->backend-type [this]
     (.. (SimpleValueFactory/getInstance) (createLiteral (:string this) (name (:lang this)))))
-  
+
   String
   (->backend-type [this]
     (.. (SimpleValueFactory/getInstance) (createLiteral this)))
-  
+
   java.net.URL
   (->backend-type [this]
     (URIImpl. (str this)))
-  
+
   java.net.URI
   (->backend-type [this]
     (URIImpl. (str this)))
@@ -187,7 +188,7 @@
   java.util.Date
   (->backend-type [this]
     (.. (SimpleValueFactory/getInstance) (createLiteral this)))
-  
+
   Quad
   (->backend-type [this]
     (quad->backend-quad this))
@@ -207,7 +208,7 @@
   clojure.lang.Keyword
   (->backend-type [this]
     (BNodeImpl. (name this)))
-  
+
   RDFLiteral
   (->backend-type [this]
     (LiteralImpl. (pr/raw-value this) (URIImpl. (str (pr/datatype-uri this))))))
@@ -263,7 +264,7 @@
   IGrafterRDFType
   (->grafter-type [uri]
     (->url (str uri)))
-  
+
   IRDF4jConverter
   (->backend-type [uri]
     (URIImpl. (str uri))))
@@ -328,7 +329,7 @@
 
   - :format        If a String or a File are provided the format parameter
                    can be optional (in which case it will be infered from
-                   the file extension).  This should be a clojure keyword 
+                   the file extension).  This should be a clojure keyword
                    representing the format extension e.g. :nt.
 
   - :encoding      The character encoding to be used (default: UTF-8)

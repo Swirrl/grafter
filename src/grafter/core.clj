@@ -1,4 +1,5 @@
-(ns grafter.core
+(ns ^{:added "0.12.1"}
+    grafter.core
   "Abstract functions for interacting with RDF & RDF backends, such as
   RDF4j."
   (:require [grafter.vocabularies.xsd :refer :all]

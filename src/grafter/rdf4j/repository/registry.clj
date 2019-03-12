@@ -1,4 +1,5 @@
-(ns grafter.rdf4j.repository.registry
+(ns ^{:added "0.12.1"}
+    grafter.rdf4j.repository.registry
   "Namespace containing functions to manage the global registry of
   Sesame parsers.
 

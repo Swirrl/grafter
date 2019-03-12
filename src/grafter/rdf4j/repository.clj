@@ -1,4 +1,5 @@
-(ns grafter.rdf4j.repository
+(ns ^{:added "0.12.1"}
+    grafter.rdf4j.repository
   "Functions for constructing and working with various RDF4j repositories."
   (:require [clojure.java.io :as io]
             [me.raynes.fs :as fs]
@@ -171,7 +172,7 @@
   Supports two arities:
 
   - Takes just a repo to wrap.
-  - Takes a repo to wrap and a boolean indicating whether to report 
+  - Takes a repo to wrap and a boolean indicating whether to report
     deltas on operations."
   ([^Repository repo]
    (NotifyingRepositoryWrapper. repo))
@@ -438,7 +439,7 @@
     (println "WARNING: prepare-query* was called on a repository not a connection.  This usage is deprecated and will be removed.")
     (let [conn (->connection repo)]
       (prepare-query* conn sparql-string restriction)))
-  
+
   RepositoryConnection
   (prepare-query* [repo sparql-string restriction]
     (let [conn (->connection repo)

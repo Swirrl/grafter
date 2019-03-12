@@ -1,6 +1,10 @@
-(ns grafter.rdf
-  "Functions and macros for creating RDF data.  Includes a small
-  DSL for creating turtle-like templated forms."
+(ns ^{:deprecated "0.12.1"}
+    grafter.rdf
+  "DEPRECATED: Use grafter.core instead, this namespace contains the
+  old sesame implementation.
+
+  Functions and macros for creating RDF data.  Includes a
+  small DSL for creating turtle-like templated forms."
   (:require [grafter.rdf.protocols :as pr]
             [potemkin.namespaces :refer [import-vars]]))
 

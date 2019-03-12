@@ -1,5 +1,9 @@
-(ns grafter.rdf.protocols
-  "Grafter protocols and types for RDF processing"
+(ns ^{:deprecated "0.12.1"}
+    grafter.rdf.protocols
+  "DEPRECATED: Use grafter.core instead.  This namespace contains the old
+  sesame implementation.
+
+  Grafter protocols and types for RDF processing"
   (:require [grafter.vocabularies.xsd :refer :all]
             [grafter.url :refer [->java-uri]])
   (:import [java.net URI]

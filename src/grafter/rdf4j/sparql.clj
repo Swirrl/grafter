@@ -1,4 +1,5 @@
-(ns grafter.rdf4j.sparql
+(ns ^{:added "0.12.1"}
+    grafter.rdf4j.sparql
   "Functions for executing SPARQL queries with grafter RDF
   repositories, that support basic binding replacement etc."
   (:require [grafter.rdf4j.repository  :as repo :refer [sparql-repo ->connection]]
