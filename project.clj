@@ -1,4 +1,4 @@
-(defproject grafter/grafter "0.12.1-SNAPSHOT"
+(defproject grafter/grafter "0.12.2-SNAPSHOT"
   :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -33,14 +33,10 @@
                  [org.eclipse.rdf4j/rdf4j-sail-nativerdf "2.5.0"]
                  [org.eclipse.rdf4j/rdf4j-repository-manager "2.5.0"]
 
-
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.5"]
                  [me.raynes/fs "1.4.6"]
-                 [potemkin "0.4.5"]
-
-                 [com.novemberain/pantomime "2.9.0"] ;; mimetypes
-                 ]
+                 [potemkin "0.4.5"]]
 
   :source-paths ["src" "deprecated/src"]
   :test-paths ["test" "deprecated/test"]

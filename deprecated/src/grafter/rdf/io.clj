@@ -17,6 +17,8 @@
            grafter.url.GrafterURL
            java.io.File
            [java.net MalformedURLException URL]
+           [java.sql Time]
+           [java.text SimpleDateFormat]
            java.util.GregorianCalendar
            javax.xml.datatype.DatatypeFactory
            [org.openrdf.model BNode Literal Resource Statement URI Value]
@@ -82,10 +84,20 @@
   (bigdec (pr/raw-value literal)))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#double" [literal]
-  (Double/parseDouble (pr/raw-value literal)))
+  (let [raw (pr/raw-value literal)]
+    (case raw
+      "INF" Double/POSITIVE_INFINITY
+      "+INF" Double/POSITIVE_INFINITY
+      "-INF" Double/NEGATIVE_INFINITY
+      (Double/parseDouble raw))))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#float" [literal]
-  (Float/parseFloat (pr/raw-value literal)))
+  (let [raw (pr/raw-value literal)]
+    (case raw
+      "INF" Float/POSITIVE_INFINITY
+      "+INF" Float/POSITIVE_INFINITY
+      "-INF" Float/NEGATIVE_INFINITY
+      (Float/parseFloat raw))))
 
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#integer" [literal]
   (bigint (pr/raw-value literal)))
@@ -105,8 +117,13 @@
 (defmethod literal-datatype->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [literal]
   (language (pr/raw-value literal) (pr/lang literal)))
 
+(defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#date" [literal]
+  (let [calendar (doto (.toGregorianCalendar (.calendarValue literal))
+                   (.setTimeZone (java.util.TimeZone/getTimeZone "UTC")))]
+    (-> calendar .getTime)))
+
 (defmethod literal-datatype->type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
-  (-> literal .calendarValue .toGregorianCalendar .getTime))
+  (-> literal .calendarValue .toGregorianCalendar .getTime .getTime Time.))
 
 (defmethod literal-datatype->type :default [literal]
   ;; If we don't have a type conversion for it, let the sesame type
@@ -213,6 +230,8 @@
                                               :quad is
                                               :quad-meta (meta is)} ex)))))
 
+(def ^:private xsd-date-format (SimpleDateFormat. "yyyy-MM-dd"))
+
 (extend-protocol ISesameRDFConverter
 
   java.lang.Boolean
@@ -225,6 +244,9 @@
   BooleanLiteralImpl
   (->sesame-rdf-type [this]
     this)
+
+  (sesame-rdf-type->type [this]
+    (.booleanValue this))
 
   Statement
   (->sesame-rdf-type [this]
@@ -286,8 +308,10 @@
 
   java.util.Date
   (->sesame-rdf-type [this]
-    this)
+    (let [date-string (.format xsd-date-format this)]
+      (LiteralImpl. date-string (URIImpl. "http://www.w3.org/2001/XMLSchema#date"))))
 
+  java.sql.Time
   (->sesame-rdf-type [this]
     (let [cal (doto (GregorianCalendar.)
                 (.setTime this))]
