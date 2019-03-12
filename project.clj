@@ -7,12 +7,40 @@
   :deploy-repositories [["releases" :clojars]]
 
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 [org.eclipse.rdf4j/rdf4j-runtime "2.5.0"]
+
+                 ;;[org.eclipse.rdf4j/rdf4j-runtime "2.5.0" :exclusions [ch.qos.logback/logback-classic]]
+
+                 ;; Include a smaller set of dependencies than we used
+                 ;; to by default, if you want everything from RDF4j
+                 ;; you can include:
+
+                 ;; [org.eclipse.rdf4j/rdf4j-runtime "2.5.0" :exclusions [ch.qos.logback/logback-classic]]
+                 [org.eclipse.rdf4j/rdf4j-rio-api "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-binary "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-jsonld "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-n3 "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-nquads "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfjson "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfxml "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trig "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trix "2.5.0"]
+
+                 [org.eclipse.rdf4j/rdf4j-repository-api "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-http "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-sail "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-dataset "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-sail-memory "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-sail-nativerdf "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-manager "2.5.0"]
+
+
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.5"]
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.5"]
-                 [com.novemberain/pantomime "2.9.0"]] ;; mimetypes
+
+                 [com.novemberain/pantomime "2.9.0"] ;; mimetypes
+                 ]
 
   :source-paths ["src" "deprecated/src"]
   :test-paths ["test" "deprecated/test"]
@@ -36,9 +64,7 @@
 
   :pedantic? true
 
-  :profiles {:clj-19 { :dependencies [[org.clojure/clojure "1.9.0-alpha14"]] }
-
-             ;; expect upstream projects to provide this explicity if they want sesame
+  :profiles { ;; expect upstream projects to provide this explicity if they want sesame
              :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]
                                        [org.clojure/tools.logging "0.4.0"]]}
 
@@ -47,7 +73,8 @@
 
              :dev-deps {
 
-                        :dependencies [[org.slf4j/slf4j-simple "1.7.25"]
+                        :dependencies [
+                                       [org.slf4j/slf4j-simple "1.7.25"]
                                        [prismatic/schema "1.1.7"]
                                        [criterium "0.4.4"]]
 
