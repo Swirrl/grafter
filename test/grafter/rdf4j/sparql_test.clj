@@ -81,14 +81,17 @@
 
 (deftest query-test
   (let [r (repo/fixture-repo (resource "grafter/rdf/sparql/sparql-data.trig"))
-        total-quads (count (into #{} r))
+        total-quads (with-open [c (repo/->connection r)]
+                      (count (into #{} c)))
         spog (partial sparql/query "grafter/rdf/sparql/select-spog.sparql")]
     (testing "limits"
-      (let [num-results (count (spog {:s (URI. "http://example.org/data/another-triple")
-                                       ::sparql/limits {99999 2}} r))]
+      (let [num-results (with-open [c (repo/->connection r)]
+                          (count (spog {:s (URI. "http://example.org/data/another-triple")
+                                        ::sparql/limits {99999 2}} c)))]
         (is (= 2 num-results))))
 
     (testing "offsets"
-      (is (= 2 (count (spog {:s (URI. "http://example.org/data/another-triple")
-                             ::sparql/offsets {0 1}}
-                            r)))))))
+      (is (= 2 (with-open [c (repo/->connection r)]
+                 (count (spog {:s (URI. "http://example.org/data/another-triple")
+                               ::sparql/offsets {0 1}}
+                              c))))))))
