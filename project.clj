@@ -20,13 +20,15 @@
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
-          :output-dir "api-docs"
+          :output-path "api-docs"
           :sources ["src" ;; Include docs from grafter-url project too
+                    "deprecated/src"
                     "../grafter-url/src"]
 
           ;; TODO change this when we merge back to master
-          :src-dir-uri "http://github.com/Swirrl/grafter/blob/0.8.x-SNAPSHOT/"
-          :src-linenum-anchor-prefix "L"}
+          :source-uri "http://github.com/Swirrl/grafter/blob/rdf-core/{filepath}#L{line}"
+
+          }
 
 
   ;; Prevent Java process from appearing as a GUI app in OSX when
@@ -42,7 +44,7 @@
 
              :dev [:provided :dev-deps]
 
-             :dev-deps {:plugins [[codox "0.8.10"]]
+             :dev-deps {
 
                         :dependencies [[org.slf4j/slf4j-simple "1.7.25"]
                                        [prismatic/schema "1.1.7"]
@@ -50,4 +52,6 @@
 
                         :resource-paths ["dev/resources"]
 
-                        :env {:dev true}}})
+                        :env {:dev true}}}
+
+  :plugins [[lein-codox "0.10.6"]])
