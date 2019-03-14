@@ -69,7 +69,7 @@
 
       :integer integer?
       :string (fn [v] (= "hello" (str v)))
-      :date (partial instance? java.util.Date)
+      :date (partial instance? java.time.OffsetDateTime)
       :decimal (partial instance? java.math.BigDecimal)
       :float float?
       :double (partial instance? java.lang.Double)

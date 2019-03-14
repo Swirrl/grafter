@@ -5,8 +5,7 @@
   (:require [grafter.vocabularies.xsd :refer :all]
             [grafter.url :refer [->java-uri]])
   (:import [java.net URI]
-           [java.util Date]
-           [java.sql Time]
+           [java.time LocalTime LocalDate LocalDateTime OffsetTime OffsetDateTime]
            [org.eclipse.rdf4j.model Literal]))
 
 ;;(require '[grafter.rdf4j.io])
@@ -117,6 +116,16 @@
 (defprotocol IDatatypeURI
   (datatype-uri [this]
     "Returns the RDF literals datatype URI as a java.net.URI."))
+
+;; We provide a ZonedDate & ZonedTime object because XMLSchema allows
+;; xsd:date or xsd:time with a TimeZone (e.g. UTC 2004-04-12Z) but the
+;; java.time API only lets you represent a ZonedDateTime which would
+;; not roundtrip.
+;;
+;; The date field is expected to be a java.time.LocalDate and the
+;; timezone field a java.time.ZoneOffset
+
+(defrecord OffsetDate [date timezone])
 
 (def rdf:langString (URI. "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
 
@@ -238,11 +247,27 @@
   (datatype-uri [t]
     (->java-uri xsd:byte))
 
-  Date
+  LocalTime
+  (datatype-uri [t]
+    (->java-uri xsd:time))
+
+  OffsetTime
+  (datatype-uri [t]
+    (->java-uri xsd:time))
+
+  LocalDate
   (datatype-uri [t]
     (->java-uri xsd:date))
 
-  Time
+  OffsetDate
+  (datatype-uri [t]
+    (->java-uri xsd:date))
+
+  LocalDateTime
+  (datatype-uri [t]
+    (->java-uri xsd:dateTime))
+
+  OffsetDateTime
   (datatype-uri [t]
     (->java-uri xsd:dateTime))
 

@@ -1,0 +1,24 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix : <http://grafter/data/> .
+
+
+
+:date-local dcterms:modified "1970-01-01"^^xsd:date .
+:date-utc dcterms:modified "1970-01-01Z"^^xsd:date .
+:date-offset dcterms:modified "1970-01-01-05:00"^^xsd:date .
+
+:date-time-local dcterms:modified "2004-04-12T13:20:00"^^xsd:dateTime .
+:date-time-local-with-half-second dcterms:modified "2004-04-12T13:20:15.5"^^xsd:dateTime .
+:date-time-with-offset dcterms:modified "2004-04-12T13:20:00-05:00"^^xsd:dateTime .
+:date-time-utc dcterms:modified "2004-04-12T13:20:00Z"^^xsd:dateTime .
+
+
+:time-local dcterms:modified "13:20:00"^^xsd:time .
+:time-local-with-fraction-of-second dcterms:modified "13:20:30.555"^^xsd:time .
+:time-local-with-insane-precision dcterms:modified "13:20:30.9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"^^xsd:time .
+
+:time-local-midnight-00 dcterms:modified "00:00:00"^^xsd:time .
+:time-local-midnight-24 dcterms:modified "24:00:00"^^xsd:time .
+
+:time-utc dcterms:modified "13:20:00Z"^^xsd:time .

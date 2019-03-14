@@ -1,25 +1,24 @@
 (ns ^{:added "0.12.1"}
-    grafter.rdf4j.io
+ grafter.rdf4j.io
   "Functions & Protocols for serializing Grafter Statements to (and from)
   any Linked Data format supported by RDF4j."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [grafter.rdf4j
-             [formats :as fmt]]
-            [grafter
-             [core :as pr :refer [->Quad ->grafter-type IGrafterRDFType]]]
+            [grafter.core :as pr :refer [->grafter-type ->Quad IGrafterRDFType]]
+            [grafter.rdf4j.formats :as fmt]
             [grafter.url
              :refer
              [->grafter-url ->java-uri ->url IURIable ToGrafterURL]])
-  (:import [grafter.core IStatement Quad RDFLiteral LangString]
+  (:import [grafter.core IStatement LangString OffsetDate Quad RDFLiteral]
            grafter.url.GrafterURL
            java.io.File
            [java.net MalformedURLException URL]
            java.util.GregorianCalendar
-           javax.xml.datatype.DatatypeFactory
+           [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
            [org.eclipse.rdf4j.model BNode Literal Resource Statement URI Value]
-           [org.eclipse.rdf4j.model.impl SimpleValueFactory BNodeImpl BooleanLiteralImpl CalendarLiteral ContextStatementImpl IntegerLiteral LiteralImpl NumericLiteral StatementImpl URIImpl]
-           [org.eclipse.rdf4j.rio RDFFormat RDFHandler RDFWriter Rio]))
+           [org.eclipse.rdf4j.model.impl BNodeImpl BooleanLiteralImpl CalendarLiteral ContextStatementImpl IntegerLiteral LiteralImpl NumericLiteral SimpleValueFactory StatementImpl URIImpl]
+           [org.eclipse.rdf4j.rio RDFFormat RDFHandler RDFWriter Rio]
+           java.time.temporal.ChronoField))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -95,11 +94,70 @@
 (defmethod backend-literal->grafter-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [literal]
   (pr/language (pr/raw-value literal) (pr/lang literal)))
 
+(defn- has-second? [^XMLGregorianCalendar xml-cal]
+  (let [tz (.getSecond xml-cal)]
+    (not= tz DatatypeConstants/FIELD_UNDEFINED)))
+
+(defn- has-time? [^XMLGregorianCalendar xml-cal]
+  (let [time (.getHour xml-cal)]
+    (= time DatatypeConstants/FIELD_UNDEFINED)))
+
+(defn- has-timezone? [^XMLGregorianCalendar xml-cal]
+  (let [tz (.getTimezone xml-cal)]
+    (not= tz DatatypeConstants/FIELD_UNDEFINED)))
+
+(defn xml-cal->local-time [xml-cal]
+  (let [hour (let [h (.getHour xml-cal)]
+               (if (= 24 h)
+                 0
+                 h))
+        min (.getMinute xml-cal)
+        sec (.getSecond xml-cal)
+        frac (.getFractionalSecond xml-cal)
+
+        local-time (if (has-second? xml-cal)
+                     (if frac
+                       (let [nanos (.multiply frac
+                                              1000000000M
+                                              (java.math.MathContext. 9 java.math.RoundingMode/DOWN))
+                             ;; Max allowed value for LocalTime nanos
+                             ;; is 999999999, so if we have a fraction
+                             ;; of 0.999999999999999 we want to round
+                             ;; down so as not to overflow.
+                             ]
+                         (java.time.LocalTime/of hour min sec nanos))
+                       (java.time.LocalTime/of hour min sec))
+                     (java.time.LocalTime/of hour min))]
+
+    (if (has-timezone? xml-cal)
+      (let [tz-seconds (* 60 (.getTimezone xml-cal))]
+        (java.time.OffsetTime/of local-time (java.time.ZoneOffset/ofTotalSeconds tz-seconds)))
+      local-time)))
+
+(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#time" [literal]
+  (xml-cal->local-time (.calendarValue literal)))
+
+(defn xml-cal->local-date [xml-cal]
+  (let [year (.getYear xml-cal)
+        month (.getMonth xml-cal)
+        day (.getDay xml-cal)
+        local-time (java.time.LocalDate/of year month day)]
+
+    (if (has-timezone? xml-cal)
+      (let [tz-seconds (* 60 (.getTimezone xml-cal))]
+        (pr/->OffsetDate local-time (java.time.ZoneOffset/ofTotalSeconds tz-seconds)))
+      local-time)))
+
 (defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
-  (java.sql.Time. (-> literal .calendarValue .toGregorianCalendar .getTime .getTime)))
+  (let [xml-cal (.calendarValue literal)
+        date (xml-cal->local-date xml-cal)
+        time (xml-cal->local-time xml-cal)]
+    (if (has-timezone? xml-cal)
+      (java.time.OffsetDateTime/of (:date date) (.toLocalTime time) (.getOffset time))
+      (java.time.LocalDateTime/of date time))))
 
 (defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#date" [literal]
-  (-> literal .calendarValue .toGregorianCalendar .getTime))
+  (xml-cal->local-date (.calendarValue literal)))
 
 (defmethod backend-literal->grafter-type :default [literal]
   ;; If we don't have a type conversion for it, let the RDF4j type
@@ -223,6 +281,74 @@
   (->backend-type [this]
     (LiteralImpl. (pr/raw-value this) (URIImpl. (str (pr/datatype-uri this))))))
 
+;; Dates and times
+
+(defn get-temporal-field [temporal-obj temporal-field]
+  (if (.isSupported temporal-obj temporal-field)
+    (.get temporal-obj temporal-field)
+    DatatypeConstants/FIELD_UNDEFINED))
+
+(defn- temporal-object->xml-cal [temporal-obj offset-obj]
+  (.newXMLGregorianCalendar (DatatypeFactory/newInstance)
+                            (when (.isSupported temporal-obj ChronoField/YEAR)
+                              (biginteger (get-temporal-field temporal-obj ChronoField/YEAR)))
+                            (get-temporal-field temporal-obj ChronoField/MONTH_OF_YEAR)
+                            (get-temporal-field temporal-obj ChronoField/DAY_OF_MONTH)
+                            (get-temporal-field temporal-obj ChronoField/HOUR_OF_DAY)
+                            (get-temporal-field temporal-obj ChronoField/MINUTE_OF_HOUR)
+                            (get-temporal-field temporal-obj ChronoField/SECOND_OF_MINUTE)
+
+                            (when (.isSupported temporal-obj ChronoField/NANO_OF_SECOND)
+                              (let [nano (.get temporal-obj ChronoField/NANO_OF_SECOND)]
+                                (if (zero? nano)
+                                  (bigdec nano)
+                                  (-> nano
+
+                                      bigdec
+                                      (.divide 1000000000.0M)))))
+
+                            (if offset-obj
+                              (let [tz-offset (Math/round (/ (.getTotalSeconds offset-obj) 60.0))]
+                                tz-offset)
+                              DatatypeConstants/FIELD_UNDEFINED)))
+
+(defn- build-temporal-literal [this tz]
+  (.. (SimpleValueFactory/getInstance) (createLiteral (temporal-object->xml-cal this tz))))
+
+(extend-protocol IRDF4jConverter
+
+  ;; java.util.Date
+  ;; (->grafter-type [this]
+  ;;   this)
+
+  java.time.OffsetDateTime
+  (->backend-type [this]
+    (build-temporal-literal this (.getOffset this)))
+
+  ;; java.time.ZonedDateTime
+  ;; (->backend-type [this]
+  ;;   this)
+
+  java.time.LocalDate
+  (->backend-type [this]
+    (build-temporal-literal this nil))
+
+  java.time.OffsetTime
+  (->backend-type [this]
+    (build-temporal-literal this (.getOffset this)))
+
+  java.time.LocalTime
+  (->backend-type [this]
+    (build-temporal-literal this nil))
+
+  java.time.LocalDateTime
+  (->backend-type [this]
+    (build-temporal-literal this nil))
+
+  grafter.core.OffsetDate
+  (->backend-type [this]
+    (build-temporal-literal (.date this) (.timezone this))))
+
 
 (extend-protocol IGrafterRDFType
   java.lang.Boolean
@@ -253,10 +379,6 @@
   (->grafter-type [this]
     (-> this .getID keyword))
 
-  java.util.Date
-  (->grafter-type [this]
-    this)
-
   clojure.lang.Keyword
   (->grafter-type [this]
     this)
@@ -270,6 +392,43 @@
   (->grafter-type [t]
     t))
 
+
+;; Dates and times
+
+(extend-protocol IGrafterRDFType
+
+  ;; java.util.Date
+  ;; (->grafter-type [this]
+  ;;   this)
+
+  java.time.OffsetDateTime
+  (->grafter-type [this]
+    this)
+
+  java.time.ZonedDateTime
+  (->grafter-type [this]
+    this)
+
+  java.time.LocalDate
+  (->grafter-type [this]
+    this)
+
+  java.time.LocalDateTime
+  (->grafter-type [this]
+    this)
+
+  java.time.OffsetTime
+  (->grafter-type [this]
+    this)
+
+  java.time.LocalTime
+  (->grafter-type [this]
+    this)
+
+  grafter.core.OffsetDate
+  (->grafter-type [this]
+    this))
+
 (extend-type GrafterURL
   IGrafterRDFType
   (->grafter-type [uri]
@@ -278,6 +437,8 @@
   IRDF4jConverter
   (->backend-type [uri]
     (URIImpl. (str uri))))
+
+
 
 (defn backend-quad->grafter-quad
   "Convert an RDF4j backend quad into a grafter Quad."

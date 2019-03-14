@@ -1,16 +1,22 @@
 (ns grafter.rdf4j.io-test
   (:require [clojure.test :refer :all]
+            [grafter.vocabularies.core :refer [prefixer]]
             [grafter.rdf4j.io :as sut]
             [grafter.rdf4j :refer [statements]]
             [grafter.core :refer [->Quad add literal] :as core]
             [grafter.rdf4j.templater :refer [graph]]
             [grafter.url :as url]
             [grafter.rdf4j.formats :as fmt]
-            [clojure.java.io :as io])
-  (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl]
+            [clojure.java.io :as io]
+            [grafter.core :as pr])
+  (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl SimpleValueFactory CalendarLiteral]
+           [javax.xml.datatype DatatypeFactory]
+           [java.util GregorianCalendar]
            [java.net URI]
-           [java.sql Time]
-           [java.util Date]))
+           ;;[java.sql Time]
+           ;;[java.util Date]
+           [java.time OffsetDateTime OffsetTime LocalTime LocalDate LocalDateTime ZoneOffset]
+           [grafter.core OffsetDate]))
 
 
 (deftest round-trip-numeric-types-test
@@ -31,23 +37,134 @@
         (is (= clj-val ret-val))
         (is (= klass (class clj-val))))
 
-    true           "http://www.w3.org/2001/XMLSchema#boolean" Boolean
-    (byte 10)      "http://www.w3.org/2001/XMLSchema#byte" Byte
-    (short 12)     "http://www.w3.org/2001/XMLSchema#short" Short
-    (bigdec 9)     "http://www.w3.org/2001/XMLSchema#decimal" java.math.BigDecimal
-    (double 33.33) "http://www.w3.org/2001/XMLSchema#double" Double
-    (float 23.8)   "http://www.w3.org/2001/XMLSchema#float" Float
-    10             "http://www.w3.org/2001/XMLSchema#long" Long
+      true           "http://www.w3.org/2001/XMLSchema#boolean" Boolean
+      (byte 10)      "http://www.w3.org/2001/XMLSchema#byte" Byte
+      (short 12)     "http://www.w3.org/2001/XMLSchema#short" Short
+      (bigdec 9)     "http://www.w3.org/2001/XMLSchema#decimal" java.math.BigDecimal
+      (double 33.33) "http://www.w3.org/2001/XMLSchema#double" Double
+      (float 23.8)   "http://www.w3.org/2001/XMLSchema#float" Float
+      10             "http://www.w3.org/2001/XMLSchema#long" Long
 
-    #inst "2017-10-20T22:26:28.195-00:00" "http://www.w3.org/2001/XMLSchema#dateTime" java.util.Date
+      ;; Yes this is correct according to the XSD spec. #integer is
+      ;; unbounded whereas #int is bounded
+      (bigint 3)     "http://www.w3.org/2001/XMLSchema#integer" clojure.lang.BigInt
+      (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
+      "hello"        "http://www.w3.org/2001/XMLSchema#string" String
 
-    ;; Yes this is correct according to the XSD spec. #integer is
-    ;; unbounded whereas #int is bounded
-    (bigint 3)     "http://www.w3.org/2001/XMLSchema#integer" clojure.lang.BigInt
-    (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
-    "hello"        "http://www.w3.org/2001/XMLSchema#string" String
-    (Time. (.getTime #inst "2017-11-20T10:38:22.143-00:00")) "http://www.w3.org/2001/XMLSchema#dateTime" Time
-    #inst "2017-01-01" "http://www.w3.org/2001/XMLSchema#date" Date))
+      ;; TODO
+
+      (OffsetDateTime/of (LocalDate/of 2018 11 3)
+                         (LocalTime/of 11 13 15 300)
+                         (ZoneOffset/ofHoursMinutes 4 15))
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+      OffsetDateTime
+
+      (LocalDateTime/of (LocalDate/of 2018 11 3)
+                        (LocalTime/of 11 13 15 300))
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+      LocalDateTime
+
+      (LocalDate/of 2018 11 3)
+      "http://www.w3.org/2001/XMLSchema#date"
+      LocalDate
+
+      (LocalTime/of 11 13 15 300)
+      "http://www.w3.org/2001/XMLSchema#time"
+      LocalTime))
+
+(def data (prefixer "http://grafter/data/"))
+
+(def date-local (data "date-local"))
+(def date-utc (data "date-utc"))
+(def date-offset (data "date-offset"))
+(def date-time-local (data "date-time-local"))
+(def date-time-local-with-half-second (data "date-time-local-with-half-second"))
+(def date-time-with-offset (data "date-time-with-offset"))
+(def date-time-utc (data "date-time-utc"))
+
+(def time-local (data "time-local"))
+(def time-local-with-fraction-of-second (data "time-local-with-fraction-of-second"))
+(def time-local-midnight-00 (data "time-local-midnight-00"))
+(def time-local-midnight-24 (data "time-local-midnight-24"))
+
+(def time-local-with-insane-precision (data "time-local-with-insane-precision"))
+
+(def time-utc (data "time-utc"))
+
+
+(deftest java-time-api-coercions
+  (let [test-cases (let [triples (->> (io/resource "grafter/rdf4j/dates-and-times.ttl")
+                                      statements)]
+                     (zipmap (map :s triples)
+                             (map :o triples)))]
+
+    (is (= (LocalDate/of 1970 1 1) (test-cases date-local)))
+
+    ;; We explicitly need to support zoned dates without coercing to dateTimes!
+    (is (instance? grafter.core.OffsetDate (test-cases date-utc)))
+
+    (is (= (pr/->OffsetDate (LocalDate/of 1970 1 1)
+                            (ZoneOffset/of "Z")) (test-cases date-utc)))
+
+    (is (= (pr/->OffsetDate (LocalDate/of 1970 1 1)
+                            (ZoneOffset/ofHours -5)) (test-cases date-offset)))
+
+    (is (= (LocalTime/of 13 20)
+           (test-cases time-local)))
+
+    (is (= (LocalTime/of 13 20 30 555000000)
+           (test-cases time-local-with-fraction-of-second)))
+
+    (is (= (LocalTime/of 0 0)
+           (test-cases time-local-midnight-24)
+           (test-cases time-local-midnight-00)))
+
+    (is (= (LocalTime/of 13 20 30 999999999)
+           (test-cases time-local-with-insane-precision))
+        "Truncated to 9 decimal places.  Technically this is not correct as xsd:time should be infinite/arbitrary precision")
+
+    (is (= (OffsetTime/of (LocalTime/of 13 20)
+                          (ZoneOffset/of "Z"))
+           (test-cases time-utc)))
+
+    (is (= (LocalDateTime/of 2004 4 12 13 20 0 0)
+           (test-cases date-time-local)))
+
+    (is (= (LocalDateTime/of 2004 4 12 13 20 15 500000000)
+           (test-cases date-time-local-with-half-second)))
+
+    (is (= (OffsetDateTime/of (LocalDateTime/of 2004 4 12 13 20 0 0)
+                              (ZoneOffset/of "-05:00"))
+           (test-cases date-time-with-offset)))
+
+    (is (= (OffsetDateTime/of (LocalDateTime/of 2004 4 12 13 20 0 0)
+                              (ZoneOffset/of "Z"))
+           (test-cases date-time-utc)))))
+
+(deftest round-trip-times
+  (testing "Times, Dates and Date Times round trip"
+    ;; NOTE this is not purely lossless.  Some types coerce with some
+    ;; truncation; for example we do not support infinite precision on
+    ;; times.
+    ;;
+    ;; So there is an implicit normalisation step that happens by
+    ;; loading data.  However data that is loaded and written through
+    ;; grafter after the implicit normalisation should round trip.
+    (let [triples (->> (io/resource "grafter/rdf4j/dates-and-times.ttl")
+                       statements)
+
+          loaded-cases (zipmap (map :s triples)
+                               (map :o triples))]
+
+      (doseq [[uri loaded-test-case] loaded-cases]
+        (is (= (grafter.core/->grafter-type loaded-test-case)
+               loaded-test-case)
+            "Grafter types all convert to themselves")
+
+
+        (is (= (core/->grafter-type (sut/->backend-type loaded-test-case))
+               loaded-test-case)
+            uri)))))
 
 (deftest literal-datatype->type-special-floating-values-test
   (is (Double/isNaN (sut/backend-literal->grafter-type (literal "NaN" "http://www.w3.org/2001/XMLSchema#double"))))
