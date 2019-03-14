@@ -34,7 +34,7 @@
                  [org.eclipse.rdf4j/rdf4j-repository-manager "2.5.0"]
 
                  [grafter/url "0.2.5"]
-                 [grafter/vocabularies "0.2.5"]
+                 [grafter/vocabularies "0.2.6"]
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.5"]]
 
