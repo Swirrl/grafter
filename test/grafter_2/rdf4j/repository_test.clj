@@ -1,12 +1,12 @@
-(ns grafter.rdf4j.repository-test
-  (:require [grafter.rdf4j.templater :refer [graph]]
+(ns grafter-2.rdf4j.repository-test
+  (:require [grafter-2.rdf4j.templater :refer [graph]]
             [clojure.java.io :refer [file] :as io]
-            [grafter.rdf4j.io :as rio]
-            [grafter.rdf4j.repository :as repo :refer :all]
-            [grafter.rdf4j :as rdf4j]
-            [grafter.core :as core]
+            [grafter-2.rdf4j.io :as rio]
+            [grafter-2.rdf4j.repository :as repo :refer :all]
+            [grafter-2.rdf4j :as rdf4j]
+            [grafter-2.rdf.protocols :as core]
             [grafter.url :refer [->GrafterURL]]
-            [grafter.rdf4j.formats :refer :all]
+            [grafter-2.rdf4j.formats :refer :all]
             [clojure.test :refer :all])
   (:import org.eclipse.rdf4j.model.impl.GraphImpl
            org.eclipse.rdf4j.sail.memory.MemoryStore

@@ -1,6 +1,6 @@
 (ns ^{:deprecated "0.12.1"}
     grafter.rdf.protocols
-  "DEPRECATED: Use grafter.core instead.  This namespace contains the old
+  "DEPRECATED: Use grafter-2.rdf.protocols instead.  This namespace contains the old
   sesame implementation.
 
   Grafter protocols and types for RDF processing"

@@ -1,5 +1,5 @@
 (ns ^{:added "0.12.1"}
-    grafter.core
+    grafter-2.rdf.protocols
   "Abstract functions for interacting with RDF & RDF backends, such as
   RDF4j."
   (:require [grafter.vocabularies.xsd :refer :all]
@@ -59,7 +59,7 @@
 
 (defprotocol ITransactable
   "Low level protocol for transactions support.  Most users probably
-  want to use grafter.rdf.sesame/with-transaction"
+  want to use grafter-2.rdf.sesame/with-transaction"
   (begin [repo] "Start a transaction")
   (commit [repo] "Commit a transaction")
   (rollback [repo] "Rollback a transaction"))
@@ -363,7 +363,7 @@
 
 (defn add-statement
   "Add an RDF statement to the target datasink.  Datasinks must
-  implement `grafter.core/ITripleWriteable`.
+  implement `grafter-2.rdf.protocols/ITripleWriteable`.
 
   Datasinks include RDF4j RDF repositories, connections and anything
   built by rdf-writer.
@@ -494,5 +494,5 @@
   The `:base-uri` option can be supplied to automatically re`@base`
   URI's on a new prefix when reading."
   [this & {:keys [format buffer-size base-uri] :as options}]
-  (throw (ex-info "Moved function definition.  Please use grafter.rdf4j/statements instead" {}))
+  (throw (ex-info "Moved function definition.  Please use grafter-2.rdf4j/statements instead" {}))
   #_(to-statements this options))

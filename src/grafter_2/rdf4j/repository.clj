@@ -1,14 +1,13 @@
 (ns ^{:added "0.12.1"}
-    grafter.rdf4j.repository
+    grafter-2.rdf4j.repository
   "Functions for constructing and working with various RDF4j repositories."
   (:require [clojure.java.io :as io]
             [me.raynes.fs :as fs]
-            [grafter.core :as pr]
-            [grafter.rdf4j.io :as rio]
-            [grafter.rdf4j :as rdf4j]
-            [clojure.string :as string]
-            [grafter.rdf4j.formats :as format])
-  (:import (grafter.core IStatement Quad)
+            [grafter-2.rdf.protocols :as pr]
+            [grafter-2.rdf4j.io :as rio]
+            [grafter-2.rdf4j :as rdf4j]
+            [grafter-2.rdf4j.formats :as format])
+  (:import (grafter_2.rdf.protocols IStatement Quad)
            (java.io File)
            (java.net MalformedURLException URL)
            (java.util GregorianCalendar)
@@ -248,7 +247,7 @@
   "adds the specified data to a sparql repository.  if the first
   argument is a repository that object is used, otherwise the first
   and remaining arguments are assumed to be
-  grafter.core/ITripleWriteable and are loaded into a sesame
+  grafter-2.core/ITripleWriteable and are loaded into a sesame
   memorystore sail-repo.
 
   this function is most useful for loading fixture data from files e.g.
@@ -619,7 +618,7 @@
 
 (extend-type RepositoryConnection
   pr/ITripleReadable
-  (pr/to-statements [this {:keys [:grafter.repository/infer] :or {infer true}}]
+  (pr/to-statements [this {:keys [:grafter-2.repository/infer] :or {infer true}}]
     (let [f (fn next-item [i]
               (when (.hasNext i)
                 (let [v (.next i)]

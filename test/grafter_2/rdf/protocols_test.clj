@@ -1,7 +1,7 @@
-(ns grafter.core-test
-  (:require [grafter.core :refer :all]
-            [grafter.rdf4j :as rdf4j]
-            [grafter.rdf4j.repository :as repo]
+(ns grafter-2.rdf.protocols-test
+  (:require [grafter-2.rdf.protocols :refer :all]
+            [grafter-2.rdf4j :as rdf4j]
+            [grafter-2.rdf4j.repository :as repo]
             [clojure.test :refer :all])
   (:import [java.net URI]))
 

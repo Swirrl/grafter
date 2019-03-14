@@ -1,6 +1,6 @@
-(ns grafter.rdf4j
-  (:require [grafter.rdf4j.io :as io]
-            [grafter.core :as core]))
+(ns grafter-2.rdf4j
+  (:require [grafter-2.rdf4j.io :as io]
+            [grafter-2.rdf.protocols :as core]))
 
 (defn ^:no-doc statements
   "Attempts to coerce an arbitrary source of RDF statements into a

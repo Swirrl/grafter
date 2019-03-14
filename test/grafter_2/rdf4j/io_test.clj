@@ -1,14 +1,14 @@
-(ns grafter.rdf4j.io-test
+(ns grafter-2.rdf4j.io-test
   (:require [clojure.test :refer :all]
             [grafter.vocabularies.core :refer [prefixer]]
-            [grafter.rdf4j.io :as sut]
-            [grafter.rdf4j :refer [statements]]
-            [grafter.core :refer [->Quad add literal] :as core]
-            [grafter.rdf4j.templater :refer [graph]]
+            [grafter-2.rdf4j.io :as sut]
+            [grafter-2.rdf4j :refer [statements]]
+            [grafter-2.rdf.protocols :refer [->Quad add literal] :as core]
+            [grafter-2.rdf4j.templater :refer [graph]]
             [grafter.url :as url]
-            [grafter.rdf4j.formats :as fmt]
+            [grafter-2.rdf4j.formats :as fmt]
             [clojure.java.io :as io]
-            [grafter.core :as pr])
+            [grafter-2.rdf.protocols :as pr])
   (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl SimpleValueFactory CalendarLiteral]
            [javax.xml.datatype DatatypeFactory]
            [java.util GregorianCalendar]
@@ -16,7 +16,7 @@
            ;;[java.sql Time]
            ;;[java.util Date]
            [java.time OffsetDateTime OffsetTime LocalTime LocalDate LocalDateTime ZoneOffset]
-           [grafter.core OffsetDate]))
+           [grafter_2.rdf.protocols OffsetDate]))
 
 
 (deftest round-trip-numeric-types-test
@@ -101,7 +101,7 @@
     (is (= (LocalDate/of 1970 1 1) (test-cases date-local)))
 
     ;; We explicitly need to support zoned dates without coercing to dateTimes!
-    (is (instance? grafter.core.OffsetDate (test-cases date-utc)))
+    (is (instance? grafter_2.rdf.protocols.OffsetDate (test-cases date-utc)))
 
     (is (= (pr/->OffsetDate (LocalDate/of 1970 1 1)
                             (ZoneOffset/of "Z")) (test-cases date-utc)))
@@ -157,7 +157,7 @@
                                (map :o triples))]
 
       (doseq [[uri loaded-test-case] loaded-cases]
-        (is (= (grafter.core/->grafter-type loaded-test-case)
+        (is (= (grafter-2.rdf.protocols/->grafter-type loaded-test-case)
                loaded-test-case)
             "Grafter types all convert to themselves")
 

@@ -1,6 +1,6 @@
 (ns ^{:deprecated "0.12.1"}
     grafter.rdf
-  "DEPRECATED: Use grafter.core instead, this namespace contains the
+  "DEPRECATED: Use grafter-2.rdf.protocols instead, this namespace contains the
   old sesame implementation.
 
   Functions and macros for creating RDF data.  Includes a
@@ -10,7 +10,7 @@
 
 ;; Force loading the required protocol implementations.  Keep separate from ns
 ;; definition to prevent ns refactoring tools cleaning it away.
-(require '[grafter.rdf4j.io])
+(require '[grafter.rdf.io])
 
 (import-vars
  [grafter.rdf.protocols

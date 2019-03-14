@@ -1,5 +1,5 @@
 (ns ^{:added "0.12.1"}
-    grafter.rdf4j.formats
+    grafter-2.rdf4j.formats
   "Symbols used to specify different Linked Data Serializations.
 
   Includes functions to coerce formats from clojure keywords / file

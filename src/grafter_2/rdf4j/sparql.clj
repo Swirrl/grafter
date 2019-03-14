@@ -1,9 +1,9 @@
 (ns ^{:added "0.12.1"}
-    grafter.rdf4j.sparql
+    grafter-2.rdf4j.sparql
   "Functions for executing SPARQL queries with grafter RDF
   repositories, that support basic binding replacement etc."
-  (:require [grafter.rdf4j.repository  :as repo :refer [sparql-repo ->connection]]
-            [grafter.rdf4j.io :refer [->backend-type] :as rio]
+  (:require [grafter-2.rdf4j.repository  :as repo :refer [sparql-repo ->connection]]
+            [grafter-2.rdf4j.io :refer [->backend-type] :as rio]
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]
             [clojure.java.io :as io])
@@ -146,7 +146,7 @@
 
   nil's inside the VALUES row's themselves will raise an error.
 
-  The clojure keyword :grafter.rdf.sparql/undef can be used to
+  The clojure keyword :grafter-2.rdf.sparql/undef can be used to
   represent a SPARQL UNDEF, in the bound VALUES data.
 
   The final argument `repo` should be the repository to query.

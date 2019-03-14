@@ -5,7 +5,7 @@
             [grafter.rdf.protocols :as pr])
   (:import [org.openrdf.model.impl LiteralImpl BNodeImpl]))
 
-(require 'grafter.rdf4j.io) ;; force loading of rdf4j backend
+
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])

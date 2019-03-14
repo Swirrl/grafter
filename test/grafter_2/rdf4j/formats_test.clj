@@ -1,5 +1,5 @@
-(ns grafter.rdf4j.formats-test
-  (:require [grafter.rdf4j.formats :as fmt]
+g(ns grafter-2.rdf4j.formats-test
+  (:require [grafter-2.rdf4j.formats :as fmt]
             [clojure.test :refer :all]
             [clojure.java.io :as io])
   (:import [org.eclipse.rdf4j.rio RDFFormat]

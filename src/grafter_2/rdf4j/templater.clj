@@ -1,8 +1,7 @@
-(ns ^{:deprecated "0.12.0"}
-    grafter.rdf4j.templater
+(ns grafter-2.rdf4j.templater
   "Functions for converting tree's of turtle-like data into Linked
   Data statements (triples/quads)."
-  (:require [grafter.core :as rdf]
+  (:require [grafter-2.rdf.protocols :as rdf]
             [grafter.url :as url]
             )
   (:import [org.eclipse.rdf4j.model URI]))
@@ -63,13 +62,13 @@
 
 (defn triplify
   "Takes many turtle like structures and converts them to a lazy-seq
-  of grafter.rdf.protocols.IStatement's.  Users should generally tend
+  of grafter-2.rdf.protocols.IStatement's.  Users should generally tend
   to prefer to using graph to triplify."
   [& subjects]
   (mapcat expand-subj subjects))
 
 (defn- quad
-  "Build a quad from a graph and a grafter.rdf.protocols/Triple."
+  "Build a quad from a graph and a grafter-2.rdf.protocols/Triple."
   [graph triple]
   (rdf/->Quad (rdf/subject triple)
           (rdf/predicate triple)

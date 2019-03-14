@@ -1,15 +1,15 @@
 (ns ^{:added "0.12.1"}
- grafter.rdf4j.io
+ grafter-2.rdf4j.io
   "Functions & Protocols for serializing Grafter Statements to (and from)
   any Linked Data format supported by RDF4j."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [grafter.core :as pr :refer [->grafter-type ->Quad IGrafterRDFType]]
-            [grafter.rdf4j.formats :as fmt]
+            [grafter-2.rdf.protocols :as pr :refer [->grafter-type ->Quad IGrafterRDFType]]
+            [grafter-2.rdf4j.formats :as fmt]
             [grafter.url
              :refer
              [->grafter-url ->java-uri ->url IURIable ToGrafterURL]])
-  (:import [grafter.core IStatement LangString OffsetDate Quad RDFLiteral]
+  (:import [grafter_2.rdf.protocols IStatement LangString OffsetDate Quad RDFLiteral]
            grafter.url.GrafterURL
            java.io.File
            [java.net MalformedURLException URL]
@@ -345,7 +345,7 @@
   (->backend-type [this]
     (build-temporal-literal this nil))
 
-  grafter.core.OffsetDate
+  OffsetDate
   (->backend-type [this]
     (build-temporal-literal (.date this) (.timezone this))))
 
@@ -425,7 +425,7 @@
   (->grafter-type [this]
     this)
 
-  grafter.core.OffsetDate
+  OffsetDate
   (->grafter-type [this]
     this))
 
@@ -491,7 +491,7 @@
   Use this to capture the intention to write to a location in a
   specific RDF format, e.g.
 
-  (grafter.rdf/add (rdf-writer \"/tmp/foo.nt\" :format :nt) quads)
+  (grafter-2.rdf/add (rdf-writer \"/tmp/foo.nt\" :format :nt) quads)
 
   Accepts also the following optional options:
 
