@@ -24,6 +24,12 @@
                  [org.eclipse.rdf4j/rdf4j-rio-rdfxml "2.5.0"]
                  [org.eclipse.rdf4j/rdf4j-rio-trig "2.5.0"]
                  [org.eclipse.rdf4j/rdf4j-rio-trix "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-api "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqljson "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-text "2.5.0"]
 
                  [org.eclipse.rdf4j/rdf4j-repository-api "2.5.0"]
                  [org.eclipse.rdf4j/rdf4j-repository-http "2.5.0"]
