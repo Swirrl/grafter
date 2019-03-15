@@ -5,7 +5,6 @@
             [me.raynes.fs :as fs]
             [grafter-2.rdf.protocols :as pr]
             [grafter-2.rdf4j.io :as rio]
-            [grafter-2.rdf4j :as rdf4j]
             [grafter-2.rdf4j.formats :as format])
   (:import (grafter_2.rdf.protocols IStatement Quad)
            (java.io File)
@@ -241,7 +240,7 @@
 (defn- statements-with-inferred-format [res]
   (if (seq? res)
     res
-    (rdf4j/statements res :format (format/->rdf-format (fs/extension (str res))))))
+    (rio/statements res :format (format/->rdf-format (fs/extension (str res))))))
 
 (defn fixture-repo
   "adds the specified data to a sparql repository.  if the first

@@ -1,6 +1,6 @@
 (ns grafter-2.rdf.protocols-test
   (:require [grafter-2.rdf.protocols :refer :all]
-            [grafter-2.rdf4j :as rdf4j]
+            [grafter-2.rdf4j.io :as rio]
             [grafter-2.rdf4j.repository :as repo]
             [clojure.test :refer :all])
   (:import [java.net URI]))
@@ -55,20 +55,20 @@
     (testing "Adds all triples"
       (with-open [repo (repo/->connection (repo/sail-repo))]
         (add-batched repo triples)
-        (is (= (set triples) (set (rdf4j/statements repo))))))
+        (is (= (set triples) (set (rio/statements repo))))))
 
     (testing "Adds all triples with graph"
       (let [expected-quads (map #(assoc % :c graph) triples)]
         (with-open [repo (repo/->connection (repo/sail-repo))]
           (add-batched repo graph triples)
-          (is (= (set expected-quads) (set (rdf4j/statements repo)))))))
+          (is (= (set expected-quads) (set (rio/statements repo)))))))
 
     (testing "Adds all triples in sized batches"
       (with-open [repo (repo/->connection (repo/sail-repo))]
         (let [batch-sizes (atom [])
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
           (add-batched recording-repo triples 3)
-          (is (= (set triples) (set (rdf4j/statements repo))))
+          (is (= (set triples) (set (rio/statements repo))))
           (is (= [3 3 3 1] @batch-sizes)))))
 
     (testing "Adds all triples with graph in sized batches"
@@ -77,7 +77,7 @@
               batch-sizes (atom [])
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
           (add-batched recording-repo graph triples 5)
-          (is (= (set expected-quads) (set (rdf4j/statements repo))))
+          (is (= (set expected-quads) (set (rio/statements repo))))
           (is (= [5 5] @batch-sizes)))))))
 
 (defn- triple->quad [graph triple]
@@ -92,13 +92,13 @@
       (with-open [repo (repo/->connection (repo/sail-repo))]
         (add repo initial-triples)
         (delete-batched repo to-delete)
-        (is (= (set to-keep) (set (rdf4j/statements repo))))))
+        (is (= (set to-keep) (set (rio/statements repo))))))
 
     (testing "Deletes all triples with graph"
       (with-open [repo (repo/->connection (repo/sail-repo))]
         (add repo (make-quads initial-triples))
         (delete-batched repo graph to-delete)
-        (is (= (set (make-quads to-keep)) (set (rdf4j/statements repo))))))
+        (is (= (set (make-quads to-keep)) (set (rio/statements repo))))))
 
     (testing "Deletes all triples in sized batches"
       (with-open [repo (repo/->connection (repo/sail-repo))]
@@ -106,7 +106,7 @@
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
           (add repo initial-triples)
           (delete-batched recording-repo to-delete 4)
-          (is (= (set to-keep) (set (rdf4j/statements repo))))
+          (is (= (set to-keep) (set (rio/statements repo))))
           (is (= [4 2] @batch-sizes)))))
 
     (testing "Deletes all triples with graph in sized batches"
@@ -115,5 +115,5 @@
               recording-repo (->BatchSizeRecordingRepository repo batch-sizes)]
           (add repo (make-quads initial-triples))
           (delete-batched recording-repo graph to-delete 4)
-          (is (= (set (make-quads to-keep)) (set (rdf4j/statements repo))))
+          (is (= (set (make-quads to-keep)) (set (rio/statements repo))))
           (is (= [4 2] @batch-sizes)))))))

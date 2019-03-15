@@ -1,18 +1,14 @@
 (ns grafter-2.rdf4j.repository-test
-  (:require [grafter-2.rdf4j.templater :refer [graph]]
-            [clojure.java.io :refer [file] :as io]
+  (:require [clojure.java.io :as io :refer [file]]
+            [clojure.test :refer :all]
+            [grafter-2.rdf.protocols :as core]
             [grafter-2.rdf4j.io :as rio]
             [grafter-2.rdf4j.repository :as repo :refer :all]
-            [grafter-2.rdf4j :as rdf4j]
-            [grafter-2.rdf.protocols :as core]
-            [grafter.url :refer [->GrafterURL]]
-            [grafter-2.rdf4j.formats :refer :all]
-            [clojure.test :refer :all])
-  (:import org.eclipse.rdf4j.model.impl.GraphImpl
-           org.eclipse.rdf4j.sail.memory.MemoryStore
-           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
-           java.net.URI
-           java.net.URL))
+            [grafter-2.rdf4j.templater :refer [graph]]
+            [grafter.url :refer [->GrafterURL]])
+  (:import [java.net URI URL]
+           org.eclipse.rdf4j.model.impl.GraphImpl
+           org.eclipse.rdf4j.repository.sparql.SPARQLRepository))
 
 (def quad-fixture-file-path (io/resource "grafter/rdf/rdf-types.trig"))
 
@@ -27,7 +23,7 @@
     (core/add-statement graph "http://foo" (core/->Quad s p o nil))
 
     (is (= (core/->Quad s p o g)
-           (first (rdf4j/statements graph))))))
+           (first (rio/statements graph))))))
 
 (deftest with-transaction-test
   (with-open [test-db (repo/->connection (sail-repo))]
@@ -55,7 +51,7 @@
   ([file]
    (let [db (sail-repo)]
      (with-open [conn (->connection db)]
-       (core/add conn (rdf4j/statements file)))
+       (core/add conn (rio/statements file)))
 
      db)))
 
@@ -82,20 +78,20 @@
     (testing "roundtripping ttl file"
       (let [file triple-fixture-file-path]
         (with-open [conn (->connection (load-rdf-types-data file))]
-          (is (= (set (rdf4j/statements conn))
-                 (set (rdf4j/statements file)))))))
+          (is (= (set (rio/statements conn))
+                 (set (rio/statements file)))))))
 
     (testing "roundtripping trig file"
       (let [file quad-fixture-file-path]
         (with-open [conn (->connection (load-rdf-types-data file))]
-          (is (= (set (rdf4j/statements conn))
-                 (set (rdf4j/statements file)))))))))
+          (is (= (set (rio/statements conn))
+                 (set (rio/statements file)))))))))
 
 (deftest delete-statement-test
   (testing "arity 2 delete"
     (are [initial-data delete-form]
         (with-open [test-db (->connection (load-rdf-types-data initial-data))]
-          (let [quads-to-delete (rdf4j/statements test-db)]
+          (let [quads-to-delete (rio/statements test-db)]
             delete-form
             (is (not (query test-db "ASK { ?s ?p ?o } LIMIT 1"))
                 "Should be deleted")))
@@ -110,15 +106,15 @@
         (-> conn
             (core/add
              (URL. "http://a")
-             (rdf4j/statements triple-fixture-file-path))
+             (rio/statements triple-fixture-file-path))
             (core/add
              (URL. "http://b")
-             (rdf4j/statements triple-fixture-file-path))))
+             (rio/statements triple-fixture-file-path))))
 
       (with-open [test-db (->connection repo)]
         (core/delete test-db
                    (URL. "http://a")
-                   (rdf4j/statements triple-fixture-file-path))
+                   (rio/statements triple-fixture-file-path))
         (is (not (query test-db "ASK { GRAPH <http://a> { ?s ?p ?o } } LIMIT 1"))
             "Should be deleted")
 
@@ -146,13 +142,13 @@
   (testing "Calling with multiple sets of quads appends them all into the repo"
     (with-open [conn (->connection (fixture-repo (io/resource "grafter/rdf4j/repository/quads.nq")
                                                  (io/resource "grafter/rdf4j/repository/quads.trig")))]
-      (is (= 2 (count (rdf4j/statements conn)))))))
+      (is (= 2 (count (rio/statements conn)))))))
 
 (deftest resource-repo-test
   (testing "Calling with multiple sets of quads appends them all into the repo"
     (with-open [conn (->connection (resource-repo "grafter/rdf4j/repository/quads.nq"
                                                   "grafter/rdf4j/repository/quads.trig"))]
-      (is (= 2 (count (rdf4j/statements conn)))))))
+      (is (= 2 (count (rio/statements conn)))))))
 
 (deftest sail-repo-test
   (is (instance? org.eclipse.rdf4j.repository.Repository (sail-repo)))
@@ -163,8 +159,8 @@
 (deftest rdfs-inferencer-test
   (let [r (sail-repo (rdfs-inferencer (memory-store)))]
     (with-open [c (->connection r)]
-      (core/add c (rdf4j/statements (io/resource "grafter/rdf4j/repository/rdfs/foaf.ttl"))) ;; add foaf vocab for reasoning...
-      (core/add c (rdf4j/statements (io/resource "grafter/rdf4j/repository/rdfs/rdfs-inferencing.trig")))) ;; add data to reason about...
+      (core/add c (rio/statements (io/resource "grafter/rdf4j/repository/rdfs/foaf.ttl"))) ;; add foaf vocab for reasoning...
+      (core/add c (rio/statements (io/resource "grafter/rdf4j/repository/rdfs/rdfs-inferencing.trig")))) ;; add data to reason about...
 
     (let [prefixes {"" "http://www.grafter.org/example#"
                     "foaf" "http://xmlns.com/foaf/0.1/"
@@ -191,5 +187,5 @@
                              "schema" "http://schema.org/")))
 
     (let [foaf (rio/rdf-writer "resources/foaf.ttl" :format :ttl :prefixes prefixes)]
-      (core/add foaf (rdf4j/statements "http://xmlns.com/foaf/spec/index.rdf" :format :rdf))))
+      (core/add foaf (rio/statements "http://xmlns.com/foaf/spec/index.rdf" :format :rdf))))
   )

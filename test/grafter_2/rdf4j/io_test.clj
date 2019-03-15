@@ -1,8 +1,7 @@
 (ns grafter-2.rdf4j.io-test
   (:require [clojure.test :refer :all]
             [grafter.vocabularies.core :refer [prefixer]]
-            [grafter-2.rdf4j.io :as sut]
-            [grafter-2.rdf4j :refer [statements]]
+            [grafter-2.rdf4j.io :as sut :refer [statements]]
             [grafter-2.rdf.protocols :refer [->Quad add literal] :as core]
             [grafter-2.rdf4j.templater :refer [graph]]
             [grafter.url :as url]

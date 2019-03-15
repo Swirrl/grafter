@@ -1,4 +1,4 @@
-g(ns grafter-2.rdf4j.formats-test
+(ns grafter-2.rdf4j.formats-test
   (:require [grafter-2.rdf4j.formats :as fmt]
             [clojure.test :refer :all]
             [clojure.java.io :as io])

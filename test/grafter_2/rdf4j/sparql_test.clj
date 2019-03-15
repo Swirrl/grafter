@@ -1,13 +1,10 @@
 (ns grafter-2.rdf4j.sparql-test
-  (:require [grafter-2.rdf4j.sparql :refer :all :as sparql]
-            [clojure.test :refer :all]
-            [clojure.java.io :refer [resource]]
-            [grafter-2.rdf4j.repository :as repo]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io :refer [resource]]
             [clojure.string :as str]
-            [grafter-2.rdf4j.io :as rio]
+            [clojure.test :refer :all]
             [grafter-2.rdf.protocols :as rdf]
-            [grafter-2.rdf4j :as rdf4j])
+            [grafter-2.rdf4j.repository :as repo]
+            [grafter-2.rdf4j.sparql :as sparql :refer :all])
   (:import java.net.URI))
 
 (deftest pre-process-limit-clauses-test
