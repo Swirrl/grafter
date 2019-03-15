@@ -694,7 +694,7 @@
   org.eclipse.rdf4j.model.Graph
   (->-rdf4j-uri [this] (URIImpl. (str this))))
 
-(defn ^:no-doc statements
+(defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a
   sequence of grafter Statements, using the RDF4j backend.
 
