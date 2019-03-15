@@ -103,7 +103,7 @@
   (let [tz (.getTimezone xml-cal)]
     (not= tz DatatypeConstants/FIELD_UNDEFINED)))
 
-(defn xml-cal->local-time [xml-cal]
+(defn- xml-cal->local-time [xml-cal]
   (let [hour (let [h (.getHour xml-cal)]
                (if (= 24 h)
                  0
@@ -134,7 +134,7 @@
 (defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#time" [literal]
   (xml-cal->local-time (.calendarValue literal)))
 
-(defn xml-cal->local-date [xml-cal]
+(defn- xml-cal->local-date [xml-cal]
   (let [year (.getYear xml-cal)
         month (.getMonth xml-cal)
         day (.getDay xml-cal)
@@ -280,7 +280,7 @@
 
 ;; Dates and times
 
-(defn get-temporal-field [temporal-obj temporal-field]
+(defn- get-temporal-field [temporal-obj temporal-field]
   (if (.isSupported temporal-obj temporal-field)
     (.get temporal-obj temporal-field)
     DatatypeConstants/FIELD_UNDEFINED))
