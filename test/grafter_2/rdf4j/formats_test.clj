@@ -1,9 +1,9 @@
 (ns grafter-2.rdf4j.formats-test
-  (:require [grafter-2.rdf4j.formats :as fmt]
+  (:require [clojure.java.io :as io]
             [clojure.test :refer :all]
-            [clojure.java.io :as io])
-  (:import [org.eclipse.rdf4j.rio RDFFormat]
-           [java.net URI URL]))
+            [grafter-2.rdf4j.formats :as fmt])
+  (:import [java.net URI URL]
+           org.eclipse.rdf4j.rio.RDFFormat))
 
 (deftest mimetype->rdf-format-test
   (testing "mimetype->rdf-format"

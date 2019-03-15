@@ -1,26 +1,19 @@
 (ns grafter-2.rdf4j.io-test
-  (:require [clojure.test :refer :all]
-            [grafter.vocabularies.core :refer [prefixer]]
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer :all]
+            [grafter-2.rdf.protocols :as pr :refer [->Quad add literal]]
             [grafter-2.rdf4j.io :as sut :refer [statements]]
-            [grafter-2.rdf.protocols :refer [->Quad add literal] :as core]
             [grafter-2.rdf4j.templater :refer [graph]]
             [grafter.url :as url]
-            [grafter-2.rdf4j.formats :as fmt]
-            [clojure.java.io :as io]
-            [grafter-2.rdf.protocols :as pr])
-  (:import [org.eclipse.rdf4j.model.impl LiteralImpl URIImpl ContextStatementImpl SimpleValueFactory CalendarLiteral]
-           [javax.xml.datatype DatatypeFactory]
-           [java.util GregorianCalendar]
-           [java.net URI]
-           ;;[java.sql Time]
-           ;;[java.util Date]
-           [java.time OffsetDateTime OffsetTime LocalTime LocalDate LocalDateTime ZoneOffset]
-           [grafter_2.rdf.protocols OffsetDate]))
-
+            [grafter.vocabularies.core :refer [prefixer]])
+  (:import grafter_2.rdf.protocols.OffsetDate
+           java.net.URI
+           [java.time LocalDate LocalDateTime LocalTime OffsetDateTime OffsetTime ZoneOffset]
+           [org.eclipse.rdf4j.model.impl ContextStatementImpl LiteralImpl URIImpl]))
 
 (deftest round-trip-numeric-types-test
   (are [xsd type number]
-      (is (= number (core/raw-value (sut/->backend-type (core/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
+      (is (= number (pr/raw-value (sut/->backend-type (pr/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
 
     "http://www.w3.org/2001/XMLSchema#byte" Byte "10"
     "http://www.w3.org/2001/XMLSchema#short" Short "10"
@@ -161,7 +154,7 @@
             "Grafter types all convert to themselves")
 
 
-        (is (= (core/->grafter-type (sut/->backend-type loaded-test-case))
+        (is (= (pr/->grafter-type (sut/->backend-type loaded-test-case))
                loaded-test-case)
             uri)))))
 
@@ -178,12 +171,12 @@
 
 
 (deftest language-string-test
-  (let [bonsoir (core/language "Bonsoir Mademoiselle" :fr)]
+  (let [bonsoir (pr/language "Bonsoir Mademoiselle" :fr)]
     (is (= bonsoir (sut/backend-literal->grafter-type bonsoir)))
-    (is (= bonsoir (core/->grafter-type (sut/->backend-type bonsoir))))))
+    (is (= bonsoir (pr/->grafter-type (sut/->backend-type bonsoir))))))
 
 (deftest literal-test
-  (is (instance? LiteralImpl (sut/->backend-type (core/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
+  (is (instance? LiteralImpl (sut/->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
 (deftest round-trip-quad-test
   (testing "round trips"

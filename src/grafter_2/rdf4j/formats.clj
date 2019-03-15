@@ -1,5 +1,5 @@
 (ns ^{:added "0.12.1"}
-    grafter-2.rdf4j.formats
+ grafter-2.rdf4j.formats
   "Symbols used to specify different Linked Data Serializations.
 
   Includes functions to coerce formats from clojure keywords / file
@@ -17,10 +17,9 @@
   :trig
   :trix
   :ttl"
-  (:require [clojure.string :as string]
-            [grafter.url :as url]
+  (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.java.io :as io])
+            [grafter.url :as url])
   (:import [org.eclipse.rdf4j.rio RDFFormat RDFParser RDFParserFactory Rio]
            org.eclipse.rdf4j.rio.binary.BinaryRDFParserFactory
            org.eclipse.rdf4j.rio.jsonld.JSONLDParserFactory
@@ -40,7 +39,7 @@
   NOTE: the ->rdf-format function also uses this, and supports both
   mime-types and file extensions." (fn [s]
                                      (if (string? s)
-                                       (string/trim (first (string/split s #";")))
+                                       (str/trim (first (str/split s #";")))
                                        s)))
 
 (defmethod mimetype->rdf-format :default [fmt]

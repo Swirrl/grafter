@@ -1,5 +1,5 @@
 (ns ^{:added "0.12.1"}
-    grafter-2.rdf4j.repository.registry
+ grafter-2.rdf4j.repository.registry
   "Namespace containing functions to manage the global registry of
   Sesame parsers.
 
@@ -12,14 +12,9 @@
 
   Be warned though, these registries apply globally (process wide), so
   altering them may have unintended consequences."
-  (:require [clojure.string :as str])
-  (:import [java.nio.charset Charset]
-           [org.eclipse.rdf4j.rio RDFParserRegistry RDFFormat]
-           [org.eclipse.rdf4j.query.resultio TupleQueryResultFormat BooleanQueryResultFormat
-            TupleQueryResultParserRegistry
-            BooleanQueryResultParserRegistry]
-           [org.eclipse.rdf4j.query.resultio.text.csv SPARQLResultsCSVParserFactory]))
-
+  (:import [org.eclipse.rdf4j.query.resultio BooleanQueryResultParserRegistry TupleQueryResultParserRegistry]
+           org.eclipse.rdf4j.query.resultio.text.csv.SPARQLResultsCSVParserFactory
+           org.eclipse.rdf4j.rio.RDFParserRegistry))
 
 (defn parser-registries
   "Returns a map of the low level sesame parser registries associated

@@ -1,9 +1,9 @@
 (ns grafter-2.rdf.protocols-test
-  (:require [grafter-2.rdf.protocols :refer :all]
+  (:require [clojure.test :refer :all]
+            [grafter-2.rdf.protocols :refer :all]
             [grafter-2.rdf4j.io :as rio]
-            [grafter-2.rdf4j.repository :as repo]
-            [clojure.test :refer :all])
-  (:import [java.net URI]))
+            [grafter-2.rdf4j.repository :as repo])
+  (:import java.net.URI))
 
 (deftest triple=-test
   (testing "triple= quads"

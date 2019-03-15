@@ -1,38 +1,25 @@
 (ns ^{:added "0.12.1"}
-    grafter-2.rdf4j.repository
+ grafter-2.rdf4j.repository
   "Functions for constructing and working with various RDF4j repositories."
   (:require [clojure.java.io :as io]
-            [me.raynes.fs :as fs]
             [grafter-2.rdf.protocols :as pr]
+            [grafter-2.rdf4j.formats :as format]
             [grafter-2.rdf4j.io :as rio]
-            [grafter-2.rdf4j.formats :as format])
-  (:import (grafter_2.rdf.protocols IStatement Quad)
-           (java.io File)
-           (java.net MalformedURLException URL)
-           (java.util GregorianCalendar)
-           (javax.xml.datatype DatatypeFactory)
-           (org.eclipse.rdf4j.model BNode Literal Resource Statement URI
-                              Value Graph)
-           (org.eclipse.rdf4j.query BooleanQuery GraphQuery QueryLanguage
-                              Query TupleQuery Update BindingSet)
-           (org.eclipse.rdf4j.model.impl BNodeImpl BooleanLiteralImpl
-                                         ContextStatementImpl
-                                   IntegerLiteral LiteralImpl
-                                   NumericLiteral StatementImpl
-                                   URIImpl)
-           (org.eclipse.rdf4j.query.impl DatasetImpl)
-           (org.eclipse.rdf4j.repository Repository RepositoryConnection)
-           (org.eclipse.rdf4j.repository.http HTTPRepository)
-           (org.eclipse.rdf4j.repository.sail SailRepository)
-           (org.eclipse.rdf4j.repository.sparql SPARQLRepository)
-           (org.eclipse.rdf4j.sail Sail)
-           (org.eclipse.rdf4j.sail.memory MemoryStore)
-           (org.eclipse.rdf4j.sail.nativerdf NativeStore)
-           (org.eclipse.rdf4j.common.iteration CloseableIteration)
-           (org.eclipse.rdf4j.sail.inferencer.fc ForwardChainingRDFSInferencer
-                                           DirectTypeHierarchyInferencer
-                                           CustomGraphQueryInferencer)
-           (org.eclipse.rdf4j.repository.event.base NotifyingRepositoryWrapper)))
+            [me.raynes.fs :as fs])
+  (:import [org.eclipse.rdf4j.model Graph Resource Statement URI]
+           [org.eclipse.rdf4j.query BindingSet BooleanQuery GraphQuery Query QueryLanguage TupleQuery Update]
+           [org.eclipse.rdf4j.repository Repository RepositoryConnection]
+           [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer])
+  (:import grafter_2.rdf.protocols.IStatement
+           org.eclipse.rdf4j.common.iteration.CloseableIteration
+           org.eclipse.rdf4j.model.impl.URIImpl
+           org.eclipse.rdf4j.query.impl.DatasetImpl
+           org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
+           org.eclipse.rdf4j.repository.http.HTTPRepository
+           org.eclipse.rdf4j.repository.sail.SailRepository
+           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
+           org.eclipse.rdf4j.sail.memory.MemoryStore
+           org.eclipse.rdf4j.sail.nativerdf.NativeStore))
 
 (defprotocol ToConnection
   (->connection [repo] "Given an RDF4j repository return a connection to it.

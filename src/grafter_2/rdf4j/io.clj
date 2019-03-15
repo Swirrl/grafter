@@ -6,19 +6,16 @@
             [clojure.string :as string]
             [grafter-2.rdf.protocols :as pr :refer [->grafter-type ->Quad IGrafterRDFType]]
             [grafter-2.rdf4j.formats :as fmt]
-            [grafter.url
-             :refer
-             [->grafter-url ->java-uri ->url IURIable ToGrafterURL]])
-  (:import [grafter_2.rdf.protocols IStatement LangString OffsetDate Quad RDFLiteral]
-           grafter.url.GrafterURL
+            [grafter.url :refer [->grafter-url ->java-uri ->url IURIable ToGrafterURL]])
+  (:import grafter.url.GrafterURL
+           [grafter_2.rdf.protocols IStatement LangString OffsetDate Quad RDFLiteral]
            java.io.File
            [java.net MalformedURLException URL]
-           java.util.GregorianCalendar
+           java.time.temporal.ChronoField
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
-           [org.eclipse.rdf4j.model BNode Literal Resource Statement URI Value]
-           [org.eclipse.rdf4j.model.impl BNodeImpl BooleanLiteralImpl CalendarLiteral ContextStatementImpl IntegerLiteral LiteralImpl NumericLiteral SimpleValueFactory StatementImpl URIImpl]
-           [org.eclipse.rdf4j.rio RDFFormat RDFHandler RDFWriter Rio]
-           java.time.temporal.ChronoField))
+           [org.eclipse.rdf4j.model BNode Literal Statement URI]
+           [org.eclipse.rdf4j.model.impl BNodeImpl ContextStatementImpl LiteralImpl SimpleValueFactory StatementImpl URIImpl]
+           [org.eclipse.rdf4j.rio RDFFormat RDFHandler Rio]))
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.

@@ -1,14 +1,13 @@
 (ns ^{:added "0.12.1"}
-    grafter-2.rdf4j.sparql
+ grafter-2.rdf4j.sparql
   "Functions for executing SPARQL queries with grafter RDF
   repositories, that support basic binding replacement etc."
-  (:require [grafter-2.rdf4j.repository  :as repo :refer [sparql-repo ->connection]]
-            [grafter-2.rdf4j.io :refer [->backend-type] :as rio]
-            [clojure.java.io :refer [resource]]
+  (:require [clojure.java.io :as io :refer [resource]]
             [clojure.string :as str]
-            [clojure.java.io :as io])
-  (:import [org.eclipse.rdf4j.rio.ntriples NTriplesUtil]
-           [java.util.regex Pattern]))
+            [grafter-2.rdf4j.io :as rio]
+            [grafter-2.rdf4j.repository :as repo :refer [->connection]])
+  (:import java.util.regex.Pattern
+           org.eclipse.rdf4j.rio.ntriples.NTriplesUtil))
 
 (defn- get-clause-pattern [clause-name key]
   (cond

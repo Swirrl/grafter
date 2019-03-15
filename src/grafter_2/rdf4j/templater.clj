@@ -1,10 +1,8 @@
 (ns grafter-2.rdf4j.templater
   "Functions for converting tree's of turtle-like data into Linked
   Data statements (triples/quads)."
-  (:require [grafter-2.rdf.protocols :as rdf]
-            [grafter.url :as url]
-            )
-  (:import [org.eclipse.rdf4j.model URI]))
+  (:require [grafter-2.rdf.protocols :as rdf])
+  (:import org.eclipse.rdf4j.model.URI))
 
 (defn- valid-uri? [node]
   (let [types [java.lang.String java.net.URL java.net.URI URI]]
