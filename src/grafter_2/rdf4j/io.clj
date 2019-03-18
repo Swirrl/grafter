@@ -270,9 +270,9 @@
   (->backend-type [this]
     this)
 
-  clojure.lang.Keyword
+  grafter_2.rdf.protocols.BNode
   (->backend-type [this]
-    (BNodeImpl. (name this)))
+    (BNodeImpl. (.id this)))
 
   RDFLiteral
   (->backend-type [this]
@@ -370,13 +370,13 @@
 
   BNode
   (->grafter-type [this]
-    (-> this .getID keyword))
+    (-> this .getID pr/make-blank-node))
 
   BNodeImpl
   (->grafter-type [this]
-    (-> this .getID keyword))
+    (-> this .getID pr/make-blank-node))
 
-  clojure.lang.Keyword
+  grafter_2.rdf.protocols.BNode
   (->grafter-type [this]
     this)
 

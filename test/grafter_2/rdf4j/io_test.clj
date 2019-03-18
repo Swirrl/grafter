@@ -191,7 +191,7 @@
     (testing "quad with bnode"
       (let [quad (->Quad (url/->java-uri "http://example.org/test/subject")
                          (url/->java-uri "http://example.org/test/predicate")
-                         :bnode-1
+                         (pr/make-blank-node :id-1)
                          (url/->java-uri "http://example.org/test/graph"))]
         (is (= quad
                (sut/backend-quad->grafter-quad (sut/quad->backend-quad quad))))))
@@ -261,5 +261,5 @@
 (deftest blank-nodes-load-test
   (testing "Blank nodes are keywords"
     (let [[[s1 p1 o1] [s2 p2 o2]] (statements (io/resource "grafter/rdf/bnodes.nt"))]
-      (is (keyword? o1))
-      (is (keyword? s2)))))
+      (is (pr/blank-node? o1))
+      (is (pr/blank-node? s2)))))

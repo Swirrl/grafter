@@ -335,13 +335,30 @@
   [m]
   (->Triple (:s m) (:p m) (:o m)))
 
+(deftype BNode [id]
+  Object
+  (equals [this other]
+    (= (.id this) (.id other)))
+  (hashCode [this]
+    (hash (.id this)))
+
+  (toString [this]
+    (str id)))
+
+(defn make-blank-node
+  "Construct a new blank node.  If 0-arity is used a blank node with a
+  new locally unique process id is used."
+  ([]
+   (make-blank-node (gensym)))
+  ([id]
+   (BNode. (str id))))
 
 (defmulti blank-node?
   "Predicate function that tests whether the supplied value is
   considered to be a blank node type."
   type)
 
-(defmethod blank-node? clojure.lang.Keyword [_]
+(defmethod blank-node? BNode [_]
   true)
 
 (defmethod blank-node? :default [_]
