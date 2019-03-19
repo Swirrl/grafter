@@ -338,7 +338,9 @@
 (deftype BNode [id]
   Object
   (equals [this other]
-    (= (.id this) (.id other)))
+    (if (instance? BNode other)
+      (= (.id this) (.id other))
+      false))
   (hashCode [this]
     (hash (.id this)))
 
