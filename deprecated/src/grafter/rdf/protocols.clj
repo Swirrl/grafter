@@ -1,10 +1,15 @@
-(ns grafter.rdf.protocols
-  "Grafter protocols and types for RDF processing"
+(ns ^{:deprecated "0.12.1"}
+    grafter.rdf.protocols
+  "DEPRECATED: Use grafter-2.rdf.protocols instead.  This namespace contains the old
+  sesame implementation.
+
+  Grafter protocols and types for RDF processing"
   (:require [grafter.vocabularies.xsd :refer :all]
             [grafter.url :refer [->java-uri]])
   (:import [java.net URI]
            [java.util Date]
-           [org.openrdf.model Literal]))
+           [java.sql Time]
+           [org.openrdf.model Literal BNode]))
 
 (defprotocol IStatement
   "An RDF triple or quad"
@@ -85,6 +90,12 @@
   ;; TODO: reimplement interfaces with proper resource handling.
   (query-dataset [this sparql-string model]))
 
+(defprotocol IGrafterRDFType
+  "This protocol coerces a backend RDF type, e.g. an RDF4j quad object
+  into an equivalent Grafter RDF type.  For example given an RDF4j
+  quad it will convert it into a Grafter Quad."
+  (->grafter-type [this] "Convert a backend RDF Type into a Native Type"))
+
 (defprotocol ISPARQLUpdateable
   (update! [this sparql-string]
     "Issue a SPARQL Update statement against the repository"))
@@ -134,8 +145,8 @@
 
   Object
   (toString [this]
-    ;; TODO consider making this output the same as .toString on a sesame
-    ;; Literal.  Advantage is its more consistent with sesame etc... The
+    ;; TODO consider making this output the same as .toString on a RDF4j
+    ;; Literal.  Advantage is its more consistent with RDF4j etc... The
     ;; disadvantage is that this implementation makes using str more intuitive
     (:string this))
 
@@ -148,10 +159,23 @@
   (datatype-uri [this]
     rdf:langString))
 
+(defn language
+  "Create an RDF langauge string out of a value string and a given
+  language tag.  Language tags should be keywords representing the
+  country code, e.g.
+
+  (language \"Bonsoir\" :fr)"
+  [s lang]
+  {:pre [(string? s)
+         lang
+         (keyword? lang)]}
+  (->LangString s lang))
+
 (extend-type Literal
   IRDFString
   (lang [this]
-    (keyword (.getLanguage this)))
+    (when-let [lang-str (.getLanguage this)]
+      (keyword lang-str)))
 
   IRawValue
   (raw-value [this]
@@ -173,6 +197,16 @@
   IRDFString
   (lang [this]
     nil))
+
+
+(defn literal
+  "You can use this to declare an RDF typed literal value along with
+  its URI.  Note that there are implicit coercions already defined for
+  many core clojure/java datatypes, so for common datatypes you
+  shounld't need this."
+
+  [val datatype-uri]
+  (->RDFLiteral (str val) (->java-uri datatype-uri)))
 
 (extend-protocol IRawValue
   Object
@@ -206,6 +240,10 @@
     (->java-uri xsd:byte))
 
   Date
+  (datatype-uri [t]
+    (->java-uri xsd:date))
+
+  Time
   (datatype-uri [t]
     (->java-uri xsd:dateTime))
 
@@ -272,3 +310,18 @@
   "Constructs a Quad from an {:s :p :o } mapwith a nil graph (context)."
   [m]
   (->Triple (:s m) (:p m) (:o m)))
+
+
+(defmulti blank-node?
+  "Predicate function that tests whether the supplied value is
+  considered to be a blank node type."
+  type)
+
+(defmethod blank-node? clojure.lang.Keyword [_]
+  true)
+
+(defmethod blank-node? BNode [_]
+  true)
+
+(defmethod blank-node? :default [_]
+  false)

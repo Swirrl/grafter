@@ -1,4 +1,8 @@
-(ns grafter.rdf.sparql
+(ns ^{:deprecated "0.12.0"}
+    grafter.rdf.sparql
+  "DEPRECATED: Use grafter.rdf4j.sparql instead.  This namespace contains the
+  old sesame implementation."
+
   (:require [grafter.rdf :refer [statements]]
             [grafter.rdf.repository :refer [repo sparql-repo ->connection]]
             [grafter.rdf.repository :as repo]

@@ -1,47 +1,31 @@
-(ns grafter.rdf.repository
-  "Functions for constructing and working with various Sesame repositories."
+(ns ^{:added "0.12.1"}
+ grafter-2.rdf4j.repository
+  "Functions for constructing and working with various RDF4j repositories."
   (:require [clojure.java.io :as io]
-            [grafter.rdf]
-            [me.raynes.fs :as fs]
-            [grafter.rdf.protocols :as pr]
-            [grafter.rdf.io :refer :all]
-            [clojure.tools.logging :as log]
-            [grafter.rdf :as rdf]
-            [clojure.string :as string]
-            [grafter.rdf.formats :as format])
-  (:import (grafter.rdf.protocols IStatement Quad)
-           (java.io File)
-           (java.net MalformedURLException URL)
-           (java.util GregorianCalendar)
-           (javax.xml.datatype DatatypeFactory)
-           (org.openrdf.model BNode Literal Resource Statement URI
-                              Value Graph)
-           (org.openrdf.query BooleanQuery GraphQuery QueryLanguage
-                              Query TupleQuery Update BindingSet)
-           (org.openrdf.model.impl BNodeImpl BooleanLiteralImpl
-                                   CalendarLiteralImpl
-                                   ContextStatementImpl
-                                   IntegerLiteralImpl LiteralImpl
-                                   NumericLiteralImpl StatementImpl
-                                   URIImpl)
-           (org.openrdf.query.impl DatasetImpl)
-           (org.openrdf.repository Repository RepositoryConnection)
-           (org.openrdf.repository.http HTTPRepository)
-           (org.openrdf.repository.sail SailRepository)
-           (org.openrdf.repository.sparql SPARQLRepository)
-           (org.openrdf.sail Sail)
-           (org.openrdf.sail.memory MemoryStore)
-           (org.openrdf.sail.nativerdf NativeStore)
-           (info.aduna.iteration CloseableIteration)
-           (org.openrdf.sail.inferencer.fc ForwardChainingRDFSInferencer
-                                           DirectTypeHierarchyInferencer
-                                           CustomGraphQueryInferencer)))
+            [grafter-2.rdf.protocols :as pr]
+            [grafter-2.rdf4j.formats :as format]
+            [grafter-2.rdf4j.io :as rio]
+            [me.raynes.fs :as fs])
+  (:import [org.eclipse.rdf4j.model Graph Resource Statement URI]
+           [org.eclipse.rdf4j.query BindingSet BooleanQuery GraphQuery Query QueryLanguage TupleQuery Update]
+           [org.eclipse.rdf4j.repository Repository RepositoryConnection]
+           [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer])
+  (:import grafter_2.rdf.protocols.IStatement
+           org.eclipse.rdf4j.common.iteration.CloseableIteration
+           org.eclipse.rdf4j.model.impl.URIImpl
+           org.eclipse.rdf4j.query.impl.DatasetImpl
+           org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
+           org.eclipse.rdf4j.repository.http.HTTPRepository
+           org.eclipse.rdf4j.repository.sail.SailRepository
+           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
+           org.eclipse.rdf4j.sail.memory.MemoryStore
+           org.eclipse.rdf4j.sail.nativerdf.NativeStore))
 
 (defprotocol ToConnection
-  (->connection [repo] "Given a sesame repository return a connection to it.
+  (->connection [repo] "Given an RDF4j repository return a connection to it.
   ->connection is designed to be used with the macro with-open"))
 
-(defn- resource-array #^"[Lorg.openrdf.model.Resource;" [& rs]
+(defn- resource-array #^"[Lorg.eclipse.rdf4j.model.Resource;" [& rs]
   (into-array Resource rs))
 
 (extend-type RepositoryConnection
@@ -49,28 +33,28 @@
 
   (pr/add-statement
     ([this statement]
-       {:pre [(instance? IStatement statement)]}
-       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
-             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
-         (doto this (.add sesame-statement resources))))
+     {:pre [(instance? IStatement statement)]}
+     (let [^Statement sesame-statement (rio/quad->backend-quad statement)
+           resources (if-let [graph (pr/context statement)] (resource-array (rio/->rdf4j-uri graph)) (resource-array))]
+       (doto this (.add sesame-statement resources))))
 
     ([this graph statement]
-       {:pre [(instance? IStatement statement)]}
-       (let [^Statement stm (IStatement->sesame-statement statement)
-             resources (resource-array (->sesame-uri graph))]
-         (doto this
-           (.add stm resources)))))
+     {:pre [(instance? IStatement statement)]}
+     (let [^Statement stm (rio/quad->backend-quad statement)
+           resources (resource-array (rio/->rdf4j-uri graph))]
+       (doto this
+         (.add stm resources)))))
 
   (pr/add
     ([this triples]
-       {:pre [(or (nil? triples)
-                  (seq triples)
-                  (instance? IStatement triples))]}
-       (if (not (instance? IStatement triples))
-         (when (seq triples)
-               (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-                 (.add this stmts (resource-array))))
-         (pr/add-statement this triples))
+     {:pre [(or (nil? triples)
+                (seq triples)
+                (instance? IStatement triples))]}
+     (if (not (instance? IStatement triples))
+       (when (seq triples)
+         (let [^Iterable stmts (map rio/quad->backend-quad triples)]
+           (.add this stmts (resource-array))))
+       (pr/add-statement this triples))
      this)
 
     ([this graph triples]
@@ -79,70 +63,60 @@
                 (instance? IStatement triples))]}
      (if (not (instance? IStatement triples))
        (when (seq triples)
-         (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-           (.add this stmts (resource-array (->sesame-uri graph)))))
+         (let [^Iterable stmts (map rio/quad->backend-quad triples)]
+           (.add this stmts (resource-array (rio/->rdf4j-uri graph)))))
        (pr/add-statement this triples))
      this)
 
     ([this graph format triple-stream]
      (doto this
-       (.add triple-stream nil format (resource-array (->sesame-uri graph)))))
+       (.add triple-stream nil format (resource-array (rio/->rdf4j-uri graph)))))
 
     ([this graph base-uri format triple-stream]
      (doto this
-       (.add triple-stream base-uri format (resource-array (->sesame-uri graph)))))))
+       (.add triple-stream base-uri format (resource-array (rio/->rdf4j-uri graph)))))))
+
+(definline throw-deprecated-exception!
+  "Throw a more helpful error message alerting people to the need to
+  change code.
+
+  This is technically a breaking change, but it should indicate sites
+  which have a bug in them anyway."
+  []
+  ;; Use a definline to remove extra stack frame from output so
+  ;; exception is closer to call site.
+  `(throw (ex-info "This function is no longer extended to Repository.  You will need to update your code to call it on a repository connection instead."
+                   {:error :deprecated-function})))
 
 (extend-type Repository
   pr/ITripleWriteable
 
   (pr/add-statement
     ([this statement]
-       (with-open [connection (.getConnection this)]
-         (log/debug "Opening connection" connection "on repo" this)
-         (pr/add-statement connection statement)
-         (log/debug "Closing connection" connection "on repo" this)
-         this))
+     (throw-deprecated-exception!))
 
     ([this graph statement]
-     (with-open [connection (.getConnection this)]
-       (log/debug "Opening connection" connection "on repo" this)
-       (pr/add-statement (.getConnection this) graph statement)
-       (log/debug "Closing connection" connection "on repo" this)
-       this)))
+     (throw-deprecated-exception!)))
 
   (pr/add
     ([this triples]
-     (with-open [connection (.getConnection this)]
-       (log/debug "Opening connection" connection "on repo" this)
-       (pr/add connection triples)
-       (log/debug "Closing connection" connection "on repo" this))
-     this)
+     (throw-deprecated-exception!))
 
     ([this graph triples]
-     (with-open [connection (.getConnection this)]
-       (log/debug "Opening connection" connection "on repo" this)
-       (pr/add connection graph triples)
-       (log/debug "Closing connection" connection "on repo" this)
-       this))
+     (throw-deprecated-exception!))
 
     ([this graph format triple-stream]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/add connection graph format triple-stream))
-     this)
+     (throw-deprecated-exception!))
 
     ([this graph base-uri format triple-stream]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/add connection graph base-uri format triple-stream))
-     this))
+     (throw-deprecated-exception!)))
 
   pr/ITripleDeleteable
   (pr/delete
     ([this quads]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/delete connection quads)))
+     (throw-deprecated-exception!))
     ([this graph quads]
-     (with-open [^RepositoryConnection connection (.getConnection this)]
-       (pr/delete connection graph quads)))))
+     (throw-deprecated-exception!))))
 
 
 (defn memory-store
@@ -175,6 +149,20 @@
      (doto (SPARQLRepository. (str query-url)
                               (str update-url))
        (.initialize))))
+
+(defn notifying-repo
+  "Wrap the given repository in an RDF4j NotifyingRepositoryWrapper.
+  Once wrapped you can capture events on the underlying repository.
+
+  Supports two arities:
+
+  - Takes just a repo to wrap.
+  - Takes a repo to wrap and a boolean indicating whether to report
+    deltas on operations."
+  ([^Repository repo]
+   (NotifyingRepositoryWrapper. repo))
+  ([repo report-deltas]
+   (NotifyingRepositoryWrapper. repo report-deltas)))
 
 (defn rdfs-inferencer
   "Returns a Sesame ForwardChainingRDFSInferencer using the rules from
@@ -224,24 +212,28 @@
    (doto (SailRepository. sail)
      (.initialize))))
 
-(defn add->repo
-  ([] (sail-repo))
-  ([acc] acc)
-  ([acc v]
-   (if (reduced? acc)
-     acc
-     (rdf/add acc v))))
+(defn add->repo [repo]
+  (fn
+    ([] (->connection repo))
+    ([acc] (.close acc) repo)
+    ([acc v]
+     (try (if (reduced? acc)
+            acc
+            (pr/add acc v))
+          (catch Throwable ex
+            (.close acc)
+            (throw (ex-info "Exception when adding to repository" {} ex)))))))
 
 (defn- statements-with-inferred-format [res]
   (if (seq? res)
     res
-    (rdf/statements res :format (format/->rdf-format (fs/extension (str res))))))
+    (rio/statements res :format (format/->rdf-format (fs/extension (str res))))))
 
 (defn fixture-repo
   "adds the specified data to a sparql repository.  if the first
   argument is a repository that object is used, otherwise the first
   and remaining arguments are assumed to be
-  grafter.rdf.protocols/itriplereadable and are loaded into a sesame
+  grafter-2.core/ITripleWriteable and are loaded into a sesame
   memorystore sail-repo.
 
   this function is most useful for loading fixture data from files e.g.
@@ -250,13 +242,16 @@
   ([] (sail-repo))
   ([repo-or-data & data]
    (let [repo (if (instance? Repository repo-or-data)
-                     repo-or-data
-                     (rdf/add (sail-repo) (statements-with-inferred-format repo-or-data)))]
+                repo-or-data
+                (let [repo (sail-repo)]
+                  (with-open [conn (->connection repo)]
+                    (pr/add conn (statements-with-inferred-format repo-or-data))
+                    repo)))]
      (let [xf (mapcat (fn [d]
                         (cond
                           (satisfies? pr/ITripleReadable d) (statements-with-inferred-format d)
                           (seq d) d)))]
-       (transduce xf add->repo repo data)))))
+       (transduce xf (add->repo repo) data)))))
 
 (defn resource-repo
   "Like fixture repo but assumes all supplied data is on the java
@@ -272,62 +267,36 @@
   repository."
   ([] (sail-repo))
   ([repo-or-data & data]
-   (let [repo (if (instance? Repository repo-or-data)
-                repo-or-data
-                (rdf/add (sail-repo) (statements-with-inferred-format (io/resource repo-or-data))))]
+   (let [repo (let [repo (sail-repo)]
+                (if (instance? Repository repo-or-data)
+                  repo-or-data
+                  (with-open [conn (->connection repo)]
+                    (pr/add conn (statements-with-inferred-format (io/resource repo-or-data)))
+
+                    repo)))]
      (apply fixture-repo repo (map io/resource data)))))
-
-(defn repo
-  "DEPRECATED: Use sail-repo or fixture-repo instead.
-
-  Given a sesame Sail of some type, return a sesame SailRepository.
-
-  This function also supports initialising the repository with some
-  data that can be loaded from anything grafter.rdf/statements can
-  coerce.  Additionally the data can also be a sequence of
-  grafter.rdf.protocols/Quad's.
-
-  Finally you can also optionally supply a sesame sail to wrap the
-  repository, which can be used to configure a sesame NativeStore.
-
-  By default this function will return a repository initialised with a
-  Sesame MemoryStore."
-  {:deprecated "0.8.0"}
-  ([] (sail-repo))
-  ([sail-or-rdf-file]
-   (if (instance? Sail sail-or-rdf-file)
-     (repo nil sail-or-rdf-file)
-     (repo sail-or-rdf-file (MemoryStore.))))
-
-  ([rdf-data sail]
-   (let [r (doto (SailRepository. sail)
-             (.initialize))]
-     (pr/add r (cond
-                 (and rdf-data (satisfies? io/Coercions rdf-data)) (pr/to-statements rdf-data {})
-                 (or (seq rdf-data) (nil? rdf-data)) rdf-data))
-     r)))
 
 (defn- query-bindings->map [^BindingSet qbs]
   (let [boundvars (.getBindingNames qbs)]
     (->> boundvars
          (mapcat (fn [k]
-                   [(keyword k) (-> qbs (.getBinding k) .getValue sesame-rdf-type->type)]))
+                   [(keyword k) (some-> qbs (.getBinding k) .getValue pr/->grafter-type)]))
          (apply hash-map))))
 
 (extend-protocol pr/ITransactable
   Repository
   (begin [repo]
-    (-> repo .getConnection (.setAutoCommit false)))
+    (throw-deprecated-exception!))
 
   (commit [repo]
-    (-> repo .getConnection .commit))
+    (throw-deprecated-exception!))
 
   (rollback [repo]
-    (-> repo .getConnection .rollback))
+    (throw-deprecated-exception!))
 
   RepositoryConnection
   (begin [repo]
-    (-> repo (.setAutoCommit false)))
+    (-> repo .begin))
 
   (commit [repo]
     (-> repo .commit))
@@ -352,38 +321,37 @@
   clojure.core.protocols/CollReduce
   (coll-reduce
     ([this f]
-     (reduce f (f) this))
+     (clojure.core.protocols/coll-reduce this f (f)))
     ([this f val]
      (with-open [c (.getConnection this)]
        (reduce f val c))))
 
   pr/ISPARQLable
   (pr/query-dataset [this query-str model]
-    (pr/query-dataset (.getConnection this) query-str model))
+    (throw-deprecated-exception!))
 
   pr/ISPARQLUpdateable
   (pr/update! [this query-str]
-    (with-open [connection (.getConnection this)]
-      (pr/update! connection query-str)))
+    (throw-deprecated-exception!))
 
   pr/ITripleReadable
   (pr/to-statements [this options]
-    (pr/to-statements (.getConnection this) options)))
+    (throw-deprecated-exception!)))
 
 (extend-type Graph
   pr/ITripleReadable
   (pr/to-statements [this options]
-    (map sesame-statement->IStatement (iterator-seq (.match this nil nil nil (resource-array)))))
+    (map rio/backend-quad->grafter-quad (iterator-seq (.match this nil nil nil (resource-array)))))
 
   pr/ITripleWriteable
 
   (pr/add-statement
     ([this graph statement]
      (.add this
-           (->sesame-rdf-type (pr/subject statement))
-           (->sesame-rdf-type (pr/predicate statement))
-           (->sesame-rdf-type (pr/object statement))
-           (resource-array (->sesame-uri graph)))))
+           (rio/->backend-type (pr/subject statement))
+           (rio/->backend-type (pr/predicate statement))
+           (rio/->backend-type (pr/object statement))
+           (resource-array (rio/->rdf4j-uri graph)))))
 
   (pr/add
     ([this triples]
@@ -436,11 +404,36 @@
 
   GraphQuery
   (evaluate [this]
-    (sesame-results->seq this sesame-statement->IStatement))
+    (sesame-results->seq this rio/backend-quad->grafter-quad))
 
   Update
   (evaluate [this]
     (.execute this)))
+
+(defprotocol IPrepareQuery
+  (prepare-query* [this sparql-string restriction]
+    "Low level function to prepare (parse, but not process) a sesame RDF
+  query.  Takes a repository a query string and an optional sesame
+  Dataset to act as a query restriction.
+
+  Prepared queries still need to be evaluated with evaluate."))
+
+(extend-protocol IPrepareQuery
+  Repository
+  (prepare-query* [repo sparql-string restriction]
+    (println "WARNING: prepare-query* was called on a repository not a connection.  This usage is deprecated and will be removed.")
+    (let [conn (->connection repo)]
+      (prepare-query* conn sparql-string restriction)))
+
+  RepositoryConnection
+  (prepare-query* [repo sparql-string restriction]
+    (let [conn (->connection repo)
+          pq (.prepareQuery conn
+                            QueryLanguage/SPARQL
+                            sparql-string)]
+
+      (when restriction (.setDataset pq restriction))
+      pq)))
 
 (defn prepare-query
   "Low level function to prepare (parse, but not process) a sesame RDF
@@ -450,13 +443,7 @@
   Prepared queries still need to be evaluated with evaluate."
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string restriction]
-     (let [conn (->connection repo)]
-       (let [pq (.prepareQuery conn
-                               QueryLanguage/SPARQL
-                               sparql-string)]
-
-         (when restriction (.setDataset pq restriction))
-         pq))))
+   (prepare-query* repo sparql-string restriction)))
 
 (defn prepare-update
   "Prepare (parse but don't process) a SPARQL update request.
@@ -494,18 +481,17 @@
       (.execute prepared-query)))
 
   pr/ITripleDeleteable
-
   (pr/delete-statement
     ([this statement]
        {:pre [(instance? IStatement statement)]}
-       (let [^Statement sesame-statement (IStatement->sesame-statement statement)
-             resources (if-let [graph (pr/context statement)] (resource-array (->sesame-uri graph)) (resource-array))]
+     (let [^Statement sesame-statement (rio/quad->backend-quad statement)
+           resources (if-let [graph (pr/context statement)] (resource-array (rio/->rdf4j-uri graph)) (resource-array))]
          (doto this (.remove sesame-statement resources))))
 
     ([this graph statement]
      {:pre [(instance? IStatement statement)]}
-     (let [^Statement stm (IStatement->sesame-statement statement)
-             resources (resource-array (->sesame-uri graph))]
+     (let [^Statement stm (rio/quad->backend-quad statement)
+           resources (resource-array (rio/->rdf4j-uri graph))]
          (doto this
            (.remove stm resources)))))
 
@@ -516,7 +502,8 @@
                   (instance? IStatement quads))]}
      (if (not (instance? IStatement quads))
        (when (seq quads)
-         (let [^Iterable stmts (map IStatement->sesame-statement quads)]
+         (let [^Iterable stmts
+               (map rio/quad->backend-quad quads)]
                  (.remove this stmts (resource-array))))
          (pr/delete-statement this quads)))
 
@@ -527,22 +514,17 @@
                 (instance? IStatement triples))]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
-             (let [^Iterable stmts (map IStatement->sesame-statement triples)]
-               (.remove this stmts (resource-array (->sesame-uri graph)))))
+           (let [^Iterable stmts (map rio/quad->backend-quad triples)]
+             (.remove this stmts (resource-array (rio/->rdf4j-uri graph)))))
          (pr/delete-statement this triples)))))
 
 (extend-protocol ToConnection
   RepositoryConnection
-  (->connection
-    [^Repository repo]
-    (if (instance? RepositoryConnection repo)
-      repo
-      (let [c (.getConnection repo)]
-        c)))
+  (->connection [conn]
+    conn)
 
   Repository
-  (->connection
-    [^Repository repo]
+  (->connection [^Repository repo]
     (.getConnection repo)))
 
 (defn make-restricted-dataset
@@ -554,16 +536,17 @@
                 (if (instance? URI graph)
                   graph
                   (URIImpl. graph)))]
-    (when options
+    (when (or (:named-graphs options) (:default-graph options))
       (let [{:keys [default-graph named-graphs]
              :or   {default-graph [] named-graphs []}} options
             private-graph "urn:private-graph-to-force-restrictions-when-no-graphs-are-listed"
             dataset (DatasetImpl.)]
+
         (if (string? default-graph)
           (.addDefaultGraph dataset (->uri default-graph))
-
           (doseq [graph (conj default-graph private-graph)]
             (.addDefaultGraph dataset (->uri graph))))
+
         (if (string? named-graphs)
           (.addNamedGraph dataset (->uri named-graphs))
           (doseq [graph named-graphs]
@@ -572,6 +555,11 @@
 
 (defn- mapply [f & args]
   (apply f (apply concat (butlast args) (last args))))
+
+(defn- build-sparql-prefixes-block [prefix-map]
+  (str (reduce (fn [sb [prefix uri]]
+                 (.append sb (str "PREFIX " prefix ": <" uri ">\n")))
+               (StringBuffer.) prefix-map)))
 
 (defn query
   "Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
@@ -606,46 +594,22 @@
 
   If no options are passed then we use the default of no graph
   restrictions whilst the union graph is the union of all graphs."
-  [repo sparql & {:as options}]
-  (let [dataset (mapply make-restricted-dataset (or options {}))]
+  [repo sparql & {:as options :keys [prefixes]}]
+  ;; we could call .setNamespace on the connection, but
+  ;; connection/namespaces are mutable so better to prepend the
+  ;; prefixes onto the SPARQL string ourselves.
+  (let [sparql (str (build-sparql-prefixes-block prefixes) sparql)
+        dataset (mapply make-restricted-dataset (or options {}))]
     (pr/query-dataset repo sparql dataset)))
 
-(def ^:private batched-results-size 10000)
-
-(defn- wrap-limit-offset
-  "Wraps a query string with a limit/offset batching"
-  ([qstr] (let [limit batched-results-size]
-            (wrap-limit-offset qstr limit 0)))
-  ([qstr limit offset]
-   (str "SELECT * WHERE {"
-        qstr
-        "} LIMIT " limit " OFFSET " offset)))
-
-(defn batched-query
-  "Like query, but queries are batched from the server by wrapping
-  them in a SPARQL SELECT query with a limit/offset.
-
-  NOTE: Though this function returns a lazy sequence, it is intended
-  to be used eagerly, perhaps inside something that eagerly loads the
-  results and manages the connection resources inside a with-open."
-  ([qstr conn] (batched-query qstr conn batched-results-size))
-  ([qstr conn limit] (batched-query qstr conn limit 0))
-  ([qstr conn limit offset]
-   (let [res (query conn (wrap-limit-offset qstr limit offset))]
-     (when (seq res)
-       (lazy-cat
-        res
-        (batched-query qstr conn limit (+ limit offset)))))))
-
 (extend-type RepositoryConnection
-
   pr/ITripleReadable
-  (pr/to-statements [this _]
+  (pr/to-statements [this {:keys [:grafter-2.repository/infer] :or {infer true}}]
     (let [f (fn next-item [i]
               (when (.hasNext i)
                 (let [v (.next i)]
-                  (lazy-seq (cons (sesame-statement->IStatement v) (next-item i))))))]
-      (let [iter (.getStatements this nil nil nil true (into-array Resource []))]
+                  (lazy-seq (cons (rio/backend-quad->grafter-quad v) (next-item i))))))]
+      (let [iter (.getStatements this nil nil nil infer (into-array Resource []))]
         (f iter)))))
 
 (defn shutdown

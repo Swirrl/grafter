@@ -1,9 +1,11 @@
 (ns grafter.rdf.protocols-test
   (:require [clojure.test :refer :all]
             [grafter.rdf.protocols :refer :all]
-            [grafter.rdf :refer [language]]
-            [grafter.vocabularies.xsd :refer :all])
-  (:import [org.openrdf.model.impl LiteralImpl]))
+            [grafter.vocabularies.xsd :refer :all]
+            [grafter.rdf.protocols :as pr])
+  (:import [org.openrdf.model.impl LiteralImpl BNodeImpl]))
+
+
 
 (def test-data [["http://a1" "http://b1" "http://c1" "http://graph1"]
                 ["http://a2" "http://b2" "http://c2" "http://graph2"]])
@@ -25,7 +27,7 @@
 
 (deftest rdf-strings-test
   (testing "RDF Strings"
-    (let [en (language "Hello" :en)
+   (let [en (pr/language "Hello" :en)
           sesame-fr (LiteralImpl. "Bonjour" "fr")
           sesame-nolang (LiteralImpl. "Bonjour")]
       (are [expected test-val]
@@ -53,3 +55,10 @@
   (testing "RDF Literals"
     (is (= "I stepped into an avalanche"
            (raw-value (LiteralImpl. "I stepped into an avalanche"))))))
+
+(deftest blank-node?-test
+  (is (not (blank-node? "not a blank node")))
+  (is (not (blank-node? (java.net.URI. "http://foo"))))
+  (is (blank-node? :keywords-are-treated-as-blank-nodes))
+  (is (blank-node? :keywords-are-treated-as-blank-nodes))
+  (is (blank-node? (BNodeImpl. "foo"))))

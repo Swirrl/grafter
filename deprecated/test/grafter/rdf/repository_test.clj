@@ -134,13 +134,13 @@
                      (URI. "http://triple"))}))
 
   (testing "Calling with multiple sets of quads appends them all into the repo"
-    (is (= 2 (count (grafter.rdf/statements (fixture-repo (io/resource "quads.nq")
-                                                          (io/resource "quads.trig"))))))))
+    (is (= 2 (count (grafter.rdf/statements (fixture-repo (io/resource "grafter/rdf4j/repository/quads.nq")
+                                                          (io/resource "grafter/rdf4j/repository/quads.trig"))))))))
 
 (deftest resource-repo-test
   (testing "Calling with multiple sets of quads appends them all into the repo"
-    (is (= 2 (count (grafter.rdf/statements (resource-repo "quads.nq"
-                                                           "quads.trig")))))))
+    (is (= 2 (count (grafter.rdf/statements (resource-repo "grafter/rdf4j/repository/quads.nq"
+                                                           "grafter/rdf4j/repository/quads.trig")))))))
 
 (deftest sail-repo-test
   (is (instance? org.openrdf.repository.Repository (sail-repo)))

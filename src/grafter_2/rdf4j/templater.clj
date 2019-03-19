@@ -1,14 +1,14 @@
-(ns grafter.rdf.templater
+(ns grafter-2.rdf4j.templater
   "Functions for converting tree's of turtle-like data into Linked
   Data statements (triples/quads)."
-  (:require [grafter.rdf :as rdf])
-  (:require [grafter.rdf.protocols :refer [->Triple ->Quad]])
-  (:import [org.openrdf.rio RDFFormat]
-           [org.openrdf.model URI]))
+  (:require [grafter-2.rdf.protocols :as rdf])
+  (:import org.eclipse.rdf4j.model.URI))
 
 (defn- valid-uri? [node]
   (let [types [java.lang.String java.net.URL java.net.URI URI]]
-    (some (fn [t] (instance? t node)) types)))
+    (some (fn [t] (instance? t node)) types))
+  ;; todo consider replacing with...
+  #_(or (= java.lang.String node) (satisfies? url/IURIable)))
 
 (defn- is-literal? [node]
   (not (or (nil? node)
@@ -45,10 +45,10 @@
       (-> (mapcat (partial make-triples bnode-resource)
                   (map first nested-pairs)
                   (map second nested-pairs))
-          (conj (->Triple subject predicate bnode-resource))))
+          (conj (rdf/->Triple subject predicate bnode-resource))))
 
     (let [object object-or-nested-subject]
-      [(->Triple subject predicate object)])))
+      [(rdf/->Triple subject predicate object)])))
 
 (defn- expand-subj
   "Takes a turtle like data structure, like that passed to graph and
@@ -60,15 +60,15 @@
 
 (defn triplify
   "Takes many turtle like structures and converts them to a lazy-seq
-  of grafter.rdf.protocols.IStatement's.  Users should generally tend
+  of grafter-2.rdf.protocols.IStatement's.  Users should generally tend
   to prefer to using graph to triplify."
   [& subjects]
   (mapcat expand-subj subjects))
 
 (defn- quad
-  "Build a quad from a graph and a grafter.rdf.protocols/Triple."
+  "Build a quad from a graph and a grafter-2.rdf.protocols/Triple."
   [graph triple]
-  (->Quad (rdf/subject triple)
+  (rdf/->Quad (rdf/subject triple)
           (rdf/predicate triple)
           (rdf/object triple)
           graph))

@@ -1,5 +1,9 @@
-(ns grafter.rdf.formats
-  "Symbols used to specify different Linked Data Serializations."
+(ns ^{:deprecated "0.12.1"}
+    grafter.rdf.formats
+  "DEPRECATED.  Use grafter.rdf4j.formats instead, this namespace
+  contains the old sesame implementation.
+
+  Symbols used to specify different Linked Data Serializations."
   (:require [clojure.string :as string]
             [grafter.url :as url]
             [clojure.string :as str])

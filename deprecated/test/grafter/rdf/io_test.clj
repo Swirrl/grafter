@@ -1,12 +1,11 @@
 (ns grafter.rdf.io-test
   (:require [clojure.test :refer :all]
             [grafter.rdf.protocols :refer [->Quad]]
-            [grafter.rdf :refer [add statements]]
+            [grafter.rdf :refer [add statements datatype-uri]]
             [grafter.rdf.templater :refer [graph]]
             [grafter.rdf.io :refer :all]
             [grafter.url :refer :all]
             [grafter.rdf.protocols :as pr]
-            [schema.core :as s]
             [grafter.rdf.formats :as fmt]
             [clojure.java.io :as io])
   (:import [org.openrdf.model.impl LiteralImpl URIImpl ContextStatementImpl]
@@ -146,7 +145,6 @@
         (is (= quad
                (statements rdr :format :nq)))))))
 
-
 (deftest IStatement->sesame-statement-test
   (testing "IStatement->sesame-statement"
     (is (= (IStatement->sesame-statement (->Quad (->java-uri "http://foo.com/") (->java-uri "http://bar.com/") "a string" (->java-uri "http://blah.com/")))
@@ -177,12 +175,8 @@
                              "http" (scheme grafter-url)
                              ["ayanami"] (path-segments grafter-url)))))
 
-(def BlankObjectNode {:s URI :p URI :o s/Keyword :c (s/eq nil)})
-
-(def BlankSubjectNode {:s s/Keyword :p URI :o URI :c (s/eq nil) })
-
-
 (deftest blank-nodes-load-test
-  (let [[btriple1 btriple2] (statements (io/resource "grafter/rdf/bnodes.nt"))]
-    (is (s/validate BlankObjectNode btriple1))
-    (is (s/validate BlankSubjectNode btriple2))))
+  (testing "Blank nodes are keywords"
+    (let [[[s1 p1 o1] [s2 p2 o2]] (statements (io/resource "grafter/rdf/bnodes.nt"))]
+      (is (keyword? o1))
+      (is (keyword? s2)))))

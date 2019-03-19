@@ -1,6 +1,10 @@
-(ns grafter.rdf
-  "Functions and macros for creating RDF data.  Includes a small
-  DSL for creating turtle-like templated forms."
+(ns ^{:deprecated "0.12.1"}
+    grafter.rdf
+  "DEPRECATED: Use grafter-2.rdf.protocols instead, this namespace contains the
+  old sesame implementation.
+
+  Functions and macros for creating RDF data.  Includes a
+  small DSL for creating turtle-like templated forms."
   (:require [grafter.rdf.protocols :as pr]
             [potemkin.namespaces :refer [import-vars]]))
 
@@ -9,13 +13,16 @@
 (require '[grafter.rdf.io])
 
 (import-vars
- [grafter.rdf.io
-  language
-  literal]
  [grafter.rdf.protocols
   ->Quad
   ->Triple
-  triple?])
+  language
+  lang
+  literal
+  triple?
+  blank-node?
+  datatype-uri
+  raw-value])
 
 (defn subject
   "Return the RDF subject from a statement."
@@ -55,8 +62,8 @@
   "Add an RDF statement to the target datasink.  Datasinks must
   implement `grafter.rdf.protocols/ITripleWriteable`.
 
-  Datasinks include sesame RDF repositories, connections and anything
-  built by rdf-serializer.
+  Datasinks include RDF4j RDF repositories, connections and anything
+  built by rdf-writer.
 
   Takes an optional string/URI to use as a graph."
   ([target statement]
@@ -73,7 +80,7 @@
   Takes an optional string/URI to use as a graph.
 
   Depending on the target, this function will also write any prefixes
-  associated with the rdf-serialiser to the target.
+  associated with the rdf-writer to the target.
 
   Returns target."
   ([target triples]
@@ -92,7 +99,7 @@
    (pr/add target graph base-uri format triple-stream)
    target))
 
-(def default-batch-size 20000)
+(def ^:private default-batch-size 20000)
 
 (defn- apply-batched [target apply-fn stmts batch-size]
   (doseq [batch (partition-all batch-size stmts)]
