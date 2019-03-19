@@ -15,7 +15,9 @@ repositories.
 
 *Where can I find the api-docs?*
 
-[api.grafter.org](http://api.grafter.org/)
+[Latest docs](http://swirrl.github.io/grafter)
+
+Legacy docs [api.grafter.org](http://api.grafter.org/)
 
 *Didn't grafter also contain tools for tabular processing?*
 
