@@ -42,7 +42,8 @@
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.6"]
                  [me.raynes/fs "1.4.6"]
-                 [potemkin "0.4.5"]]
+                 [potemkin "0.4.5"]
+                 [expound "0.7.2"]]
 
   :source-paths ["src" "deprecated/src"]
   :test-paths ["test" "deprecated/test"]

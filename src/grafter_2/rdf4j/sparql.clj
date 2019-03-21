@@ -3,11 +3,14 @@
   "Functions for executing SPARQL queries with grafter RDF
   repositories, that support basic binding replacement etc."
   (:require [clojure.java.io :as io :refer [resource]]
+            [clojure.spec.alpha :as s]
             [clojure.string :as str]
+            [expound.alpha :as expound]
             [grafter-2.rdf4j.io :as rio]
             [grafter-2.rdf4j.repository :as repo :refer [->connection]])
   (:import java.util.regex.Pattern
-           org.eclipse.rdf4j.rio.ntriples.NTriplesUtil))
+           org.eclipse.rdf4j.rio.ntriples.NTriplesUtil
+           org.eclipse.rdf4j.repository.RepositoryConnection))
 
 (defn- get-clause-pattern [clause-name key]
   (cond
@@ -117,6 +120,29 @@
       (rewrite-limit-and-offset-clauses bindings)
       (rewrite-values-clauses bindings)))
 
+(defn- query* [sparql-file {:keys [reasoning?] :as opts} bindings repo]
+  (let [sparql-query (slurp (resource sparql-file))
+        pre-processed-qry (pre-process-query sparql-query bindings)
+        prepped-query (cond-> (repo/prepare-query repo pre-processed-qry)
+                        reasoning? (doto (.setIncludeInferred true)))]
+    (reduce (fn [pq [unbound-var val]]
+              (when-not (or (sequential? val) (set? val))
+                (if (and val (satisfies? rio/IRDF4jConverter val))
+                  (.setBinding pq (name unbound-var) (rio/->backend-type val))
+                  (throw (ex-info (str "Could not coerce nil value into SPARQL binding for variable " unbound-var)
+                                  {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
+              pq)
+            prepped-query
+            (dissoc bindings ::limits ::offsets))
+    (repo/evaluate prepped-query)))
+
+(s/def ::reasoning? boolean?)
+(s/def ::query-opts (s/keys :req-un [::reasoning?]))
+(s/def ::repo (partial instance? RepositoryConnection))
+(s/def ::bindings map?)
+(s/def ::query-args
+  (s/cat :opts (s/? ::query-opts) :bind (s/? ::bindings) :repo (s/? ::repo)))
+
 (defn query
   "Takes a string reference to a sparql-file on the resource path and
   optionally a map of bindings that should map SPARQL variables from
@@ -161,27 +187,29 @@
 
   (spog r {:s (java.net.URI. \"http://example.org/data/a-triple\")}) ;; triples for given subject s.
   "
+ {:arglists '([sparql-file]
+              [sparql-file opts]
+              [sparql-file repo]
+              [sparql-file opts repo]
+              [sparql-file bindings repo]
+              [sparql-file opts bindings repo])}
   ([sparql-file]
    (if (io/resource sparql-file)
      (partial query sparql-file)
-     (throw (ex-info "Could not find sparql file on resource path" {:error :resource-file-not-found
-                                                                    :resource-path sparql-file}))))
-  ([sparql-file repo]
-   (query sparql-file {} repo))
-  ([sparql-file bindings repo]
-   (let [sparql-query (slurp (resource sparql-file))
-         pre-processed-qry (pre-process-query sparql-query bindings)
-         prepped-query (repo/prepare-query repo pre-processed-qry)]
-     (reduce (fn [pq [unbound-var val]]
-               (when-not (or (sequential? val) (set? val))
-                 (if (and val (satisfies? rio/IRDF4jConverter val))
-                   (.setBinding pq (name unbound-var) (rio/->backend-type val))
-                   (throw (ex-info (str "Could not coerce nil value into SPARQL binding for variable " unbound-var)
-                                   {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
-               pq)
-             prepped-query
-             (dissoc bindings ::limits ::offsets))
-     (repo/evaluate prepped-query))))
+     (throw (ex-info "Could not find sparql file on resource path"
+                     {:error :resource-file-not-found
+                      :resource-path sparql-file}))))
+  ([sparql-file & args]
+   (let [{:keys [opts bind repo] :as argm} (s/conform ::query-args args)]
+     (if (s/invalid? argm)
+       (throw (IllegalArgumentException.
+               (str "Couldn't parse arguments:\n"
+                    (expound/expound-str ::query-args args))))
+       (if (contains? argm :repo)
+         (query* sparql-file (or opts {}) (or bind {}) repo)
+         (if (contains? argm :bind)
+           (partial query* sparql-file (or opts {}) bind)
+           (partial query* sparql-file (or opts {}))))))))
 
 (comment
   (def r (repo/resource-repo "grafter/rdf/sparql/sparql-data.trig"))
