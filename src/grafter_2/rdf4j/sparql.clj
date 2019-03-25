@@ -62,6 +62,9 @@
         values-block (str/join " " (map (partial ->sparql-str k) vals))]
     (str/replace q regex (str "$1 " values-block  " $2"))))
 
+(def ^:private flat-coll? #(or (sequential? %)
+                               (set? %)))
+
 (defn- rewrite-values-clauses [q bindings]
   (->> bindings
        (map (fn [[k v]]
@@ -78,7 +81,7 @@
                            :error :nil-sparql-binding}))
                 :else
                 [k v])))
-       (filter (comp sequential? second))
+       (filter (comp flat-coll? second))
        (into {})
        (reduce rewrite-values-clauses* q)))
 
@@ -172,6 +175,7 @@
    (let [sparql-query (slurp (resource sparql-file))
          pre-processed-qry (pre-process-query sparql-query bindings)
          prepped-query (repo/prepare-query repo pre-processed-qry)]
+
      (reduce (fn [pq [unbound-var val]]
                (when-not (or (sequential? val) (set? val))
                  (if (and val (satisfies? rio/IRDF4jConverter val))
