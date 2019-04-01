@@ -44,6 +44,9 @@
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.5"]]
 
+  ;; Ensure we build the java sub project source code too!
+  :java-source-paths ["src-java/grafter_sparql_repository/src/main/java"]
+
   :source-paths ["src" "deprecated/src"]
   :test-paths ["test" "deprecated/test"]
 
@@ -64,6 +67,9 @@
   ;; Swing classes are loaded.
   :jvm-opts ["-Dapple.awt.UIElement=true"]
 
+  ;; Target JDK 8 expected JVM version
+  :javac-options ["-target" "8" "-source" "8"]
+
   :pedantic? true
 
   :profiles { ;; expect upstream projects to provide this explicity if they want sesame
@@ -76,6 +82,7 @@
              :dev-deps {
 
                         :dependencies [
+                                       [http-kit "2.3.0"]
                                        [org.slf4j/slf4j-simple "1.7.25"]
                                        [prismatic/schema "1.1.7"]
                                        [criterium "0.4.4"]]

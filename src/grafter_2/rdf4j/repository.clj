@@ -10,14 +10,14 @@
            [org.eclipse.rdf4j.query BindingSet BooleanQuery GraphQuery Query QueryLanguage TupleQuery Update]
            [org.eclipse.rdf4j.repository Repository RepositoryConnection]
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer])
-  (:import grafter_2.rdf.protocols.IStatement
+  (:import grafter_2.rdf.SPARQLRepository
+           grafter_2.rdf.protocols.IStatement
            org.eclipse.rdf4j.common.iteration.CloseableIteration
            org.eclipse.rdf4j.model.impl.URIImpl
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
            org.eclipse.rdf4j.repository.http.HTTPRepository
            org.eclipse.rdf4j.repository.sail.SailRepository
-           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
            org.eclipse.rdf4j.sail.memory.MemoryStore
            org.eclipse.rdf4j.sail.nativerdf.NativeStore))
 
