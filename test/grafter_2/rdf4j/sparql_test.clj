@@ -112,3 +112,40 @@
       (is (same-query?
             (str "SELECT * WHERE { VALUES ?s { <http://s1> <http://s2> } ?s ?p ?o . }")
             (#'sparql/pre-process-query q1 {:s [(URI. "http://s1") (URI. "http://s2")]}))))))
+
+(deftest reasoning-test
+  (letfn [(reasoning? [x] (.getIncludeInferred x))]
+    (let [r (repo/fixture-repo (resource "grafter/rdf/sparql/sparql-data.trig"))]
+      (with-open [c (repo/->connection r)]
+        (testing "1-ary :sparql-query"
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql")]
+            (testing "[:repo] - no opts, defaulting to false"
+              (is (not (reasoning? (q c)))))
+            (testing "[:bind :repo] - no opts, defaulting to false"
+              (is (not (reasoning? (q {} c)))))
+            (testing "[:opts :repo] - with opts, specifically false"
+              (is (not (reasoning? (q {:reasoning? false} c)))))
+            (testing "[:opts :bind :repo] - with opts, specifically true"
+              (is (reasoning? (q {:reasoning? true} c))))))
+        (testing "2-ary :sparql-query :repo"
+          (is (not (reasoning? (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" c)))))
+        (testing "2-ary :sparql-query :opts, specifically false"
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" {:reasoning? false})]
+            (is (not (reasoning? (q c))))))
+        (testing "2-ary :sparql-query :opts, specifically true"
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" {:reasoning? true})]
+            (is (reasoning? (q c)))))
+        (testing "3-ary :sparql-query :opts :repo - specifically false"
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" {:reasoning? false} c)]
+            (is (not (reasoning? q)))))
+        (testing "3-ary :sparql-query :opts :repo - specifically ture"
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" {:reasoning? true} c)]
+            (is (reasoning? q))))
+        (testing "3-ary :sparql-query :bind :repo - defaulting to false"
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" {} c)]
+            (is (not (reasoning? q)))))
+        (testing "4-ary :sparql-query :opts :bind :repo"
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" {:reasoning? false} {} c)]
+            (is (not (reasoning? q))))
+          (let [q (#'sparql/-query "grafter/rdf/sparql/select-spog.sparql" {:reasoning? true} {} c)]
+            (is (reasoning? q))))))))

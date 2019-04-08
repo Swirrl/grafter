@@ -87,7 +87,9 @@
         (println res)))
   ````"
   ;; TODO: reimplement interfaces with proper resource handling.
-  (query-dataset [this sparql-string model]))
+  (query-dataset
+    [this sparql-string model]
+    [this sparql-string model opts]))
 
 (defprotocol IGrafterRDFType
   "This protocol coerces a backend RDF type, e.g. an RDF4j quad object

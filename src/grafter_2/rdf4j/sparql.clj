@@ -3,11 +3,13 @@
   "Functions for executing SPARQL queries with grafter RDF
   repositories, that support basic binding replacement etc."
   (:require [clojure.java.io :as io :refer [resource]]
+            [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [grafter-2.rdf4j.io :as rio]
             [grafter-2.rdf4j.repository :as repo :refer [->connection]])
   (:import java.util.regex.Pattern
-           org.eclipse.rdf4j.rio.ntriples.NTriplesUtil))
+           org.eclipse.rdf4j.rio.ntriples.NTriplesUtil
+           org.eclipse.rdf4j.repository.RepositoryConnection))
 
 (defn- get-clause-pattern [clause-name key]
   (cond
@@ -117,25 +119,102 @@
       (rewrite-limit-and-offset-clauses bindings)
       (rewrite-values-clauses bindings)))
 
+
+(s/def ::reasoning? boolean?)
+(s/def ::query-opts (s/keys :req-un [::reasoning?]))
+(s/def ::repo (partial instance? RepositoryConnection))
+(s/def ::bindings (s/map-of keyword? any?))
+(s/def ::query-args
+  (s/cat :opts (s/? ::query-opts) :bind (s/? ::bindings) :repo (s/? ::repo)))
+
+(defn ensure-sparql-file [sparql-file]
+  (if (io/resource sparql-file)
+    sparql-file
+    (throw (ex-info "Could not find sparql file on resource path"
+                    {:error :resource-file-not-found
+                     :resource-path sparql-file}))))
+
+(defmulti ^:private -query
+  (fn [sparql-file & args]
+    (let [{:keys [opts bind repo] :as conformed} (s/conform ::query-args args)]
+      (if (s/invalid? conformed)
+        conformed
+        (cond-> [:sparql-file]
+          opts (conj :opts)
+          bind (conj :bind)
+          repo (conj :repo))))))
+
+(defmethod -query [:sparql-file]
+  [sparql-file]
+  (partial -query (ensure-sparql-file sparql-file)))
+
+(defmethod -query [:sparql-file :opts]
+  [sparql-file opts]
+  (partial -query (ensure-sparql-file sparql-file) opts))
+
+(defmethod -query [:sparql-file :repo]
+  [sparql-file repo]
+  (-query sparql-file {:reasoning? false} {} repo))
+
+(defmethod -query [:sparql-file :bind :repo]
+  [sparql-file opts bindings]
+  (partial -query (ensure-sparql-file sparql-file) opts bindings))
+
+(defmethod -query [:sparql-file :opts :repo]
+  [sparql-file opts repo]
+  (-query sparql-file opts {} repo))
+
+(defmethod -query [:sparql-file :bind :repo]
+  [sparql-file bindings repo]
+  (-query sparql-file {:reasoning? false} bindings repo))
+
+(defmethod -query [:sparql-file :opts :bind :repo]
+  [sparql-file {:keys [reasoning?] :as opts} bindings repo]
+  (let [sparql-query (slurp (resource sparql-file))
+        pre-processed-qry (pre-process-query sparql-query bindings)
+        prepped-query (repo/prepare-query repo pre-processed-qry nil opts)]
+    (reduce (fn [pq [unbound-var val]]
+              (when-not (or (sequential? val) (set? val))
+                (if (and val (satisfies? rio/IRDF4jConverter val))
+                  (.setBinding pq (name unbound-var) (rio/->backend-type val))
+                  (throw (ex-info (str "Could not coerce nil value into SPARQL binding for variable " unbound-var)
+                                  {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
+              pq)
+            prepped-query
+            (dissoc bindings ::limits ::offsets))
+    prepped-query))
+
+(defmethod -query ::s/invalid [sparql-file & args]
+  (throw
+   (ex-info
+    (format "Arguments did not conform to spec %s\n%s"
+            ::query-args
+            (s/explain-str ::query-args args))
+    {:type :illegal-argument-exception
+     :spec (s/explain-data ::query-args args)})))
+
 (defn query
-  "Takes a string reference to a sparql-file on the resource path and
-  optionally a map of bindings that should map SPARQL variables from
-  your query to concrete values, allowing you to restrict and
-  customise your query.
+  "Takes a string reference to a `sparql-file` on the resource path and
+  optionally a map of bindings that should map SPARQL variables from your query
+  to concrete values, allowing you to restrict and customise your query.
 
-  The bindings map is optional, and if it's not provided then the
-  query in the file is run as is.
+  The `opts` map is optional. Options include:
 
-  Additionally, if your sparql query specifies a LIMIT or OFFSET the
-  bindings map supports the special keys ::limits and ::offsets.
-  Which should be maps binding identifiable limits/offsets from your
-  query to new values.
+  - `:reasoning?` `true|false` whether or not reasoning/inference should be used
+  in the query. DEFAULT: `false`
 
-  VALUES clause bindings are supported like normal ?var bindings when
-  there is just one VALUES binding.  When there are more than one, you
-  should provide a vector containing the component var names as the
-  key in the map, with a sequence of sequences as the values
-  themselves.  e.g. to override a clause like this:
+  The `bindings` map is optional, and if it's not provided then the query in the
+  file is run as is.
+
+  Additionally, if your sparql query specifies a LIMIT or OFFSET the bindings
+  map supports the special keys ::limits and ::offsets.  Which should be maps
+  binding identifiable limits/offsets from your query to new values.
+
+  VALUES clause bindings are supported like normal ?var bindings when there is
+  just one VALUES binding.  When there are more than one, you should provide a
+  vector containing the component var names as the key in the map, with a
+  sequence of sequences as the values themselves.  e.g. to override a clause
+  like this:
 
   VALUES ?a ?b { (1 2) (3 4) }
 
@@ -145,13 +224,13 @@
 
   nil's inside the VALUES row's themselves will raise an error.
 
-  The clojure keyword :grafter-2.rdf.sparql/undef can be used to
-  represent a SPARQL UNDEF, in the bound VALUES data.
+  The clojure keyword :grafter-2.rdf.sparql/undef can be used to represent a
+  SPARQL UNDEF, in the bound VALUES data.
 
   The final argument `repo` should be the repository to query.
 
-  If only one argument referencing a resource path to a SPARQL query
-  then a partially applied function is returned. e.g.
+  If only one argument referencing a resource path to a SPARQL query then a
+  partially applied function is returned. e.g.
 
   (def spog (query \"grafter/rdf/sparql/select-spog.sparql\"))
 
@@ -161,27 +240,17 @@
 
   (spog r {:s (java.net.URI. \"http://example.org/data/a-triple\")}) ;; triples for given subject s.
   "
-  ([sparql-file]
-   (if (io/resource sparql-file)
-     (partial query sparql-file)
-     (throw (ex-info "Could not find sparql file on resource path" {:error :resource-file-not-found
-                                                                    :resource-path sparql-file}))))
-  ([sparql-file repo]
-   (query sparql-file {} repo))
-  ([sparql-file bindings repo]
-   (let [sparql-query (slurp (resource sparql-file))
-         pre-processed-qry (pre-process-query sparql-query bindings)
-         prepped-query (repo/prepare-query repo pre-processed-qry)]
-     (reduce (fn [pq [unbound-var val]]
-               (when-not (or (sequential? val) (set? val))
-                 (if (and val (satisfies? rio/IRDF4jConverter val))
-                   (.setBinding pq (name unbound-var) (rio/->backend-type val))
-                   (throw (ex-info (str "Could not coerce nil value into SPARQL binding for variable " unbound-var)
-                                   {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
-               pq)
-             prepped-query
-             (dissoc bindings ::limits ::offsets))
-     (repo/evaluate prepped-query))))
+ {:arglists '([sparql-file]
+              [sparql-file opts]
+              [sparql-file repo]
+              [sparql-file opts repo]
+              [sparql-file bindings repo]
+              [sparql-file opts bindings repo])}
+  ([sparql-file & args]
+   (let [q (apply -query sparql-file args)]
+     (if (fn? q)
+       (comp repo/evaluate q)
+       (repo/evaluate q)))))
 
 (comment
   (def r (repo/resource-repo "grafter/rdf/sparql/sparql-data.trig"))

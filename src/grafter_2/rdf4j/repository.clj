@@ -10,14 +10,14 @@
            [org.eclipse.rdf4j.query BindingSet BooleanQuery GraphQuery Query QueryLanguage TupleQuery Update]
            [org.eclipse.rdf4j.repository Repository RepositoryConnection]
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer])
-  (:import grafter_2.rdf.protocols.IStatement
+  (:import grafter_2.rdf.SPARQLRepository
+           grafter_2.rdf.protocols.IStatement
            org.eclipse.rdf4j.common.iteration.CloseableIteration
            org.eclipse.rdf4j.model.impl.URIImpl
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
            org.eclipse.rdf4j.repository.http.HTTPRepository
            org.eclipse.rdf4j.repository.sail.SailRepository
-           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
            org.eclipse.rdf4j.sail.memory.MemoryStore
            org.eclipse.rdf4j.sail.nativerdf.NativeStore))
 
@@ -327,8 +327,9 @@
        (reduce f val c))))
 
   pr/ISPARQLable
-  (pr/query-dataset [this query-str model]
-    (throw-deprecated-exception!))
+  (pr/query-dataset
+    ([this query-str model] (throw-deprecated-exception!))
+    ([this query-str model opts] (throw-deprecated-exception!)))
 
   pr/ISPARQLUpdateable
   (pr/update! [this query-str]
@@ -443,7 +444,10 @@
   Prepared queries still need to be evaluated with evaluate."
   ([repo sparql-string] (prepare-query repo sparql-string nil))
   ([repo sparql-string restriction]
-   (prepare-query* repo sparql-string restriction)))
+   (prepare-query repo sparql-string restriction nil))
+  ([repo sparql-string restriction {:keys [reasoning?] :as opts}]
+   (doto (prepare-query* repo sparql-string restriction)
+     (.setIncludeInferred (or reasoning? false)))))
 
 (defn prepare-update
   "Prepare (parse but don't process) a SPARQL update request.
@@ -469,9 +473,12 @@
      (reduce f val (pr/to-statements this {}))))
 
   pr/ISPARQLable
-  (pr/query-dataset [this sparql-string dataset]
-    (let [preped-query (prepare-query this sparql-string dataset)]
-      (evaluate preped-query)))
+  (pr/query-dataset
+    ([this sparql-string dataset]
+     (pr/query-dataset this sparql-string dataset {}))
+    ([this sparql-string dataset opts]
+     (let [preped-query (prepare-query this sparql-string dataset opts)]
+       (evaluate preped-query))))
 
   pr/ISPARQLUpdateable
   (pr/update! [this sparql-string]
@@ -586,11 +593,14 @@
 
   Options are:
 
-  - `:default-graph` a seq of URI strings representing named graphs to be set
-    as the default union graph for the query.
+  - `:default-graph` a seq of URI strings representing named graphs to be set as
+    the default union graph for the query.
 
-  - `:named-graphs` a seq of URI strings representing the named graphs in
-    to be used in the query.
+  - `:named-graphs` a seq of URI strings representing the named graphs to be
+    used in the query.
+
+  - `:reasoning?` `true|false` whether or not reasoning/inference should be used
+  in the query. DEFAULT: `false`
 
   If no options are passed then we use the default of no graph
   restrictions whilst the union graph is the union of all graphs."
@@ -600,7 +610,7 @@
   ;; prefixes onto the SPARQL string ourselves.
   (let [sparql (str (build-sparql-prefixes-block prefixes) sparql)
         dataset (mapply make-restricted-dataset (or options {}))]
-    (pr/query-dataset repo sparql dataset)))
+    (pr/query-dataset repo sparql dataset options)))
 
 (extend-type RepositoryConnection
   pr/ITripleReadable

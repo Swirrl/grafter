@@ -167,10 +167,18 @@
                     "geopos" "http://www.w3.org/2003/01/geo/wgs84_pos#"}]
       (with-open [c (->connection r)]
         (testing "RDFS Inference"
-          (is (query c "ASK { :rick a foaf:Person . }" :prefixes prefixes))
-          (is (query c "ASK { :manchester a geopos:SpatialThing . }" :prefixes prefixes))
-          (is (query c "ASK { :swirrl a foaf:Agent . }" :prefixes prefixes))
-          (is (query c "ASK { <http://swirrl.com/> a foaf:Document . }" :prefixes prefixes)))))))
+          (is (query c "ASK { :rick a foaf:Person . }"
+                     :prefixes prefixes
+                     :reasoning? true))
+          (is (query c "ASK { :manchester a geopos:SpatialThing . }"
+                     :prefixes prefixes
+                     :reasoning? true))
+          (is (query c "ASK { :swirrl a foaf:Agent . }"
+                     :prefixes prefixes
+                     :reasoning? true))
+          (is (query c "ASK { <http://swirrl.com/> a foaf:Document . }"
+                     :prefixes prefixes
+                     :reasoning? true)))))))
 
 
 (comment
