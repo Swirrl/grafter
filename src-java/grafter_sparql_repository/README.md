@@ -1,7 +1,7 @@
 # Grafter SPARQL Repository
 
 This small piece of Java code enhances the SPARQL Repository to behave how we
-want it to when talking to Stardog.
+want it to when talking to SPARQL endpoints, such as Stardog.
 
 It's main job is to centralise how we handle timeouts, query parameters, etc...
 
