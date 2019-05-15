@@ -126,7 +126,51 @@
 (s/def ::reasoning? boolean?)
 (s/def ::query-opts (s/keys :req-un [::reasoning?]))
 (s/def ::repo (partial instance? RepositoryConnection))
-(s/def ::bindings (s/map-of keyword? any?))
+
+(s/def ::bound-value any?)
+
+(s/def ::binding-name (s/and keyword?
+                             ;; only the keyword slug need conform
+                             ;; to the regex as we ignore ns
+                             #(re-matches #"[a-z,A-Z]{1}(\p{Alnum}|-|_)*" (name %))))
+
+(s/def ::simple-binding (s/tuple ::binding-name any?))
+
+(s/def ::same-key-and-value-arity (fn [[k v]]
+                                    (let [arity (count k)]
+                                      (every? #(= arity (count %))
+                                              v))))
+
+(s/def ::values-binding-pair (s/tuple
+                              sequential?
+                              (s/coll-of ::bound-value)))
+
+(s/def ::values-tuple-binding (s/and ::values-binding-pair
+                                     ::same-key-and-value-arity))
+
+;; bindings are given as a map of keys (binding names) to values.
+;;
+;; A simple binding is for the case in a SPARQL query where we want to
+;; replace a single variable e.g. `?s` with a single value e.g. a URI.
+;;
+;; We might do that like so {:s (URI. "http://the/uri")}
+;;
+;; The second case is for binding to VALUES clauses where there may be
+;; multiple bindings projected into the query.
+;;
+;; e.g. VALUES (?s ?p) { (:some-subject rdfs:label) (:some-other-subject skos:notation) }
+;;
+;; This is the :values-tuple-binding case, where we spec that the
+;; binding key is a tuple like [:s :p] and the value is a sequence of
+;; 0 or more tuples with the same arity as the projection.
+;;
+;; Though these are given as a map we spec them as a coll-of tuples,
+;; so we can constrain that the key arity matches the value arity,
+;; within a collection of values.
+(s/def ::bindings (s/coll-of
+                   (s/or :simple-binding ::simple-binding
+                         :values-tuple-binding ::values-tuple-binding)))
+
 (s/def ::query-args
   (s/cat :opts (s/? ::query-opts) :bind (s/? ::bindings) :repo (s/? ::repo)))
 
