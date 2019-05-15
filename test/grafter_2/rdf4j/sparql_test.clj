@@ -4,7 +4,8 @@
             [clojure.test :refer :all]
             [grafter-2.rdf.protocols :as rdf]
             [grafter-2.rdf4j.repository :as repo]
-            [grafter-2.rdf4j.sparql :as sparql :refer :all])
+            [grafter-2.rdf4j.sparql :as sparql :refer :all]
+            [grafter.vocabularies.rdf :refer :all])
   (:import java.net.URI))
 
 (deftest pre-process-limit-clauses-test
@@ -66,7 +67,7 @@
               "?s ?p ?o ."
               "}")
          (#'sparql/rewrite-values-clauses q4 { [:s :p] [[(URI. "http://s1") (URI. "http://p1")]
-                                                      [(URI. "http://s2") (URI. "http://p2")]]}))))
+                                                        [(URI. "http://s2") (URI. "http://p2")]]}))))
 
   (let [q5 (sparql-query "grafter/rdf/sparql/select-values-5.sparql")]
     (is (same-query?
@@ -91,7 +92,13 @@
       (is (= 2 (with-open [c (repo/->connection r)]
                  (count (spog {:s (URI. "http://example.org/data/another-triple")
                                ::sparql/offsets {0 1}}
-                              c))))))))
+                              c))))))
+
+    (testing "Multi column VALUES query"
+      (let [q (partial sparql/query "grafter/rdf/sparql/select-values-4.sparql")]
+        (with-open [conn (repo/->connection r)]
+          (is (= 3 (count (q {[:s :p] [[(URI. "http://example.org/data/another-triple") rdf:a]]}
+                             conn)))))))))
 
 (deftest strip-comments-test
   (let [q1 (sparql-query "grafter/rdf/sparql/select-prefixes-comments.sparql")]
