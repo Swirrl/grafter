@@ -8,7 +8,7 @@
   (:require [grafter.rdf :as rdf]
             [grafter.url :as url]
             [grafter.rdf.protocols :refer [->Triple ->Quad]])
-  (:import [org.eclipse.rdf4j.model URI]))
+  (:import [org.openrdf.model URI]))
 
 (defn- valid-uri? [node]
   (let [types [java.lang.String java.net.URL java.net.URI URI]]
