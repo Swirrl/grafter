@@ -690,8 +690,6 @@
   org.eclipse.rdf4j.model.URI
   (->-rdf4j-uri [this] this)
   GrafterURL
-  (->-rdf4j-uri [this] (URIImpl. (str this)))
-  org.eclipse.rdf4j.model.Graph
   (->-rdf4j-uri [this] (URIImpl. (str this))))
 
 (defn statements

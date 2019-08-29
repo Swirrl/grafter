@@ -6,7 +6,7 @@
             [grafter-2.rdf4j.formats :as format]
             [grafter-2.rdf4j.io :as rio]
             [me.raynes.fs :as fs])
-  (:import [org.eclipse.rdf4j.model Graph Resource Statement URI]
+  (:import [org.eclipse.rdf4j.model Resource Statement URI]
            [org.eclipse.rdf4j.query BindingSet BooleanQuery GraphQuery Query QueryLanguage TupleQuery Update]
            [org.eclipse.rdf4j.repository Repository RepositoryConnection]
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer])
@@ -338,35 +338,6 @@
   pr/ITripleReadable
   (pr/to-statements [this options]
     (throw-deprecated-exception!)))
-
-(extend-type Graph
-  pr/ITripleReadable
-  (pr/to-statements [this options]
-    (map rio/backend-quad->grafter-quad (iterator-seq (.match this nil nil nil (resource-array)))))
-
-  pr/ITripleWriteable
-
-  (pr/add-statement
-    ([this graph statement]
-     (.add this
-           (rio/->backend-type (pr/subject statement))
-           (rio/->backend-type (pr/predicate statement))
-           (rio/->backend-type (pr/object statement))
-           (resource-array (rio/->rdf4j-uri graph)))))
-
-  (pr/add
-    ([this triples]
-     (pr/add this nil triples))
-
-    ([this graph triples]
-     (doseq [triple triples]
-       (pr/add-statement this graph triple)))
-
-    ([this graph format triple-stream]
-     (pr/add this graph triple-stream))
-
-    ([this graph base-uri format triple-stream]
-     (pr/add this graph triple-stream))))
 
 (defn ^:no-doc sesame-results->seq
   "Convert a sesame results object into a lazy sequence of results."

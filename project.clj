@@ -1,4 +1,4 @@
-(defproject grafter/grafter "2.0.3-SNAPSHOT"
+(defproject grafter/grafter "2.0.4-SNAPSHOT"
   :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -10,36 +10,36 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
 
-                 ;;[org.eclipse.rdf4j/rdf4j-runtime "2.5.0" :exclusions [ch.qos.logback/logback-classic]]
+                 ;;[org.eclipse.rdf4j/rdf4j-runtime "3.0.0" :exclusions [ch.qos.logback/logback-classic]]
 
                  ;; Include a smaller set of dependencies than we used
                  ;; to by default, if you want everything from RDF4j
                  ;; you can include:
 
                  ;; [org.eclipse.rdf4j/rdf4j-runtime "2.5.0" :exclusions [ch.qos.logback/logback-classic]]
-                 [org.eclipse.rdf4j/rdf4j-rio-api "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-binary "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-jsonld "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-n3 "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-nquads "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-rdfjson "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-rdfxml "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-trig "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-trix "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-api "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqljson "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-text "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-api "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-binary "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-jsonld "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-n3 "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-nquads "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfjson "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfxml "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trig "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trix "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-api "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqljson "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-text "3.0.0"]
 
-                 [org.eclipse.rdf4j/rdf4j-repository-api "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-http "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-sail "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-dataset "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-sail-memory "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-sail-nativerdf "2.5.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-manager "2.5.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-api "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-http "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-sail "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-dataset "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-sail-memory "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-sail-nativerdf "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.0"]
 
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.2.6"]
