@@ -38,6 +38,7 @@
                  [org.eclipse.rdf4j/rdf4j-repository-sail "3.0.0"]
                  [org.eclipse.rdf4j/rdf4j-repository-dataset "3.0.0"]
                  [org.eclipse.rdf4j/rdf4j-sail-memory "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-sail-inferencer "3.0.0"]
                  [org.eclipse.rdf4j/rdf4j-sail-nativerdf "3.0.0"]
                  [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.0"]
 
