@@ -13,7 +13,7 @@
            [java.net MalformedURLException URL]
            java.time.temporal.ChronoField
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
-           [org.eclipse.rdf4j.model BNode Literal Statement URI]
+           [org.eclipse.rdf4j.model BNode Literal Statement URI Model]
            [org.eclipse.rdf4j.model.impl BNodeImpl ContextStatementImpl LiteralImpl SimpleValueFactory StatementImpl URIImpl]
            [org.eclipse.rdf4j.rio RDFFormat RDFHandler Rio]))
 
@@ -663,7 +663,12 @@
 
   java.io.Reader
   (pr/to-statements [this opts]
-    (to-statements* this opts)))
+    (to-statements* this opts))
+
+  Model
+  (to-statements [this _opts]
+    ;; Works because a Model is a java.util.Set
+    (map backend-quad->grafter-quad this)))
 
 (extend-protocol IURIable
   org.eclipse.rdf4j.model.URI
