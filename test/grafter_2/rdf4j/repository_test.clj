@@ -7,23 +7,11 @@
             [grafter-2.rdf4j.templater :refer [graph]]
             [grafter.url :refer [->GrafterURL]])
   (:import [java.net URI URL]
-           org.eclipse.rdf4j.model.impl.GraphImpl
            org.eclipse.rdf4j.repository.sparql.SPARQLRepository))
 
 (def quad-fixture-file-path (io/resource "grafter/rdf/rdf-types.trig"))
 
 (def triple-fixture-file-path (io/resource "grafter/rdf/rdf-types.ttl"))
-
-(deftest reading-writing-to-Graph
-  (let [graph (GraphImpl.)
-        g (URI. "http://foo")
-        s (URI. "http://s")
-        p (URI. "http://p")
-        o (URI. "http://o")]
-    (core/add-statement graph "http://foo" (core/->Quad s p o nil))
-
-    (is (= (core/->Quad s p o g)
-           (first (rio/statements graph))))))
 
 (deftest with-transaction-test
   (with-open [test-db (repo/->connection (sail-repo))]
