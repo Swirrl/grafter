@@ -59,7 +59,7 @@
 
 (defprotocol ITransactable
   "Low level protocol for transactions support.  Most users probably
-  want to use grafter-2.rdf.sesame/with-transaction"
+  want to use grafter-2.rdf4j.repository/with-transaction"
   (begin [repo] "Start a transaction")
   (commit [repo] "Commit a transaction")
   (rollback [repo] "Rollback a transaction"))
