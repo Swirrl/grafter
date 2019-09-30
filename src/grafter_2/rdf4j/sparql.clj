@@ -6,7 +6,8 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [grafter-2.rdf4j.io :as rio]
-            [grafter-2.rdf4j.repository :as repo :refer [->connection]])
+            [grafter-2.rdf4j.repository :as repo
+             :refer [->connection IPrepareQuery]])
   (:import java.util.regex.Pattern
            org.eclipse.rdf4j.rio.ntriples.NTriplesUtil
            org.eclipse.rdf4j.repository.RepositoryConnection))
@@ -125,7 +126,8 @@
 
 (s/def ::reasoning? boolean?)
 (s/def ::query-opts (s/keys :req-un [::reasoning?]))
-(s/def ::repo (partial instance? RepositoryConnection))
+
+(s/def ::repo (partial satisfies? IPrepareQuery))
 
 (s/def ::bound-value any?)
 
