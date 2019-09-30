@@ -161,7 +161,7 @@
   ;; through, as it's not really up to grafter to fail the processing,
   ;; as they might just want to pass data through rather than
   ;; understand it.
-  literal)
+  (pr/->RDFLiteral (pr/raw-value literal) (pr/datatype-uri literal)))
 
 (defn quad->backend-quad
   "Convert a grafter IStatement into a backend (RDF4j) statement type."
