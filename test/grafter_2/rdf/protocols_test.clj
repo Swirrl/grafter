@@ -15,6 +15,14 @@
     (triple= (->Quad "http://subject/1" "http://predicate/" "http://object/" "http://context/")
              (->Quad "http://subject/2" "http://predicate/" "http://object/" "http://context/"))))
 
+(deftest quad-test
+  (testing "Quad indexing"
+    (let [q (->Quad "http://subject/" "http://predicate/" "http://object/" "http://context/")]
+      (are [x y] (= x y)
+                 "http://subject/" (nth q 0)
+                 "http://predicate/" (nth q 1)
+                 "http://object/" (nth q 2)
+                 "http://context/" (nth q 3)))))
 
 (deftest literal-test
   (let [lit (literal "10" "http://www.w3.org/2001/XMLSchema#byte")]
@@ -24,6 +32,12 @@
 (deftest language-test
   (is (thrown? AssertionError
                (language "foo" nil))))
+
+(deftest bnode-equality-test
+  (testing "BNode equality"
+    (let [id (gensym)]
+      (is (= (make-blank-node id)
+             (make-blank-node id))))))
 
 (defrecord BatchSizeRecordingRepository [repo batch-sizes])
 
@@ -42,12 +56,12 @@
   ITripleDeleteable
   (delete
     ([{:keys [repo batch-sizes]} quads]
-      (swap! batch-sizes conj (count quads))
-      (delete repo quads))
+     (swap! batch-sizes conj (count quads))
+     (delete repo quads))
 
     ([{:keys [repo batch-sizes]} graph triples]
-      (swap! batch-sizes conj (count triples))
-      (delete repo graph triples))))
+     (swap! batch-sizes conj (count triples))
+     (delete repo graph triples))))
 
 (deftest add-batched-test
   (let [triples (map (fn [i] (->Triple (URI. (str "http://subject" i)) (URI. (str "http://predicate" i)) (URI. (str "http://object" i)))) (range 1 11))

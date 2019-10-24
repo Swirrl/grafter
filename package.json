@@ -1,0 +1,12 @@
+{"name": "grafter",
+  "scripts": {
+    "deps": "yarn install",
+    "watch-test": "shadow-cljs watch test;",
+    "clean": "rm -rf target"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "shadow-cljs": "^2.8.61"
+  }
+}
+

@@ -1,4 +1,4 @@
-(defproject grafter/grafter "2.1.3-SNAPSHOT"
+(defproject grafter/grafter "2.1.4-CLJC"
   :description "Tools for the hard graft of linked data processing"
   :url "http://grafter.org/"
   :license {:name "Eclipse Public License - v1.0"
@@ -43,7 +43,7 @@
                  [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.0"]
 
                  [grafter/url "0.2.5"]
-                 [grafter/vocabularies "0.2.6"]
+                 [grafter/vocabularies "0.3.1"]
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.5"]]
 
@@ -88,7 +88,8 @@
                                        [http-kit "2.3.0"]
                                        [org.slf4j/slf4j-simple "1.7.25"]
                                        [prismatic/schema "1.1.7"]
-                                       [criterium "0.4.4"]]
+                                       [criterium "0.4.4"]
+                                       [thheller/shadow-cljs "2.8.61"]]
 
                         :resource-paths ["dev/resources"]
 
