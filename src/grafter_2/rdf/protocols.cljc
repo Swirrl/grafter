@@ -2,7 +2,7 @@
   grafter-2.rdf.protocols
   "Abstract functions for interacting with RDF & RDF backends, such as
   RDF4j."
-  (:require [grafter.vocabularies.core :as gvc :refer [->uri]]
+  (:require [grafter.vocabularies.core :as gvc]
             [grafter.vocabularies.rdf :as rdf]
             [grafter.vocabularies.xsd :refer [xsd:boolean xsd:byte
                                               xsd:date xsd:dateTime
@@ -17,20 +17,21 @@
 
 #?(:cljs
    (defprotocol IURIable
-     (->cljs-uri [url] "Convert into a grafter.vocabularies.core/URI")))
+     ;; TODO consider adding this to CLJ side for extra portabiltiy
+     (->uri [url] "Convert into a grafter.vocabularies.core/URI")))
 
 #?(:cljs
    (extend-protocol IURIable
      string
-     (->cljs-uri [uri]
-       (->uri uri))
+     (->uri [uri]
+       (gvc/->uri uri))
 
      gvc/URI
-     (->cljs-uri [uri]
+     (->uri [uri]
        uri)
 
      goog/Uri
-     (->cljs-uri [uri]
+     (->uri [uri]
        (->uri (.toString uri)))))
 
 (defprotocol IStatement
@@ -267,7 +268,7 @@
   [val datatype-uri]
   (->RDFLiteral (str val)
                 #?(:clj  (->java-uri datatype-uri)
-                   :cljs (->cljs-uri datatype-uri))))
+                   :cljs (->uri datatype-uri))))
 
 (extend-protocol IRawValue
   #?@(:clj
