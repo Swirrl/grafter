@@ -1,5 +1,6 @@
 (ns grafter-2.rdf.protocols-test
   (:require [grafter.vocabularies.xsd :refer [xsd:boolean xsd:string]]
+            [grafter.vocabularies.rdf :refer [rdf:langString]]
             [grafter-2.rdf.protocols :as pr]
             [cljs.test :refer (deftest testing is are)]))
 
@@ -7,7 +8,8 @@
   (testing "langstring"
     (let [lang-string (pr/->LangString "foo-bar" :en)]
       (is (= "foo-bar" (pr/raw-value lang-string)))
-      (is (instance? pr/LangString lang-string)))))
+      (is (instance? pr/LangString lang-string))
+      (is (= rdf:langString (pr/datatype-uri lang-string))))))
 
 (deftest literal-test
   (testing "literal"

@@ -3,6 +3,7 @@
   "Abstract functions for interacting with RDF & RDF backends, such as
   RDF4j."
   (:require [grafter.vocabularies.core :as gvc :refer [->uri]]
+            [grafter.vocabularies.rdf :as rdf]
             [grafter.vocabularies.xsd :refer [xsd:boolean xsd:byte
                                               xsd:date xsd:dateTime
                                               xsd:decimal xsd:double
@@ -158,7 +159,8 @@
 
 (defrecord OffsetDate [date timezone])
 
-(def rdf:langString (->uri "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"))
+(def ^{:deprecated "Use grafter.vocabularies.rdf/rdf:langString instead."}
+  rdf:langString rdf/rdf:langString)
 
 ;; TODO add tests to ensure that datatype-uri's etc are right
 ;; everywhere we do string coercions.
@@ -211,7 +213,7 @@
 
   IDatatypeURI
   (datatype-uri [this]
-    rdf:langString)
+    rdf/rdf:langString)
 
   #?@(:cljs
       ;; IEmptyableCollection fix for protocol bug seen in Chrome / Chromium
