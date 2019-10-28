@@ -1,5 +1,5 @@
 (ns grafter-2.rdf.protocols-test
-  (:require [grafter.vocabularies.xsd :as gvx]
+  (:require [grafter.vocabularies.xsd :refer [xsd:boolean xsd:string]]
             [grafter-2.rdf.protocols :as pr]
             [cljs.test :refer (deftest testing is are)]))
 
@@ -14,7 +14,7 @@
     (let [lit (pr/literal "foo" "http://www.w3.org/2001/XMLSchema#string")]
       (are [x y] (= x y)
                  "foo" (pr/raw-value lit)
-                 gvx/xsd:string (pr/datatype-uri lit)))))
+                 xsd:string (pr/datatype-uri lit)))))
 
 (deftest quad-test
   (testing "Quad indexing"
@@ -28,13 +28,13 @@
 (deftest datatype-uri-test
   (testing "datatype-uri"
     (are [x y] (= x y)
-               gvx/xsd:boolean (pr/datatype-uri true)
-               gvx/xsd:boolean (pr/datatype-uri false)
+      xsd:boolean (pr/datatype-uri true)
+      xsd:boolean (pr/datatype-uri false)
 
-               gvx/xsd:string (pr/datatype-uri "")
-               gvx/xsd:string (pr/datatype-uri " ")
-               gvx/xsd:string (pr/datatype-uri "a")
-               gvx/xsd:string (pr/datatype-uri "a b"))))
+      xsd:string (pr/datatype-uri "")
+      xsd:string (pr/datatype-uri " ")
+      xsd:string (pr/datatype-uri "a")
+      xsd:string (pr/datatype-uri "a b"))))
 
 (deftest bnode-equality-test
   (testing "BNode equality"
@@ -51,4 +51,3 @@
   (testing "not triple="
     (pr/triple= (pr/->Quad "http://subject/1" "http://predicate/" "http://object/" "http://context/")
                 (pr/->Quad "http://subject/2" "http://predicate/" "http://object/" "http://context/"))))
-

@@ -3,9 +3,13 @@
   "Abstract functions for interacting with RDF & RDF backends, such as
   RDF4j."
   (:require [grafter.vocabularies.core :as gvc :refer [->uri]]
-            #?@(:clj  [[grafter.url :refer [->java-uri]]
-                       [grafter.vocabularies.xsd :as gvx :refer :all]]
-                :cljs [[grafter.vocabularies.xsd :as gvx]]))
+            [grafter.vocabularies.xsd :refer [xsd:boolean xsd:byte
+                                              xsd:date xsd:dateTime
+                                              xsd:decimal xsd:double
+                                              xsd:float xsd:float
+                                              xsd:integer xsd:short
+                                              xsd:string xsd:time]]
+            #?@(:clj  [[grafter.url :refer [->java-uri]]]))
   #?(:clj (:import [java.net URI]
                    [java.time LocalTime LocalDate LocalDateTime OffsetTime OffsetDateTime]
                    [org.eclipse.rdf4j.model Literal])))
@@ -173,7 +177,7 @@
 
      IDatatypeURI
      (datatype-uri [this]
-       gvx/xsd:string))
+       xsd:string))
 
    :cljs
    (extend-type string
@@ -187,7 +191,7 @@
 
      IDatatypeURI
      (datatype-uri [this]
-       gvx/xsd:string)))
+       xsd:string)))
 
 (defrecord LangString [string lang]
   IRDFString
@@ -277,10 +281,10 @@
 #?(:cljs
    (extend-protocol IDatatypeURI
      boolean
-     (datatype-uri [t] gvx/xsd:boolean)
+     (datatype-uri [t] xsd:boolean)
 
      string
-     (datatype-uri [t] gvx/xsd:string))
+     (datatype-uri [t] xsd:string))
 
    :clj
    (extend-protocol IDatatypeURI
