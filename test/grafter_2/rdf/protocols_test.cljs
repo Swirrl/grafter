@@ -33,10 +33,7 @@
       xsd:boolean (pr/datatype-uri true)
       xsd:boolean (pr/datatype-uri false)
 
-      xsd:string (pr/datatype-uri "")
-      xsd:string (pr/datatype-uri " ")
-      xsd:string (pr/datatype-uri "a")
-      xsd:string (pr/datatype-uri "a b"))))
+      xsd:string (pr/datatype-uri "an xsd string"))))
 
 (deftest bnode-equality-test
   (testing "BNode equality"
