@@ -39,7 +39,7 @@
 
 (defn- make-triples [subject predicate object-or-nested-subject]
   (if (blank-node? object-or-nested-subject)
-    (let [bnode-resource (keyword (gensym "bnode"))
+    (let [bnode-resource (rdf/make-blank-node)
           nested-pairs object-or-nested-subject]
 
       (-> (mapcat (partial make-triples bnode-resource)
