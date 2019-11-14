@@ -228,6 +228,7 @@
         (is (= (statements bais :format :brf)
                quads))))))
 
+
 (deftest quad->backend-quad-test
   (testing "IStatement->sesame-statement"
     (is (= (sut/quad->backend-quad (->Quad (url/->java-uri "http://foo.com/") (url/->java-uri "http://bar.com/") "a string" (url/->java-uri "http://blah.com/")))
@@ -259,7 +260,7 @@
                              ["ayanami"] (url/path-segments grafter-url)))))
 
 (deftest blank-nodes-load-test
-  (testing "Blank nodes are keywords"
+  (testing "Blank nodes are blank node objects"
     (let [[[s1 p1 o1] [s2 p2 o2]] (statements (io/resource "grafter/rdf/bnodes.nt"))]
       (is (pr/blank-node? o1))
       (is (pr/blank-node? s2)))))
