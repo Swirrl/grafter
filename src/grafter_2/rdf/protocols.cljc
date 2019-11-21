@@ -13,7 +13,8 @@
             #?@(:clj  [[grafter.url :refer [->java-uri]]]))
   #?(:clj (:import [java.net URI]
                    [java.time LocalTime LocalDate LocalDateTime OffsetTime OffsetDateTime]
-                   [org.eclipse.rdf4j.model Literal])))
+                   [org.eclipse.rdf4j.model Literal]))
+  (:refer-clojure :exclude [uri?]))
 
 #?(:cljs
    (defprotocol IURIable
@@ -439,17 +440,6 @@
   ([id]
    (BNode. (str id))))
 
-(defmulti blank-node?
-          "Predicate function that tests whether the supplied value is
-          considered to be a blank node type."
-          type)
-
-(defmethod blank-node? BNode [_]
-  true)
-
-(defmethod blank-node? :default [_]
-  false)
-
 (defn triple=
   "Equality test for an RDF triple or quad, that checks whether the supplied RDF
   statements are equal in terms of RDFs semantics i.e. two quads will be equal
@@ -577,3 +567,80 @@
 
      ([target graph triples batch-size]
       (apply-batched target (fn [repo batch] (delete repo graph batch)) triples batch-size))))
+
+(defprotocol ILangStringPredicate
+  (lang-string? [t]))
+
+(defprotocol IXSDStringPredicate
+  (xsd-string? [t]))
+
+#?(:clj
+   (extend-protocol ILangStringPredicate
+     Object
+     (lang-string? [t]
+       false)
+
+     LangString
+     (lang-string? [_]
+       true)))
+
+#?(:clj
+   (extend-protocol IXSDStringPredicate
+     Object
+     (xsd-string? [t]
+       false)
+
+     String
+     (xsd-string? [t]
+       true)))
+
+(defprotocol ILiteralPredicate
+  (literal? [t]))
+
+(defprotocol INativeLiteralPredicate
+  (native-literal? [t]))
+
+#?(:clj
+   (extend-protocol ILiteralPredicates
+     String
+     (literal? [t]
+       true)
+     Number
+     (literal? [_]
+       true)
+     Boolean
+     (literal? [_]
+       true)))
+
+(defn non-native-literal? [t]
+  (and (literal? t)
+       (not (native-literal? t))))
+
+(defn rdf-string? [t]
+  (or (xsd-string? t)
+      (lang-string? t)))
+
+(defprotocol IResourcePredicates
+  (uri? [t])
+  (blank-node? [t] "Predicate function that tests whether the supplied value is
+   considered to be a blank node type."))
+
+#?(:clj
+
+   (extend-protocol IResourcePredicates
+     java.net.URI
+     (uri? [_] true)
+     (blank-node? [_] false)
+
+     Object
+     (uri? [_] false)
+     (blank-node? [_] false)
+
+     nil
+     (uri? [_] false)
+     (blank-node? [_] false)))
+
+
+(defn resource? [t]
+  (or (uri? t)
+      (blank-node? t)))
