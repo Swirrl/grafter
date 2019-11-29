@@ -51,7 +51,7 @@
   :java-source-paths ["src-java/grafter_sparql_repository/src/main/java"]
 
   :source-paths ["src" "deprecated/src"]
-  :test-paths ["test" "deprecated/test"]
+  :test-paths ["test"]
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
@@ -68,7 +68,7 @@
 
   ;; Prevent Java process from appearing as a GUI app in OSX when
   ;; Swing classes are loaded.
-  :jvm-opts ["-Dapple.awt.UIElement=true"]
+  :jvm-opts ["-Dapple.awt.UIElement=true" #_"--illegal-access=debug"]
 
   ;; Target JDK 8 expected JVM version
   :javac-options ["-target" "8" "-source" "8"]
@@ -79,8 +79,12 @@
              :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]
                                        [org.clojure/tools.logging "0.4.0"]]}
 
-             :dev [:provided :dev-deps]
+             :dev [:provided
+                   :dev-deps
+                   :grafter-1-tests ;; test the deprecated grafter-1
+                   ]
 
+             :grafter-1-tests {:test-paths ["deprecated/test"] }
 
              :dev-deps {
 
