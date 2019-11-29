@@ -11,7 +11,8 @@
            [grafter_2.rdf.protocols IStatement LangString OffsetDate Quad RDFLiteral]
            java.io.File
            [java.net MalformedURLException URL]
-           java.time.temporal.ChronoField
+           [java.time LocalTime]
+           [java.time.temporal ChronoField Temporal TemporalField]
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
            [org.eclipse.rdf4j.model BNode Literal Statement URI Model]
            [org.eclipse.rdf4j.model.impl BNodeImpl ContextStatementImpl LiteralImpl SimpleValueFactory StatementImpl URIImpl]
@@ -103,7 +104,10 @@
   (let [tz (.getTimezone xml-cal)]
     (not= tz DatatypeConstants/FIELD_UNDEFINED)))
 
-(defn- xml-cal->local-time [xml-cal]
+(defn- xml-cal->local-time
+  "NOTE: this function returns either a LocalTime or an OffsetTime.
+  TODO: consider refactoring so we can avoid the reflective call."
+  [^XMLGregorianCalendar xml-cal]
   (let [hour (let [h (.getHour xml-cal)]
                (if (= 24 h)
                  0
@@ -131,10 +135,10 @@
         (java.time.OffsetTime/of local-time (java.time.ZoneOffset/ofTotalSeconds tz-seconds)))
       local-time)))
 
-(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#time" [literal]
+(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#time" [^Literal literal]
   (xml-cal->local-time (.calendarValue literal)))
 
-(defn- xml-cal->local-date [xml-cal]
+(defn- xml-cal->local-date [^XMLGregorianCalendar xml-cal]
   (let [year (.getYear xml-cal)
         month (.getMonth xml-cal)
         day (.getDay xml-cal)
@@ -145,15 +149,15 @@
         (pr/->OffsetDate local-time (java.time.ZoneOffset/ofTotalSeconds tz-seconds)))
       local-time)))
 
-(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#dateTime" [literal]
+(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#dateTime" [^Literal literal]
   (let [xml-cal (.calendarValue literal)
         date (xml-cal->local-date xml-cal)
-        time (xml-cal->local-time xml-cal)]
+        time ^LocalTime (xml-cal->local-time xml-cal)]
     (if (has-timezone? xml-cal)
       (java.time.OffsetDateTime/of (:date date) (.toLocalTime time) (.getOffset time))
       (java.time.LocalDateTime/of date time))))
 
-(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#date" [literal]
+(defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#date" [^Literal literal]
   (xml-cal->local-date (.calendarValue literal)))
 
 (defmethod backend-literal->grafter-type :default [literal]
@@ -236,7 +240,7 @@
 
   LangString
   (->backend-type [this]
-    (.. (SimpleValueFactory/getInstance) (createLiteral (:string this) (name (:lang this)))))
+    (.. (SimpleValueFactory/getInstance) (createLiteral ^String (:string this) (name (:lang this)))))
 
   String
   (->backend-type [this]
@@ -280,34 +284,35 @@
 
 ;; Dates and times
 
-(defn- get-temporal-field [temporal-obj temporal-field]
+(defn- get-temporal-field [^Temporal temporal-obj ^TemporalField temporal-field]
   (if (.isSupported temporal-obj temporal-field)
     (.get temporal-obj temporal-field)
     DatatypeConstants/FIELD_UNDEFINED))
 
-(defn- temporal-object->xml-cal [temporal-obj offset-obj]
-  (.newXMLGregorianCalendar (DatatypeFactory/newInstance)
-                            (when (.isSupported temporal-obj ChronoField/YEAR)
-                              (biginteger (get-temporal-field temporal-obj ChronoField/YEAR)))
-                            (get-temporal-field temporal-obj ChronoField/MONTH_OF_YEAR)
-                            (get-temporal-field temporal-obj ChronoField/DAY_OF_MONTH)
-                            (get-temporal-field temporal-obj ChronoField/HOUR_OF_DAY)
-                            (get-temporal-field temporal-obj ChronoField/MINUTE_OF_HOUR)
-                            (get-temporal-field temporal-obj ChronoField/SECOND_OF_MINUTE)
+(defn- temporal-object->xml-cal ^XMLGregorianCalendar [^Temporal temporal-obj ^java.time.ZoneOffset offset-obj]
+  (let [factory (DatatypeFactory/newInstance)]
+    (.newXMLGregorianCalendar ^javax.xml.datatype.DatatypeFactory factory
+                              (when (.isSupported temporal-obj ChronoField/YEAR)
+                                (biginteger (get-temporal-field temporal-obj ChronoField/YEAR)))
+                              (int (get-temporal-field temporal-obj ChronoField/MONTH_OF_YEAR))
+                              (int (get-temporal-field temporal-obj ChronoField/DAY_OF_MONTH))
+                              (int (get-temporal-field temporal-obj ChronoField/HOUR_OF_DAY))
+                              (int (get-temporal-field temporal-obj ChronoField/MINUTE_OF_HOUR))
+                              (int (get-temporal-field temporal-obj ChronoField/SECOND_OF_MINUTE))
 
-                            (when (.isSupported temporal-obj ChronoField/NANO_OF_SECOND)
-                              (let [nano (.get temporal-obj ChronoField/NANO_OF_SECOND)]
-                                (if (zero? nano)
-                                  (bigdec nano)
-                                  (-> nano
+                              (when (.isSupported temporal-obj ChronoField/NANO_OF_SECOND)
+                                (let [nano (.get temporal-obj ChronoField/NANO_OF_SECOND)]
+                                  (if (zero? nano)
+                                    (bigdec nano)
+                                    (-> nano
 
-                                      bigdec
-                                      (.divide 1000000000.0M)))))
+                                        bigdec
+                                        (.divide 1000000000.0M)))))
 
-                            (if offset-obj
-                              (let [tz-offset (Math/round (/ (.getTotalSeconds offset-obj) 60.0))]
-                                tz-offset)
-                              DatatypeConstants/FIELD_UNDEFINED)))
+                              (int (if offset-obj
+                                     (let [tz-offset (Math/round (/ (.getTotalSeconds offset-obj) 60.0))]
+                                       tz-offset)
+                                     DatatypeConstants/FIELD_UNDEFINED)))))
 
 (defn- build-temporal-literal [this tz]
   (.. (SimpleValueFactory/getInstance) (createLiteral (temporal-object->xml-cal this tz))))
