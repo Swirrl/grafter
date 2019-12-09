@@ -17,30 +17,30 @@
                  ;; you can include:
 
                  ;; [org.eclipse.rdf4j/rdf4j-runtime "2.5.0" :exclusions [ch.qos.logback/logback-classic]]
-                 [org.eclipse.rdf4j/rdf4j-rio-api "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-binary "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-jsonld "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-n3 "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-nquads "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-rdfjson "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-rdfxml "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-trig "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-rio-trix "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-api "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqljson "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-text "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-rio-api "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-binary "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-jsonld "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-n3 "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-nquads "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfjson "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfxml "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trig "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trix "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-api "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqljson "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-text "3.0.3"]
 
-                 [org.eclipse.rdf4j/rdf4j-repository-api "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-http "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-sail "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-dataset "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-sail-memory "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-sail-inferencer "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-sail-nativerdf "3.0.0"]
-                 [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.0"]
+                 [org.eclipse.rdf4j/rdf4j-repository-api "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-repository-http "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-repository-sail "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-repository-dataset "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-sail-memory "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-sail-inferencer "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-sail-nativerdf "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.3"]
 
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.3.2"]
@@ -51,7 +51,7 @@
   :java-source-paths ["src-java/grafter_sparql_repository/src/main/java"]
 
   :source-paths ["src" "deprecated/src"]
-  :test-paths ["test" "deprecated/test"]
+  :test-paths ["test"]
 
   :codox {:defaults {:doc "FIXME: write docs"
                      :doc/format :markdown}
@@ -68,7 +68,7 @@
 
   ;; Prevent Java process from appearing as a GUI app in OSX when
   ;; Swing classes are loaded.
-  :jvm-opts ["-Dapple.awt.UIElement=true"]
+  :jvm-opts ["-Dapple.awt.UIElement=true" #_"--illegal-access=debug"]
 
   ;; Target JDK 8 expected JVM version
   :javac-options ["-target" "8" "-source" "8"]
@@ -79,8 +79,12 @@
              :provided {:dependencies [[org.openrdf.sesame/sesame-runtime "2.8.9"]
                                        [org.clojure/tools.logging "0.4.0"]]}
 
-             :dev [:provided :dev-deps]
+             :dev [:provided
+                   :dev-deps
+                   :grafter-1-tests ;; test the deprecated grafter-1
+                   ]
 
+             :grafter-1-tests {:test-paths ["deprecated/test"] }
 
              :dev-deps {
 

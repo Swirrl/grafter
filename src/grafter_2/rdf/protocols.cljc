@@ -138,7 +138,7 @@
     "Return the strings language tag (as a clojure Keyword)"))
 
 (defprotocol IRawValue
-  (raw-value [this]
+  (raw-value ^String [this]
     "Returns the naked value of a literal.  For native primitive
     values e.g. a java.lang.Integer or JS Boolean, this will return the
     supplied value (like identity).  However for more complex types such
