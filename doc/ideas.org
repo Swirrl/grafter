@@ -1,30 +1,30 @@
-**** Matcha Alpha 2 & Grafter 3 ideas
+* Matcha Alpha 2 & Grafter 3 ideas
 <2019-12-19 Thu 21:12>
 
 Grafter 3
 
-- coerce registered vocab URIs into :clj/keywords and back
+- coerce registered vocab URIs into =:clj/keywords= and back
   - Support relative URIs as values to work with base-uri?
     - #ruri "/relative-path" ?
-    - :base/relative-path
-    - :base/../foo/bar
-- Support base-uri everywhere including in SPARQL
+    - =:base/relative-path=
+    - =:base/../foo/bar=
+- Support =base-uri= everywhere including in SPARQL
 - Support general options maps on important interfaces,
   e.g. add/remove triples.  Old API grew to too many arities making
   optionality hard.
 
 - SPARQL support
-  - Generalise ->connection to take opts (base-uri etc)
-  - Provide a ->sparql-string protocol that we always call, and is
+  - Generalise =->connection= to take opts (base-uri etc)
+  - Provide a =->sparql-string= protocol that we always call, and is
     extended to java.lang.String by default, and uses clj 1.10's value
     toggle on protocols.  This will allow us to support coercing
     EDN as SPARQL into sparql in the future for query/rewriting uses.
   - Provide a bind protocol that allows us to bind variables into
     queries
   - Support reducers
-    - Queries should return an IReduceInit that when reduced executes
+    - Queries should return an =IReduceInit= that when reduced executes
       the contained SPARQL statement
-    - Support a :builder-fn arg to let you customise how statements
+    - Support a =:builder-fn= arg to let you customise how statements
       are created. Provide a default for grafter Quad's, but allow a
       lower level that gives you raw backend statements (for extra
       perf).
@@ -35,7 +35,7 @@ Grafter 3
 I/O
 
 - Much as it is now, except opts arg with :builder-fn and other opts
-  like on the SPARQL repo.  Also support reducers.
+  like on the SPARQL repo.  Also support reducers / =IReduceInit=.
 
     - Eventually support datafiable/nav
 
@@ -48,7 +48,7 @@ I/O
 | :grater.rdf4j/value-factory | "                               | Override the default SimpleValueFactory factory with a more specialised one |
 
 
-***** :grafter.rdf4j/value-factory
+** :grafter.rdf4j/value-factory
 
 Override default SimpleValueFactory with a more specialised one.  This
 will be called underneath before the builder-fn to construct the "raw"
@@ -61,7 +61,7 @@ Main use of this will be raw users who want to load all data into
 memory.  MemoryValueFactory will cache/reuses URI's in memory to save
 memory, so reused URI's have the same identity.
 
-***** :grafter.rdf4j/builder-fn
+** :grafter.rdf4j/builder-fn
 
 Similar to :grafter.rdf4j/value-factory but happens after the
 value-factory has done its job. i.e builder-fn receives a statement
@@ -78,10 +78,10 @@ into memory/matcha.
 (defn default-quad-builder [quad {:keys [::prefixes ,,,]}])
 #+END_SRC
 
-***** Repository -> QueryResults flow
+** Repository -> QueryResults flow
 
 
-1. Call grafter.next.sparql/make-repo and provide the relevant opts.
+1. Call =grafter.next.sparql/make-repo= and provide the relevant opts.
 
 Initial opts (in addition to those above) for make-repo are:
 
@@ -113,15 +113,15 @@ NOTES:
  - We should always construct the session manager ourselves so we can
    pass connection-timeout and other opts
 
-2. Call ->connection on repo inside a with-open takes an optional map
+2. Call =->connection= on repo inside a with-open takes an optional map
    of opts too.  Opts include namespaces,
 
 Options that RDF4j insists are set on the connection should be
 settable on connection in ->connection, but also provided on the repo
 object.  If on connection they should override the default on repo.
 
-3. Call prepare on connection passing object supporting ->sparql-string
-   protocol.  Prepare will internally call ->sparql-string for you.
+3. Call prepare on connection passing object supporting =->sparql-string=
+   protocol.  Prepare will internally call =->sparql-string= for you.
 
 #+BEGIN_SRC clojure
 (def repo (make-repo {::query-endpoint "http://foo.bar.baz/sparql}"
@@ -131,11 +131,13 @@ object.  If on connection they should override the default on repo.
    (into [] (prepare conn "CONSTRUCT {?s ?p ?o} WHERE { ?s ?p ?o }" {:bindings {'?s ,,,} :builder-fn default-fn }))) ;; => #Quad [,,, :rdfs/label "hello"]
 #+END_SRC
 
-***** Additionally
+** Additionally
 
+- (Obviously) support equivalents of graph query stuff on select's too.
+- Make =rdf-writer= polymorphic on connection too for adds / options etc.
+-
 
-
-***** Matcha.next ideas
+* Matcha.next ideas
 
 1. All these new matcha queries will be additions to matcha.alpha in a
    new namespace, e.g. grafter.matcha they won't preserve
@@ -197,7 +199,7 @@ exactly yet (need to read more about datomic) but you could imagine
 something like:
 
 #+BEGIN_SRC clojure
-(matcha/pull [^:many :skos/topConcept [#loop [:concept [:rdfs/label {:skos/narrower #recur :concept } ]]]])
+(matcha/pull [^:many :skos/topConcept [#loop [:concept [:rdfs/label {^:optional :skos/narrower #recur :concept } ]]]])
 
 ;; =>
 
