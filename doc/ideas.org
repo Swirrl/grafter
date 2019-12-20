@@ -1,0 +1,221 @@
+**** Matcha Alpha 2 & Grafter 3 ideas
+<2019-12-19 Thu 21:12>
+
+Grafter 3
+
+- coerce registered vocab URIs into :clj/keywords and back
+  - Support relative URIs as values to work with base-uri?
+    - #ruri "/relative-path" ?
+    - :base/relative-path
+    - :base/../foo/bar
+- Support base-uri everywhere including in SPARQL
+- Support general options maps on important interfaces,
+  e.g. add/remove triples.  Old API grew to too many arities making
+  optionality hard.
+
+- SPARQL support
+  - Generalise ->connection to take opts (base-uri etc)
+  - Provide a ->sparql-string protocol that we always call, and is
+    extended to java.lang.String by default, and uses clj 1.10's value
+    toggle on protocols.  This will allow us to support coercing
+    EDN as SPARQL into sparql in the future for query/rewriting uses.
+  - Provide a bind protocol that allows us to bind variables into
+    queries
+  - Support reducers
+    - Queries should return an IReduceInit that when reduced executes
+      the contained SPARQL statement
+    - Support a :builder-fn arg to let you customise how statements
+      are created. Provide a default for grafter Quad's, but allow a
+      lower level that gives you raw backend statements (for extra
+      perf).
+    - Support the injection of a "vocab" registry into the sparql repo
+      object.  This should allow coercion of key predicates/classes
+      and URI's into coerced keyword form.
+
+I/O
+
+- Much as it is now, except opts arg with :builder-fn and other opts
+  like on the SPARQL repo.  Also support reducers.
+
+    - Eventually support datafiable/nav
+
+
+| Option                      | Interface                       | Description                                                                 |
+|-----------------------------+---------------------------------+-----------------------------------------------------------------------------|
+| ::base-uri                  | io/add, io/delete, sp/make-repo | URI Prefix to coin relative URIs against                                    |
+| ::prefixes / ::vocabs       | "                               | Pass registry of {rdfs/label rdfs:label} maps for builder-fn                |
+| :grafter.rdf4j/builder-fn   | "                               | Customise how token create/coerce statements at the bottom                  |
+| :grater.rdf4j/value-factory | "                               | Override the default SimpleValueFactory factory with a more specialised one |
+
+
+***** :grafter.rdf4j/value-factory
+
+Override default SimpleValueFactory with a more specialised one.  This
+will be called underneath before the builder-fn to construct the "raw"
+backend values.
+
+Grafter will provide vars to construct different "default" variants
+for convenience; that wrap RDF4j factory constructors.
+
+Main use of this will be raw users who want to load all data into
+memory.  MemoryValueFactory will cache/reuses URI's in memory to save
+memory, so reused URI's have the same identity.
+
+***** :grafter.rdf4j/builder-fn
+
+Similar to :grafter.rdf4j/value-factory but happens after the
+value-factory has done its job. i.e builder-fn receives a statement
+output from the value-factory.  This allows us to then coerce URI's
+into grafter/clj canonical form.
+
+We will also provide a caching/pooling implementation similar to
+simple-value factory, that allows us to save memory on URI dupes.  By
+default this won't be used; but it will make a sensible and
+recommended override for webapps rendering pages, and loading triples
+into memory/matcha.
+
+#+BEGIN_SRC clojure
+(defn default-quad-builder [quad {:keys [::prefixes ,,,]}])
+#+END_SRC
+
+***** Repository -> QueryResults flow
+
+
+1. Call grafter.next.sparql/make-repo and provide the relevant opts.
+
+Initial opts (in addition to those above) for make-repo are:
+
+| Option                                           | Required | Overridable on connection | Description                                                |
+|--------------------------------------------------+----------+---------------------------+------------------------------------------------------------|
+| ::http-headers                                   | N        | Y                         | Map of String > String for headers to set on every request |
+| ::username                                       | N        | N                         | String                                                     |
+| ::password                                       | N        | N                         | String                                                     |
+| ::query-endpoint                                 | N        | N                         |                                                            |
+| ::update-endpoint                                | N        | N                         |                                                            |
+| :grafter.rdf4j.sparql/quad-mode?                 |          |                           |                                                            |
+| :grafter.rdf4j.sparql/session-manager            |          | N                         | RDF4j override should you need to reimplement the class    |
+| :grafter.rdf4j.sparql.session/connection-timeout |          | Y                         | pass a value to session-manager                            |
+| :grafter.rdf4j.sparql.boolean/format-preference  |          | Y                         |                                                            |
+| :grafter.rdf4j.sparql.select/format-preference   |          | Y                         |                                                            |
+| :grafter.rdf4j.sparql.rdf/format-preference      |          | Y                         |                                                            |
+| :grafter.rdf4j.parser/fail-on-unknown-languages  |          |                           |                                                            |
+| ...                                              |          |                           | Convert all from [[https://rdf4j.org/javadoc/latest/org/eclipse/rdf4j/rio/helpers/BasicParserSettings.html#PRESERVE_BNODE_IDS][BasicParserSettings]]                       |
+| :grafter.rdf4j.parser/config                     |          | Y                         |                                                            |
+| :grafter.sparql/max-execution-time               |          | Y                         | Max execution time for query                               |
+| :grafter.sparql/from                             |          | Y                         | Set of graphs for default graph                            |
+| :grafter.sparql/from-named                       |          | Y                         | Set of graphs for named graph                              |
+| :grafter.rdf4j.sparql/include-inferred           |          |                           | Reasoning on or off                                        |
+
+
+
+NOTES:
+
+ - We should always construct the session manager ourselves so we can
+   pass connection-timeout and other opts
+
+2. Call ->connection on repo inside a with-open takes an optional map
+   of opts too.  Opts include namespaces,
+
+Options that RDF4j insists are set on the connection should be
+settable on connection in ->connection, but also provided on the repo
+object.  If on connection they should override the default on repo.
+
+3. Call prepare on connection passing object supporting ->sparql-string
+   protocol.  Prepare will internally call ->sparql-string for you.
+
+#+BEGIN_SRC clojure
+(def repo (make-repo {::query-endpoint "http://foo.bar.baz/sparql}"
+                      ::namespaces {"http://rdfs/base/uri/" :rdfs})))
+
+(with-open [conn (->connection repo {:grafter.sparql/max-execution-time 5000 }]
+   (into [] (prepare conn "CONSTRUCT {?s ?p ?o} WHERE { ?s ?p ?o }" {:bindings {'?s ,,,} :builder-fn default-fn }))) ;; => #Quad [,,, :rdfs/label "hello"]
+#+END_SRC
+
+***** Additionally
+
+
+
+***** Matcha.next ideas
+
+1. All these new matcha queries will be additions to matcha.alpha in a
+   new namespace, e.g. grafter.matcha they won't preserve
+   compatibility with the old signatures.  But:
+2. There will be a new Matcha queries as data syntax; the data syntax
+   will be mostly identical to existing Matcha BGP query syntax.
+   There may be some helper functions for building matcha query
+   fragments, but ultimately existing query macros will have
+   equivalent data formats supported by likely one (or two) generic
+   query functions.  e.g.
+
+#+BEGIN_SRC clojure
+(matcha/query {:select '[?s ?p ?o] :where '[[?s ?p ?o]]})
+(matcha/query {:construct '[[:foo/bar :rdfs/label ?label]] :where '[[:foo/bar :rdfs/label ?label]]})
+#+END_SRC
+
+3. A significant difference is that construct will NO longer build
+   :grafter.rdf/uri objects, or unify variables into trees.  It will
+   ONLY create triples.
+
+4. Old :grafter.rdf/uri construct queries will use a new function to
+   emit them:
+
+#+BEGIN_SRC clojure
+(matcha/resource '?s '{?p ?o} [[?s ?p ?o]])
+#+END_SRC
+
+5. However there will be a new query syntax too, that I believe will
+   deliver what I originally wanted matcha construct's to do (the
+   unification stuff there was originally an experiment).  This new
+   syntax will let you build UI data trees in a single query, e.g.
+
+#+BEGIN_SRC clojure
+(matcha/pull [:dcat/record ^:many [:dcterms/title :dcterms/modified
+                                   {:foaf/primaryTopic [:dcterms/title
+                                                        :dcterms/description
+                                                        :pmdcat/graph
+                                                        :pmdcat/datasetContents]}]])
+
+;; =>
+
+{:dcat/record [{:rdf/subject ::crimes-record
+                :dcterms/title "Crimes DCAT Record"
+                :dcterms/modified #inst "01-01-2019"
+                :foaf/primaryTopic {:rdf/subject ::crimes-ds
+                                    :dcterms/title "Crimes"
+                                    :dcterms/description "Crimes by area"
+                                    :pmdcat/graph :base/graph/crimes
+                                    :pmdcat/datasetContents :base/graph/crimes }}]}
+#+END_SRC
+
+This syntax is inspired by datomic pull syntax, but will be tailored
+to rdf and our needs.  e.g. because RDF can have one or many values
+for any attribute we will need a =^:many= annotation.
+
+It may support recursive definitions for walking skos hierarchies etc.
+Possibly with a configurable depth.  Not sure how this will work
+exactly yet (need to read more about datomic) but you could imagine
+something like:
+
+#+BEGIN_SRC clojure
+(matcha/pull [^:many :skos/topConcept [#loop [:concept [:rdfs/label {:skos/narrower #recur :concept } ]]]])
+
+;; =>
+
+;; =>
+
+{:skos/topConcept [{:rdfs/label "EU"
+                    :skos/narrower [{:rdfs/label "France"
+                                     :skos/narrower [{:rdfs/label "Paris"} {:rdfs/label "Nice"}]}
+                                    {:rdfs/label "UK"
+                                     :skos/narrower [{:rdfs/label "London"}
+                                                     {:rdfs/label "Manchester"} ,,,]}]}]}
+
+
+#+END_SRC
+
+
+The above will allow us to trivially construct a UI view-model from a
+single matcha query.  Additionally with spec 2, we could trivially
+convert queries such as the above into a spec, which we can attach to
+their view.  Likewise queries like the above could generate conforming
+values to test views etc.
