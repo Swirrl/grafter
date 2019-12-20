@@ -63,7 +63,7 @@ memory, so reused URI's have the same identity.
 
 ** :grafter.rdf4j/builder-fn
 
-Similar to :grafter.rdf4j/value-factory but happens after the
+Similar to =:grafter.rdf4j/value-factory= but happens after the
 value-factory has done its job. i.e builder-fn receives a statement
 output from the value-factory.  This allows us to then coerce URI's
 into grafter/clj canonical form.
@@ -155,11 +155,11 @@ object.  If on connection they should override the default on repo.
 #+END_SRC
 
 3. A significant difference is that construct will NO longer build
-   :grafter.rdf/uri objects, or unify variables into trees.  It will
-   ONLY create triples.
+   =:grafter.rdf/uri= objects, or unify variables into arbitrary
+   datastructures.  It will ONLY create triples.
 
-4. Old :grafter.rdf/uri construct queries will use a new function to
-   emit them:
+4. Old =:grafter.rdf/uri= construct queries that wish to port to the new
+   ns will be able to use a new function to emit them:
 
 #+BEGIN_SRC clojure
 (matcha/resource '?s '{?p ?o} [[?s ?p ?o]])
@@ -168,7 +168,8 @@ object.  If on connection they should override the default on repo.
 5. However there will be a new query syntax too, that I believe will
    deliver what I originally wanted matcha construct's to do (the
    unification stuff there was originally an experiment).  This new
-   syntax will let you build UI data trees in a single query, e.g.
+   syntax will let you build UI view-model data trees in a single
+   query, e.g.
 
 #+BEGIN_SRC clojure
 (matcha/pull [:dcat/record ^:many [:dcterms/title :dcterms/modified
