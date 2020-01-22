@@ -17,6 +17,7 @@
            [org.eclipse.rdf4j.model BNode Literal Statement URI Model]
            [org.eclipse.rdf4j.model.impl BNodeImpl ContextStatementImpl LiteralImpl SimpleValueFactory StatementImpl URIImpl]
            [org.eclipse.rdf4j.rio RDFFormat RDFHandler Rio]))
+(set! *warn-on-reflection* true)
 
 (extend-type Statement
   ;; Extend our IStatement protocol to Sesame's Statements for convenience.
@@ -514,13 +515,17 @@
                                                                 prefixes default-prefixes}}]
 
    (let [^RDFFormat format (resolve-format-preference destination format)
-         iowriter (fmt/select-output-coercer format)
-         writer (Rio/createWriter format
-                                  (iowriter destination
-                                            :append append
-                                            :encoding encoding))]
+         writer (if (= RDFFormat/BINARY (fmt/->rdf-format format))
+                  (Rio/createWriter format
+                                  (io/output-stream destination
+                                                    :append append
+                                                    :encoding encoding)) ;; If we're a binary format we need to use an outputstream not a writer
+                  (Rio/createWriter format
+                                    (io/writer destination
+                                               :append append
+                                               :encoding encoding)))]
 
-     (reduce (fn [writer [name prefix]]
+     (reduce (fn [^RDFWriter writer [^String name prefix]]
                (doto writer
                  (.handleNamespace name (str prefix)))) writer prefixes))))
 
@@ -531,13 +536,25 @@
 (defn- write-namespaces
   "Signal to the writer that we're about to send RDF data.  This will
   also trigger any buffered prefixes to be written to the stream."
-  [target]
+  [^RDFWriter target]
   (.startRDF target))
 
 (defn- end-rdf
   "Signal to the writer that we've finished sending RDF data."
-  [target]
+  [^RDFWriter target]
   (.endRDF target))
+
+(defn- add* [^RDFHandler rdf-handler triples]
+  (cond
+       (seq triples)
+       (do
+         (write-namespaces rdf-handler)
+         (doseq [t triples]
+           (pr/add-statement rdf-handler t))
+         (end-rdf rdf-handler))
+       (nil? (seq triples)) (do (.startRDF rdf-handler)
+                                (.endRDF rdf-handler))
+       :else (throw (IllegalArgumentException. "This serializer was given an unknown type it must be passed a sequence of Statements."))))
 
 (extend-protocol pr/ITripleWriteable
   RDFHandler
@@ -546,16 +563,20 @@
 
   (pr/add
     ([this triples]
-     (cond
-       (seq triples)
-       (do
-         (write-namespaces this)
-         (doseq [t triples]
-           (pr/add-statement this t))
-         (end-rdf this))
-       (nil? (seq triples)) (do (.startRDF this)
-                                (.endRDF this))
-       :else (throw (IllegalArgumentException. "This serializer was given an unknown type it must be passed a sequence of Statements."))))
+     (add* this triples))
+
+    ([this graph triples]
+     ;; graph's not supported on raw RDFHandler's
+     (pr/add this triples)))
+
+
+  RDFWriter
+  (pr/add-statement [this statement]
+    (.handleStatement this (->backend-type statement)))
+
+  (pr/add
+    ([this triples]
+     (add* this triples))
 
     ([this graph triples]
      (if (format-supports-graphs (.getRDFFormat this))
