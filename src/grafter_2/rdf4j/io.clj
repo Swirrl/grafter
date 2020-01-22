@@ -16,7 +16,8 @@
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
            [org.eclipse.rdf4j.model BNode Literal Statement URI Model]
            [org.eclipse.rdf4j.model.impl BNodeImpl ContextStatementImpl LiteralImpl SimpleValueFactory StatementImpl URIImpl]
-           [org.eclipse.rdf4j.rio RDFFormat RDFHandler Rio]))
+           [org.eclipse.rdf4j.rio RDFFormat RDFParser RDFWriter RDFHandler Rio]))
+
 (set! *warn-on-reflection* true)
 
 (extend-type Statement
@@ -623,7 +624,42 @@
         pull (fn pull [] (lazy-seq (let [x (.take q)]
                                     (when-not (= EOQ x)
                                       (cons (when-not (= NIL x) x) (pull))))))]
-    [(pull) (fn put! ([] (.put q EOQ)) ([x] (.put q (or x NIL))))]))
+    {:pull pull
+     :put (fn put!
+            ([] (.put q EOQ))
+            ([x] (.put q (or x NIL))))}))
+
+(defn- build-rdf-parser ^RDFParser [is-or-rdr
+                                    {:keys [put!] :as pipe}
+                                    {:keys [format buffer-size base-uri]
+                                     :or {buffer-size 32
+                                          base-uri "http://example.org/base-uri"} :as options}]
+  (doto (fmt/format->parser (fmt/->rdf-format format))
+    (.setRDFHandler (reify RDFHandler
+                      (startRDF [this])
+                      (endRDF [this]
+                        (put!)
+                        (.close ^java.io.Closeable is-or-rdr))
+                      (handleStatement [this statement]
+                        (put! statement))
+                      (handleComment [this comment])
+                      (handleNamespace [this prefix-str uri-str])))))
+
+(defn- build-parser [is-or-rdr {:keys [format buffer-size base-uri] :or {buffer-size 32
+                                                                         base-uri "http://example.org/base-uri"} :as options}]
+  (let [pipe (pipe buffer-size)
+        parse-fn (if (= RDFFormat/BINARY (fmt/->rdf-format format))
+                   (let [is (io/input-stream is-or-rdr :buffer-size buffer-size)
+                         rdf-parser (build-rdf-parser is pipe options)]
+                     (fn start-parsing-is []
+                       (.parse rdf-parser is (str base-uri))))
+                   (let [rdr (io/reader is-or-rdr :buffer-size buffer-size)
+                         rdf-parser (build-rdf-parser rdr pipe options)]
+                     (fn start-parsing-rdr []
+                       (.parse rdf-parser rdr (str base-uri)))))]
+
+    {:pipe pipe
+     :start-parsing parse-fn}))
 
   ;; WARNING: This implementation is necessarily a little convoluted
   ;; as we hack around Sesame to generate a lazy sequence of results.
@@ -642,34 +678,23 @@
   ;; TODO: consider how to support proper resource cleanup.
 (defn- to-statements* [is-or-rdr {:keys [format buffer-size base-uri] :or {buffer-size 32
                                                                            base-uri "http://example.org/base-uri"} :as options}]
-  (let [coercer (fmt/select-input-coercer format)
-        reader (coercer is-or-rdr :buffer-size buffer-size)]
-    (if-not format
-      (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:error :no-format-supplied}))
-      (let [[statements put!] (pipe buffer-size)
-            parser (doto (fmt/format->parser (fmt/->rdf-format format))
-                     (.setRDFHandler (reify RDFHandler
-                                       (startRDF [this])
-                                       (endRDF [this]
-                                         (put!)
-                                         (.close reader))
-                                       (handleStatement [this statement]
-                                         (put! statement))
-                                       (handleComment [this comment])
-                                       (handleNamespace [this prefix-str uri-str]))))]
-        (future
-          (try
-            (.parse parser reader (str base-uri))
-            (catch Exception ex
-              (put! ex))))
-        (let [read-rdf (fn read-rdf [msg]
-                         (if (instance? Throwable msg)
-                           ;; if the other thread puts an Exception on
-                           ;; the pipe, raise it here.
-                           (throw (ex-info "Reading triples aborted."
-                                           {:error :reading-aborted} msg))
-                           (backend-quad->grafter-quad msg)))]
-          (map read-rdf statements))))))
+  (if-not format
+    (throw (ex-info (str "The RDF format was neither specified nor inferable from this object.") {:error :no-format-supplied}))
+    (let [{:keys [pipe start-parsing]} (build-parser is-or-rdr options)
+          {:keys [pull put!]} pipe]
+      (future
+        (try
+          (start-parsing)
+          (catch Exception ex
+            (put! ex))))
+      (let [read-rdf (fn read-rdf [msg]
+                       (if (instance? Throwable msg)
+                         ;; if the other thread puts an Exception on
+                         ;; the pipe, raise it here.
+                         (throw (ex-info "Reading triples aborted."
+                                         {:error :reading-aborted} msg))
+                         (backend-quad->grafter-quad msg)))]
+        (map read-rdf (pull))))))
 
 (extend-protocol pr/ITripleReadable
   clojure.lang.Sequential
