@@ -11,7 +11,7 @@
            [grafter_2.rdf.protocols IStatement LangString OffsetDate Quad RDFLiteral]
            java.io.File
            [java.net MalformedURLException URL]
-           [java.time LocalTime]
+           [java.time LocalTime LocalDate LocalDateTime OffsetTime OffsetDateTime ZoneOffset]
            [java.time.temporal ChronoField Temporal TemporalField]
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
            [org.eclipse.rdf4j.model BNode Literal Statement URI Model]
@@ -127,39 +127,67 @@
                              ;; of 0.999999999999999 we want to round
                              ;; down so as not to overflow.
                              ]
-                         (java.time.LocalTime/of hour min sec nanos))
-                       (java.time.LocalTime/of hour min sec))
-                     (java.time.LocalTime/of hour min))]
+                         (LocalTime/of hour min sec nanos))
+                       (LocalTime/of hour min sec))
+                     (LocalTime/of hour min))]
 
-    (if (has-timezone? xml-cal)
-      (let [tz-seconds (* 60 (.getTimezone xml-cal))]
-        (java.time.OffsetTime/of local-time (java.time.ZoneOffset/ofTotalSeconds tz-seconds)))
-      local-time)))
+    local-time))
+
+(defn- ^OffsetTime xml-cal->offset-time
+  "NOTE: this function returns either a LocalTime or an OffsetTime.
+  TODO: consider refactoring so we can avoid the reflective call."
+  [^XMLGregorianCalendar xml-cal]
+
+  (let [local-time (xml-cal->local-time xml-cal)
+        tz-seconds (* 60 (.getTimezone xml-cal))]
+    (OffsetTime/of local-time (ZoneOffset/ofTotalSeconds tz-seconds))))
+
+(defn- xml-cal->time
+  "NOTE: this function returns either a LocalTime or an OffsetTime.
+  TODO: consider refactoring so we can avoid the reflective call."
+  [^XMLGregorianCalendar xml-cal]
+  (if (has-timezone? xml-cal)
+    (let [local-time (xml-cal->local-time xml-cal)
+          tz-seconds (* 60 (.getTimezone xml-cal))]
+      (OffsetTime/of local-time (ZoneOffset/ofTotalSeconds tz-seconds)))
+    (xml-cal->local-time xml-cal)))
 
 (defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#time" [^Literal literal]
-  (xml-cal->local-time (.calendarValue literal)))
+  (xml-cal->time (.calendarValue literal)))
 
-(defn- xml-cal->local-date [^XMLGregorianCalendar xml-cal]
+(defn- ^LocalDate xml-cal->local-date [^XMLGregorianCalendar xml-cal]
   (let [year (.getYear xml-cal)
         month (.getMonth xml-cal)
         day (.getDay xml-cal)
-        local-time (java.time.LocalDate/of year month day)]
+        local-date (LocalDate/of year month day)]
 
-    (if (has-timezone? xml-cal)
-      (let [tz-seconds (* 60 (.getTimezone xml-cal))]
-        (pr/->OffsetDate local-time (java.time.ZoneOffset/ofTotalSeconds tz-seconds)))
-      local-time)))
+    local-date))
+
+(defn- ^OffsetDate xml-cal->offset-date [^XMLGregorianCalendar xml-cal]
+  (let [local-date (xml-cal->local-date xml-cal)
+        tz-seconds (* 60 (.getTimezone xml-cal))]
+    (pr/->OffsetDate local-date (ZoneOffset/ofTotalSeconds tz-seconds))))
+
+(defn- xml-cal->date
+  "Converts an xml-cal into either a LocalDate or an OffsetDate,
+  depending on whether it has a time zone."
+  [^XMLGregorianCalendar xml-cal]
+  (if (has-timezone? xml-cal)
+    (xml-cal->offset-date xml-cal)
+    (xml-cal->local-date xml-cal)))
 
 (defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#dateTime" [^Literal literal]
-  (let [xml-cal (.calendarValue literal)
-        date (xml-cal->local-date xml-cal)
-        time ^LocalTime (xml-cal->local-time xml-cal)]
+  (let [xml-cal (.calendarValue literal)]
     (if (has-timezone? xml-cal)
-      (java.time.OffsetDateTime/of (:date date) (.toLocalTime time) (.getOffset time))
-      (java.time.LocalDateTime/of date time))))
+      (let [date (xml-cal->offset-date xml-cal)
+            time (xml-cal->offset-time xml-cal)]
+        (OffsetDateTime/of (:date date) (.toLocalTime time) (.getOffset time)))
+      (let [date (xml-cal->date xml-cal)
+            time ^LocalTime (xml-cal->local-time xml-cal)]
+        (LocalDateTime/of date time)))))
 
 (defmethod backend-literal->grafter-type "http://www.w3.org/2001/XMLSchema#date" [^Literal literal]
-  (xml-cal->local-date (.calendarValue literal)))
+  (xml-cal->date (.calendarValue literal)))
 
 (defmethod backend-literal->grafter-type :default [literal]
   ;; If we don't have a type conversion for it, let the RDF4j type
@@ -290,7 +318,7 @@
     (.get temporal-obj temporal-field)
     DatatypeConstants/FIELD_UNDEFINED))
 
-(defn- temporal-object->xml-cal ^XMLGregorianCalendar [^Temporal temporal-obj ^java.time.ZoneOffset offset-obj]
+(defn- temporal-object->xml-cal ^XMLGregorianCalendar [^Temporal temporal-obj ^ZoneOffset offset-obj]
   (let [factory (DatatypeFactory/newInstance)]
     (.newXMLGregorianCalendar ^javax.xml.datatype.DatatypeFactory factory
                               (when (.isSupported temporal-obj ChronoField/YEAR)
