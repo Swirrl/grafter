@@ -6,13 +6,13 @@
             [grafter-2.rdf4j.formats :as format]
             [grafter-2.rdf4j.io :as rio]
             [me.raynes.fs :as fs])
-  (:import [org.eclipse.rdf4j.model Resource Statement URI]
+  (:import [org.eclipse.rdf4j.model Resource Statement URI IRI Value]
            [org.eclipse.rdf4j.query BindingSet BooleanQuery GraphQuery Query QueryLanguage TupleQuery Update]
            [org.eclipse.rdf4j.repository Repository RepositoryConnection]
-           [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer])
+           [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer]
+           [org.eclipse.rdf4j.common.iteration CloseableIteration Iteration])
   (:import grafter_2.rdf.SPARQLRepository
-           grafter_2.rdf.protocols.IStatement
-           org.eclipse.rdf4j.common.iteration.CloseableIteration
+           grafter_2.rdf.protocols.IStatement           
            org.eclipse.rdf4j.model.impl.URIImpl
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
@@ -586,12 +586,15 @@
 (extend-type RepositoryConnection
   pr/ITripleReadable
   (pr/to-statements [this {:keys [:grafter-2.repository/infer] :or {infer true}}]
-    (let [f (fn next-item [i]
+    (let [f (fn next-item [^Iteration i]
               (when (.hasNext i)
                 (let [v (.next i)]
-                  (lazy-seq (cons (rio/backend-quad->grafter-quad v) (next-item i))))))]
-      (let [iter (.getStatements this nil nil nil infer (into-array Resource []))]
-        (f iter)))))
+                  (lazy-seq (cons (rio/backend-quad->grafter-quad v) (next-item i))))))
+          ^Resource subj nil
+          ^IRI pred nil
+          ^Value obj nil            
+          iter (.getStatements this subj pred obj (boolean infer) (resource-array))]
+      (f iter))))
 
 (defn shutdown
   "Cleanly shutsdown the repository."
