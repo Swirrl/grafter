@@ -93,7 +93,7 @@
                                        [org.slf4j/slf4j-simple "1.7.25"]
                                        [prismatic/schema "1.1.7"]
                                        [criterium "0.4.4"]
-                                       [thheller/shadow-cljs "2.8.61"]]
+                                       [thheller/shadow-cljs "2.8.93"]]
 
                         :resource-paths ["dev/resources"]
 
