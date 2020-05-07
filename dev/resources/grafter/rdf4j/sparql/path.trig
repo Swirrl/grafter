@@ -5,10 +5,18 @@
 
 
 <http://grafter.org/graph/rdfs> {
-        :s a :Type .
-        :s :p :o .
-        :o rdfs:label "Test" .
-
-        :rick foaf:based_near :saddleworth .
-        :rick foaf:based_near :manchester .
+        :a rdfs:label "Test A" .
+        :a :link :b .
+        :b rdfs:label "Test B" .
+        :b :link :c .
+        :c rdfs:label "Test C" .
+        :c :link :d .
+        :c :lin2 :g .
+        :c :lin3 :h .
+        :g :other :h .
+        :d rdfs:label "Test D" .
+        :d :link :e .
+        :e rdfs:label "Test E" .
+        :e :link :f .
+        :f rdfs:label "Test F" .
 }

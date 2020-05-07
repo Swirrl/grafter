@@ -50,52 +50,30 @@ Precedence is left-to-right within groups."
 
 
 (defprotocol PathString
-  (flat [_])
   (string-value [_]))
 
 (deftype Arg [x]
   PathString
-  (flat [y] [y])
-  (string-value [_] (str \< x \>))
-  rio/IRDF4jConverter
-  (rio/->backend-type [_]
-    (rio/->backend-type x)))
+  (string-value [_]
+    (if (satisfies? PathString x)
+      (string-value x)
+      (str \< x \>))))
+
+(deftype Group [x]
+  PathString
+  (string-value [_] (str \( (string-value x) \))))
 
 (deftype Prefix [op x]
   PathString
-  (flat [y] [y])
-  (string-value [_] (str op (string-value x)))
-  rio/IRDF4jConverter
-  (rio/->backend-type [_]
-    (throw (ex-info "Cannot convert Prefix to backend type"
-                    {:type ::prefix-conversion-exception}))))
+  (string-value [_] (str op (string-value x))))
 
 (deftype Suffix [op x]
   PathString
-  (flat [y] [y])
-  (string-value [_] (str (string-value x) op))
-  rio/IRDF4jConverter
-  (rio/->backend-type [_]
-    (throw (ex-info "Cannot convert Suffix to backend type"
-                    {:type ::suffix-conversion-exception}))))
+  (string-value [_] (str (string-value x) op)))
 
 (deftype BinOp [op x y]
   PathString
-  (flat [_] (concat (flat x) (flat y)))
-  (string-value [_] (str (string-value x) op (string-value y)))
-  rio/IRDF4jConverter
-  (rio/->backend-type [z]
-    (let [flat (flat z)]
-      (when (instance? Prefix (first flat))
-        (throw (ex-info "Cannot start path with a prefix"
-                        {:type ::prefix-path-start-exception})))
-      (when (instance? Suffix (last flat))
-        (throw (ex-info "Cannot end path with a suffix"
-                        {:type ::prefix-path-start-exception}))))
-    (let [s (string-value z)]
-      (reify org.eclipse.rdf4j.model.IRI
-        (stringValue [_]
-          (subs s 1 (dec (count s))))))))
+  (string-value [_] (str (string-value x) op (string-value y))))
 
 (defn- arg [x]
   (if (or (instance? Prefix x) (instance? Suffix x) (instance? BinOp x))
@@ -116,7 +94,7 @@ Precedence is left-to-right within groups."
 (defn /
   "A sequence path of x, followed by y, followed by zs"
   [x y & zs]
-  (binop "/" (concat [x y] zs)))
+  (Group. (binop "/" (concat [x y] zs))))
 
 (defn !
   "In arity [x]:
@@ -126,29 +104,29 @@ Precedence is left-to-right within groups."
   In arity [x y & zs]:
   Shorthand for x / ^y / ^z1 ..., that is x followed by the inverse of y ..."
   ([x]
-   (prefix "^" x))
+   (Group. (prefix "^" x)))
   ([x y & zs]
-   (binop "^" (concat [x y] zs))))
+   (Group. (binop "^" (concat [x y] zs)))))
 
 (defn |
   "A alternative path of x, or y, or zs (all possibilities are tried)."
   [x y & zs]
-  (binop "|" (concat [x y] zs)))
+  (Group. (binop "|" (concat [x y] zs))))
 
 (defn *
   "A path of zero or more occurrences of x"
   [x]
-  (suffix "*" x))
+  (Group. (suffix "*" x)))
 
 (defn +
   "A path of one or more occurrences of x"
   [x]
-  (suffix "+" x))
+  (Group. (suffix "+" x)))
 
 (defn ?
   "A path of zero or one x"
   [x]
-  (suffix "?" x))
+  (Group. (suffix "?" x)))
 
 (defn n
   "m occurrences of x, where m is one of:
@@ -157,17 +135,107 @@ Precedence is left-to-right within groups."
   * n      - Exactly n occurrences
   * {n, *} - n or more occurrences"
   [x m]
-  (cond (map? m)
-        (let [[n m] (first m)]
-          (cond (= m '*)
-                (suffix (format "{%s,}" n) x)
-                (= m clojure.core/*)
-                (suffix (format "{%s,}" n) x)
-                (= m *)
-                (suffix (format "{%s,}" n) x)
-                (= n m)
-                (suffix (format "{%s}" n) x)
-                :else
-                (suffix (format "{%s,%s}" n m) x)))
-        (integer? m)
-        (suffix (format "{%s}" m) x)))
+  (Group.
+   (cond (map? m)
+         (let [[n m] (first m)]
+           (cond (= m '*)
+                 (suffix (format "{%s,}" n) x)
+                 (= m clojure.core/*)
+                 (suffix (format "{%s,}" n) x)
+                 (= m *)
+                 (suffix (format "{%s,}" n) x)
+                 (= n m)
+                 (suffix (format "{%s}" n) x)
+                 :else
+                 (suffix (format "{%s,%s}" n m) x)))
+         (integer? m)
+         (suffix (format "{%s}" m) x))))
+
+(defn- prefix? [prefix]
+  (s/and symbol? (fn [x] (.startsWith (name x) (name prefix)))))
+
+(defn- suffix? [suffix]
+  (s/and symbol? (fn [x] (.endsWith (name x) (name suffix)))))
+
+(s/def ::expr1
+  (s/or :sym*    (suffix? '*)
+        :sym+    (suffix? '+)
+        :sym?    (suffix? '?)
+        :!sym    (prefix? '!)
+        :expr*   (s/cat :x ::expr1 :* '#{*})
+        :expr+   (s/cat :x ::expr1 :* '#{+})
+        :expr?   (s/cat :x ::expr1 :* '#{?})
+        :!expr   (s/cat :! '#{!} :x ::expr1)
+        :simple  (s/or :uri uri?
+                       :sym (s/and symbol? (complement '#{! / | * + ?})))
+        :group   (s/and seq? ::expr)
+        :n-m     (s/cat :x ::expr1 :n-m (s/map-of integer? integer?))
+        :n-*     (s/cat :x ::expr1 :n-m (s/map-of integer? #{'*}))
+        :n       (s/cat :x ::expr1 :n integer?)
+        :sexp    (s/and seq? #(not (s/valid? ::expr %)))))
+
+(s/def ::expr
+  (s/alt :expr1    ::expr1
+         :sequence (s/cat :a ::expr1 :/ #{'/} :b ::expr)
+         :invseq   (s/cat :a ::expr1 :/ #{'!} :b ::expr)
+         :altseq   (s/cat :a ::expr1 :/ #{'|} :b ::expr)))
+
+(defn- parse-path-expr [x]
+  (if (s/invalid? x)
+    (throw (ex-info "Property Path syntax invalid"
+                    {:type ::property-path-syntax-invalid}))
+    (letfn [(del-suffix [x]
+              (let [name (name x)]
+                (symbol (namespace x) (subs name 0 (dec (count name))))))
+            (del-prefix [x]
+              (symbol (namespace x) (subs (name x) 1)))]
+      (let [[t e] x]
+        (case t
+          :sym*  (list `* (del-suffix e))
+          :sym+  (list `+ (del-suffix e))
+          :sym?  (list `? (del-suffix e))
+          :!sym  (list `! (del-prefix e))
+          :expr* (list `* (parse-path-expr (:x e)))
+          :expr+ (list `+ (parse-path-expr (:x e)))
+          :expr? (list `? (parse-path-expr (:x e)))
+          :!expr (list `! (parse-path-expr (:x e)))
+          :expr1 (parse-path-expr e)
+          :sequence (list `/ (parse-path-expr (:a e)) (parse-path-expr (:b e)))
+          :invseq   (list `! (parse-path-expr (:a e)) (parse-path-expr (:b e)))
+          :altseq   (list `| (parse-path-expr (:a e)) (parse-path-expr (:b e)))
+          :simple   (parse-path-expr e)
+          :uri      e
+          :sym      e
+          :group    (parse-path-expr e)
+          :n-m      (list `n (parse-path-expr (:x e)) (:n-m e))
+          :n-*      (list `n (parse-path-expr (:x e)) (:n-m e))
+          :n        (list `n (parse-path-expr (:x e)) (:n e))
+          :sexp     e)))))
+
+(defmacro path
+  "Build a path with syntax similar to SPARQL property path syntax.
+
+  SPARQL Form | Clojure Form
+  uri         | uri
+  ^elt        | !elt
+  ^elt        | (! elt)
+  (elt)       | (elt)
+  elt1 / elt2 | elt1 / elt2
+  elt1 ^ elt2 | elt1 ! elt2
+  elt1 ^ elt2 | elt1 / !elt2 - NOTE: only this form works with Sail repo
+  elt1 | elt2 | elt1 | elt2
+  elt*        | elt* - or - (elt *)
+  elt+        | elt+ - or - (elt +)
+  elt?        | elt? - or - (elt ?)
+  elt{n,m}    | (elt {n m})  - NOTE: n,m forms do not work with Sail repo
+  elt{n}      | (elt n) or (elt {n n})
+  elt{n,}     | (elt {n *})
+  elt{,n}     | (elt {0 n})
+
+  E.G.,
+
+  (path !a / b ! (c* {3 *}) | (d 3) | (java.net.URI. (str \"http://www.grafter.org/example#\" p)))
+
+  Where bindings a, b, c, d are URIs, and binding p is a String."
+  [& path]
+  (parse-path-expr (s/conform ::expr path)))

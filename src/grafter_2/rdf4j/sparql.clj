@@ -7,7 +7,8 @@
             [clojure.string :as str]
             [grafter-2.rdf4j.io :as rio]
             [grafter-2.rdf4j.repository :as repo
-             :refer [->connection IPrepareQuery]])
+             :refer [->connection IPrepareQuery]]
+            [grafter-2.rdf4j.sparql.path :as path])
   (:import java.util.regex.Pattern
            org.eclipse.rdf4j.rio.ntriples.NTriplesUtil
            org.eclipse.rdf4j.repository.RepositoryConnection))
@@ -117,11 +118,23 @@
                    "")
       (str/trim)))
 
+(defn- path-binding? [[_ v]] (satisfies? path/PathString v))
+
+(defn- rewrite-property-path-bindings [sparql-query bindings]
+  (->> bindings
+       (filter path-binding?)
+       (reduce (fn [q [key path]]
+                 (str/replace q
+                              (re-pattern (var-key-matcher key))
+                              (path/string-value path)))
+               sparql-query)))
+
 (defn- pre-process-query [sparql-query bindings]
   (-> sparql-query
       (strip-comments)
       (rewrite-limit-and-offset-clauses bindings)
-      (rewrite-values-clauses bindings)))
+      (rewrite-values-clauses bindings)
+      (rewrite-property-path-bindings bindings)))
 
 
 (s/def ::reasoning? boolean?)
@@ -230,7 +243,8 @@
                                   {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
               pq)
             prepped-query
-            (dissoc bindings ::limits ::offsets))
+            (->> (dissoc bindings ::limits ::offsets)
+                 (remove path-binding?)))
     prepped-query))
 
 (defmethod -query ::s/invalid [sparql-file & args]
