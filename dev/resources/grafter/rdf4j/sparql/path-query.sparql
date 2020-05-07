@@ -1,0 +1,6 @@
+PREFIX :     <http://www.grafter.org/example#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT * WHERE {
+  ?s ?path ?o
+}
