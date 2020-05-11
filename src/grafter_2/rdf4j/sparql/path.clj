@@ -1,18 +1,5 @@
 (ns grafter-2.rdf4j.sparql.path
-  "A limited implementation of SPARQL Property Paths[1] for `grafter`/`rdf4j`.
-
-  Limitations:
-
-  Paths must start and end with a \"plain\" `uri`. Meaning, no prefix or suffix
-  modifiers.
-
-  This is due to the rdf4j implementation, and the hook used to shoehorn this
-  in.
-
-  Additionally, `group`s are not implemented for the same reason.
-
-  Therefore, this implementation will not be able to translate complex paths, but
-  simple paths, E.G., `x ^y{3} / z` will be possible.
+  "An implementation of SPARQL Property Paths[1] for `grafter`/`rdf4j`.
 
 [1] https://www.w3.org/TR/sparql11-property-paths/#path-language
 
