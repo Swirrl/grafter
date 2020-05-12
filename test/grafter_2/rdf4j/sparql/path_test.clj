@@ -1,12 +1,10 @@
 (ns grafter-2.rdf4j.sparql.path-test
-  (:require [grafter-2.rdf4j.sparql.path :as p]
+  (:require [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
-            [grafter-2.rdf4j.io :as rio]
-            [grafter-2.rdf4j.sparql :as sparql]
             [grafter-2.rdf4j.repository :as repo]
-            [clojure.java.io :as io])
-  (:import java.net.URI
-           org.eclipse.rdf4j.repository.sparql.query.QueryStringUtil))
+            [grafter-2.rdf4j.sparql :as sparql]
+            [grafter-2.rdf4j.sparql.path :as p])
+  (:import java.net.URI))
 
 (def uri1 (URI. "http://test1"))
 (def uri2 (URI. "http://test2"))
@@ -95,5 +93,26 @@
   (let [uri (URI. "http://test1")]
     (is (= "(^<http://test1>)" (p/string-value (p/path ! uri)))))
 
-  (let [presuf (URI. "http://presuf")]
-    (is (= "(^(<http://presuf>*))" (p/string-value (p/path !presuf*))))))
+  (testing "!prefix path syntax"
+    (let [!prefix (URI. "http://test")] (is (= !prefix (p/path !prefix))))
+    (let [prefix  (URI. "http://test")] (is (= "(^<http://test>)" (p/string-value (p/path !prefix))))))
+
+  (testing "suffix+ path syntax"
+    (let [suffix+ (URI. "http://test")] (is (= suffix+ (p/path suffix+))))
+    (let [suffix  (URI. "http://test")] (is (= "(<http://test>+)" (p/string-value (p/path suffix+))))))
+
+  (testing "!presuf* path syntax"
+    (let [!presuf* (URI. "http://test")] (is (= !presuf* (p/path !presuf*))))
+    (let [!presuf  (URI. "http://test")] (is (= "(<http://test>*)" (p/string-value (p/path !presuf*)))))
+    (let [presuf*  (URI. "http://test")] (is (= "(^<http://test>)" (p/string-value (p/path !presuf*)))))
+    (let [presuf   (URI. "http://test")] (is (= "(^(<http://test>*))" (p/string-value (p/path !presuf*))))))
+
+  #_(testing "Ambiguous syntaxes and/or compiler errors"
+    ;; NOTE: We can't actually unit test these because they throw compiler errors
+    (let [!presuf* 0  presuf  0] (p/path !presuf*))
+    (let [!presuf  0  presuf  0] (p/path !presuf*))
+    (let [ presuf* 0  presuf  0] (p/path !presuf*))
+    (let [!presuf* 0 !presuf  0] (p/path !presuf*))
+    (let [!presuf* 0  presuf* 0] (p/path !presuf*))
+    (let [!presuf** 'wut] (p/path !presuf*)))
+  )

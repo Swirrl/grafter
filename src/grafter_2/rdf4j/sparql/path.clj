@@ -31,12 +31,12 @@ Precedence:
 
 Precedence is left-to-right within groups."
   (:refer-clojure :exclude [/ * + ?])
-  (:require [grafter-2.rdf4j.io :as rio]
-            [clojure.string :as string]
-            [clojure.spec.alpha :as s]))
-
+  (:require [clojure.spec.alpha :as s]))
 
 (defprotocol PathString
+  ;; NOTE: Please do not extend this protocol to types that are not representing
+  ;; the AST of this Property Path DSL. There could be trouble with substitution
+  ;; if it was satisfied for, E.G., URI
   (string-value [_]))
 
 (deftype Arg [x]
@@ -171,39 +171,70 @@ Precedence is left-to-right within groups."
          :invseq   (s/cat :a ::expr1 :/ #{'!} :b ::expr)
          :altseq   (s/cat :a ::expr1 :/ #{'|} :b ::expr)))
 
-(defn- parse-path-expr [x]
+(def path-ns "grafter-2.rdf4j.sparql.path")
+
+(defn- split-prefix [x]
+  (let [name (name x)]
+    [(symbol (namespace x) (subs name 1))
+     (symbol path-ns (subs name 0 1))]))
+
+(defn- split-suffix [x]
+  (let [name (name x)
+        c    (dec (count name))]
+    [(symbol (namespace x) (subs name 0 c))
+     (symbol path-ns (subs name c))]))
+
+(defn- split-presuf [x]
+  (let [name (name x)
+        c    (dec (count name))]
+    [(symbol (namespace x) (subs name 1 c))
+     (symbol path-ns (subs name c))
+     (symbol path-ns (subs name 0 1))]))
+
+(defn- warn! [& bindings]
+  (throw
+   (ex-info (str "Ambiguous syntax, bindings in scope: " bindings)
+            {:type ::ambiguous-syntax :bindings bindings})))
+
+(defn- unfixed-expr [env sym split-fns]
+  (letfn [(binding? [x] (or (contains? env x) (boolean (resolve x))))
+          (apply-fix-fns [[x & fns]] (reduce (fn [x f] (list f x)) x fns))]
+    (let [syms  (cons [sym] ((apply juxt split-fns) sym))
+          bound (filter (comp binding? first) syms)
+          c     (count bound)]
+      (cond (> c 1) (apply warn! (map first bound))
+            (= c 1) (apply-fix-fns (first bound))
+            :else   (apply-fix-fns (last syms))))))
+
+(defn- parse-path-expr [env x]
   (if (s/invalid? x)
     (throw (ex-info "Property Path syntax invalid"
                     {:type ::property-path-syntax-invalid}))
-    (letfn [(del-suffix [x]
-              (let [name (name x)]
-                (symbol (namespace x) (subs name 0 (dec (count name))))))
-            (del-prefix [x]
-              (symbol (namespace x) (subs (name x) 1)))]
-      (let [[t e] x]
-        (case t
-          :sym*     (list `* (del-suffix e))
-          :sym+     (list `+ (del-suffix e))
-          :sym?     (list `? (del-suffix e))
-          :!sym     (list `! (del-prefix e))
-          :presuf   (list `! (parse-path-expr (update e 1 del-prefix)))
-          :expr*    (list `* (parse-path-expr (:x e)))
-          :expr+    (list `+ (parse-path-expr (:x e)))
-          :expr?    (list `? (parse-path-expr (:x e)))
-          :!expr    (list `! (parse-path-expr (:x e)))
-          :expr     (parse-path-expr e)
-          :expr1    (parse-path-expr e)
-          :sequence (list `/ (parse-path-expr (:a e)) (parse-path-expr (:b e)))
-          :invseq   (list `! (parse-path-expr (:a e)) (parse-path-expr (:b e)))
-          :altseq   (list `| (parse-path-expr (:a e)) (parse-path-expr (:b e)))
-          :simple   (parse-path-expr e)
-          :uri      e
-          :sym      e
-          :group    (parse-path-expr e)
-          :n-m      (list `n (parse-path-expr (:x e)) (:n-m e))
-          :n-*      (list `n (parse-path-expr (:x e)) (:n-m e))
-          :n        (list `n (parse-path-expr (:x e)) (:n e))
-          :sexp     e)))))
+    (let [fix-sym {:sym* `* :sym+ `+ :sym? `?}
+          [t e] x]
+      (case t
+        :sym*     (unfixed-expr env e [split-suffix])
+        :sym+     (unfixed-expr env e [split-suffix])
+        :sym?     (unfixed-expr env e [split-suffix])
+        :!sym     (unfixed-expr env e [split-prefix])
+        :presuf   (unfixed-expr env (val e) [split-prefix split-suffix split-presuf])
+        :expr*    (list `* (parse-path-expr env (:x e)))
+        :expr+    (list `+ (parse-path-expr env (:x e)))
+        :expr?    (list `? (parse-path-expr env (:x e)))
+        :!expr    (list `! (parse-path-expr env (:x e)))
+        :expr     (parse-path-expr env e)
+        :expr1    (parse-path-expr env e)
+        :sequence (list `/ (parse-path-expr env (:a e)) (parse-path-expr env (:b e)))
+        :invseq   (list `! (parse-path-expr env (:a e)) (parse-path-expr env (:b e)))
+        :altseq   (list `| (parse-path-expr env (:a e)) (parse-path-expr env (:b e)))
+        :simple   (parse-path-expr env e)
+        :uri      e
+        :sym      e
+        :group    (parse-path-expr env e)
+        :n-m      (list `n (parse-path-expr env (:x e)) (:n-m e))
+        :n-*      (list `n (parse-path-expr env (:x e)) (:n-m e))
+        :n        (list `n (parse-path-expr env (:x e)) (:n e))
+        :sexp     e))))
 
 (defmacro path
   "Build a path with syntax similar to SPARQL property path syntax.
@@ -231,4 +262,4 @@ Precedence is left-to-right within groups."
 
   Where bindings a, b, c, d are URIs, and binding p is a String."
   [& path]
-  (parse-path-expr (s/conform (s/or :expr ::expr :expr1 ::expr1) path)))
+  (parse-path-expr &env (s/conform (s/or :expr ::expr :expr1 ::expr1) path)))
