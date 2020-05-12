@@ -191,7 +191,7 @@ Precedence is left-to-right within groups."
      (symbol path-ns (subs name c))
      (symbol path-ns (subs name 0 1))]))
 
-(defn- warn! [& bindings]
+(defn- throw-ambiguous [& bindings]
   (throw
    (ex-info (str "Ambiguous syntax, bindings in scope: " bindings)
             {:type ::ambiguous-syntax :bindings bindings})))
@@ -202,7 +202,7 @@ Precedence is left-to-right within groups."
     (let [syms  (cons [sym] ((apply juxt split-fns) sym))
           bound (filter (comp binding? first) syms)
           c     (count bound)]
-      (cond (> c 1) (apply warn! (map first bound))
+      (cond (> c 1) (apply throw-ambiguous (map first bound))
             (= c 1) (apply-fix-fns (first bound))
             :else   (apply-fix-fns (last syms))))))
 
