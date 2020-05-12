@@ -145,21 +145,21 @@ Precedence is left-to-right within groups."
   (s/and symbol? (fn [x] (.endsWith (name x) (name suffix)))))
 
 (s/def ::expr1
-  (s/or :sym*    (suffix? '*)
-        :sym+    (suffix? '+)
-        :sym?    (suffix? '?)
-        :!sym    (prefix? '!)
-        :expr*   (s/cat :x ::expr1 :* '#{*})
-        :expr+   (s/cat :x ::expr1 :* '#{+})
-        :expr?   (s/cat :x ::expr1 :* '#{?})
-        :!expr   (s/cat :! '#{!} :x ::expr1)
-        :simple  (s/or :uri uri?
-                       :sym (s/and symbol? (complement '#{! / | * + ?})))
-        :group   (s/and seq? ::expr)
-        :n-m     (s/cat :x ::expr1 :n-m (s/map-of integer? integer?))
-        :n-*     (s/cat :x ::expr1 :n-m (s/map-of integer? #{'*}))
-        :n       (s/cat :x ::expr1 :n integer?)
-        :sexp    (s/and seq? #(not (s/valid? ::expr %)))))
+  (s/or :sym*   (suffix? '*)
+        :sym+   (suffix? '+)
+        :sym?   (suffix? '?)
+        :!sym   (prefix? '!)
+        :expr*  (s/cat :x ::expr1 :* '#{*})
+        :expr+  (s/cat :x ::expr1 :* '#{+})
+        :expr?  (s/cat :x ::expr1 :* '#{?})
+        :!expr  (s/cat :! '#{!} :x ::expr1)
+        :simple (s/or :uri uri?
+                      :sym (s/and symbol? (complement '#{! / | * + ?})))
+        :group  (s/and seq? ::expr)
+        :n-m    (s/cat :x ::expr1 :n-m (s/map-of integer? integer?))
+        :n-*    (s/cat :x ::expr1 :n-m (s/map-of integer? #{'*}))
+        :n      (s/cat :x ::expr1 :n integer?)
+        :sexp   (s/and seq? #(not (s/valid? ::expr %)))))
 
 (s/def ::expr
   (s/alt :expr1    ::expr1
@@ -178,15 +178,16 @@ Precedence is left-to-right within groups."
               (symbol (namespace x) (subs (name x) 1)))]
       (let [[t e] x]
         (case t
-          :sym*  (list `* (del-suffix e))
-          :sym+  (list `+ (del-suffix e))
-          :sym?  (list `? (del-suffix e))
-          :!sym  (list `! (del-prefix e))
-          :expr* (list `* (parse-path-expr (:x e)))
-          :expr+ (list `+ (parse-path-expr (:x e)))
-          :expr? (list `? (parse-path-expr (:x e)))
-          :!expr (list `! (parse-path-expr (:x e)))
-          :expr1 (parse-path-expr e)
+          :sym*     (list `* (del-suffix e))
+          :sym+     (list `+ (del-suffix e))
+          :sym?     (list `? (del-suffix e))
+          :!sym     (list `! (del-prefix e))
+          :expr*    (list `* (parse-path-expr (:x e)))
+          :expr+    (list `+ (parse-path-expr (:x e)))
+          :expr?    (list `? (parse-path-expr (:x e)))
+          :!expr    (list `! (parse-path-expr (:x e)))
+          :expr     (parse-path-expr e)
+          :expr1    (parse-path-expr e)
           :sequence (list `/ (parse-path-expr (:a e)) (parse-path-expr (:b e)))
           :invseq   (list `! (parse-path-expr (:a e)) (parse-path-expr (:b e)))
           :altseq   (list `| (parse-path-expr (:a e)) (parse-path-expr (:b e)))
@@ -225,4 +226,4 @@ Precedence is left-to-right within groups."
 
   Where bindings a, b, c, d are URIs, and binding p is a String."
   [& path]
-  (parse-path-expr (s/conform ::expr path)))
+  (parse-path-expr (s/conform (s/or :expr ::expr :expr1 ::expr1) path)))

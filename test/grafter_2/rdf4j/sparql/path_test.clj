@@ -83,11 +83,14 @@
                     (sparql/query {:path (p/path link? / (p "lin2"))}
                                   conn))]
         (is (results-contain? res {:s (p "g") :o (p "g")}))
-        (is (results-contain? res {:s (p "b") :o (p "g")}))
-        )
+        (is (results-contain? res {:s (p "b") :o (p "g")})))
 
       (let [res (-> "grafter/rdf4j/sparql/path-query.sparql"
                     (sparql/query {:path (p/path (p "lin2") | (p "lin3"))}
                                   conn))]
         (is (results-contain? res {:s (p "c") :o (p "g")}))
         (is (results-contain? res {:s (p "c") :o (p "h")}))))))
+
+(deftest path-syntax-test
+  (let [uri (URI. "http://test1")]
+    (is (= "(^<http://test1>)" (p/string-value (p/path ! uri))))))
