@@ -93,4 +93,7 @@
 
 (deftest path-syntax-test
   (let [uri (URI. "http://test1")]
-    (is (= "(^<http://test1>)" (p/string-value (p/path ! uri))))))
+    (is (= "(^<http://test1>)" (p/string-value (p/path ! uri)))))
+
+  (let [presuf (URI. "http://presuf")]
+    (is (= "(^(<http://presuf>*))" (p/string-value (p/path !presuf*))))))

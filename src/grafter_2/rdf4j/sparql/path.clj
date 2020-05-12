@@ -145,7 +145,11 @@ Precedence is left-to-right within groups."
   (s/and symbol? (fn [x] (.endsWith (name x) (name suffix)))))
 
 (s/def ::expr1
-  (s/or :sym*   (suffix? '*)
+  (s/or :presuf (s/and (prefix? '!)
+                       (s/or :sym* (suffix? '*)
+                             :sym+ (suffix? '+)
+                             :sym? (suffix? '?)))
+        :sym*   (suffix? '*)
         :sym+   (suffix? '+)
         :sym?   (suffix? '?)
         :!sym   (prefix? '!)
@@ -182,6 +186,7 @@ Precedence is left-to-right within groups."
           :sym+     (list `+ (del-suffix e))
           :sym?     (list `? (del-suffix e))
           :!sym     (list `! (del-prefix e))
+          :presuf   (list `! (parse-path-expr (update e 1 del-prefix)))
           :expr*    (list `* (parse-path-expr (:x e)))
           :expr+    (list `+ (parse-path-expr (:x e)))
           :expr?    (list `? (parse-path-expr (:x e)))
