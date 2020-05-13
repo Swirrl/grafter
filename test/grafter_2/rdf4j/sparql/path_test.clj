@@ -107,12 +107,19 @@
     (let [presuf*  (URI. "http://test")] (is (= "(^<http://test>)" (p/string-value (p/path !presuf*)))))
     (let [presuf   (URI. "http://test")] (is (= "(^(<http://test>*))" (p/string-value (p/path !presuf*))))))
 
-  #_(testing "Ambiguous syntaxes and/or compiler errors"
-    ;; NOTE: We can't actually unit test these because they throw compiler errors
-    (let [!presuf* 0  presuf  0] (p/path !presuf*))
-    (let [!presuf  0  presuf  0] (p/path !presuf*))
-    (let [ presuf* 0  presuf  0] (p/path !presuf*))
-    (let [!presuf* 0 !presuf  0] (p/path !presuf*))
-    (let [!presuf* 0  presuf* 0] (p/path !presuf*))
-    (let [!presuf** 'wut] (p/path !presuf*)))
-  )
+  (testing "Ambiguous syntaxes and/or compiler errors"
+    ;; Use eval to move compiler errors to runtime to test macro
+    ;; properly raises syntax errors when we have ambiguous bindings
+    ;; in scope.
+    (is (thrown? clojure.lang.Compiler$CompilerException
+                 (eval '(let [!presuf* 0  presuf  0] (p/path !presuf*)))))
+    (is (thrown? clojure.lang.Compiler$CompilerException
+                 (eval '(let [!presuf  0  presuf  0] (p/path !presuf*)))))
+    (is (thrown? clojure.lang.Compiler$CompilerException
+                 (eval '(let [presuf* 0  presuf  0] (p/path !presuf*)))))
+    (is (thrown? clojure.lang.Compiler$CompilerException
+                 (eval '(let [!presuf* 0 !presuf  0] (p/path !presuf*)))))
+    (is (thrown? clojure.lang.Compiler$CompilerException
+                 (eval '(let [!presuf* 0  presuf* 0] (p/path !presuf*)))))
+    (is (thrown? clojure.lang.Compiler$CompilerException
+                 (eval '(let [!presuf** 'wut] (p/path !presuf*)))))))
