@@ -1,0 +1,22 @@
+@prefix : <http://www.grafter.org/example#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+
+<http://grafter.org/graph/rdfs> {
+        :a rdfs:label "Test A" .
+        :a :link :b .
+        :b rdfs:label "Test B" .
+        :b :link :c .
+        :c rdfs:label "Test C" .
+        :c :link :d .
+        :c :lin2 :g .
+        :c :lin3 :h .
+        :g :other :h .
+        :d rdfs:label "Test D" .
+        :d :link :e .
+        :e rdfs:label "Test E" .
+        :e :link :f .
+        :f rdfs:label "Test F" .
+}
