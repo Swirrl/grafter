@@ -1,9 +1,12 @@
 (ns grafter-2.rdf4j.sparql.path-test
   (:require [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.test :refer [deftest is testing are]]
             [grafter-2.rdf4j.repository :as repo]
             [grafter-2.rdf4j.sparql :as sparql]
-            [grafter-2.rdf4j.sparql.path :as p])
+            [grafter-2.rdf4j.sparql.path :as p]
+            [grafter.vocabularies.rdf :refer [rdfs:label rdf:a rdf:type rdfs:Class rdfs:subClassOf rdfs:subPropertyOf rdf:first rdf:rest]]
+            [grafter.vocabularies.dcterms :refer [dcterms:title]]
+            [grafter.vocabularies.foaf :refer [foaf:knows foaf:name]])
   (:import java.net.URI))
 
 (def uri1 (URI. "http://test1"))
@@ -39,7 +42,6 @@
 (defn p [s] (URI. (str "http://www.grafter.org/example#" s)))
 
 (def link (p "link"))
-(def rdfs:label (URI. "http://www.w3.org/2000/01/rdf-schema#label"))
 
 (defn results-contain? [results m]
   (boolean (some (partial = m) results)))
@@ -159,3 +161,60 @@
                  (eval '(let [presuf 0] (p/path !presuf*)))))
     (is (thrown? clojure.lang.Compiler$CompilerException
                  (eval '(p/path ! uri *))))))
+
+
+;; Ported path expressions from the W3C spec as example usage
+;;
+;; https://www.w3.org/TR/sparql11-query/#propertypath-examples
+;;
+;; NOTE these are just of the path expressions from the queries not
+;; the complete queries
+
+(def ex:motherOf (URI. "http://example/motherOf"))
+(def ex:fatherOf (URI. "http://example/fatherOf"))
+
+(deftest sparql-11-path-examples
+  (are [path-sexp example]
+      (= example (p/string-value path-sexp))
+
+    ;; Alternatives: Match one or both possibilities
+    (p/path dcterms:title | rdfs:label)
+    "(<http://purl.org/dc/terms/title>|<http://www.w3.org/2000/01/rdf-schema#label>)"
+
+    ;; Sequence: Find the name of any people (that Alice knows)
+    (p/path foaf:knows / foaf:name)
+    "(<http://xmlns.com/foaf/0.1/knows>/<http://xmlns.com/foaf/0.1/name>)"
+
+    ;; Sequence: Find the names of people 2 "foaf:knows" links away
+    (p/path foaf:knows / foaf:knows / foaf:name)
+    "(<http://xmlns.com/foaf/0.1/knows>/(<http://xmlns.com/foaf/0.1/knows>/<http://xmlns.com/foaf/0.1/name>))"
+
+    ;; Inverse Path Sequence: Find all the people who know someone (?x knows)
+    (p/path foaf:knows / -foaf:knows)
+    "(<http://xmlns.com/foaf/0.1/knows>/(^<http://xmlns.com/foaf/0.1/knows>))"
+
+    ;; Arbitrary length match: Find the names of all the people that can be reached (from Alice) by foaf:knows
+    (p/path foaf:knows+ / foaf:name)
+    "((<http://xmlns.com/foaf/0.1/knows>+)/<http://xmlns.com/foaf/0.1/name>)"
+
+    ;; Alternatives in an arbitrary length path
+    (p/path (ex:motherOf | ex:fatherOf)+ )
+    "((<http://example/motherOf>|<http://example/fatherOf>)+)"
+
+    ;; Arbitrary length path match.  Some forms of limited inference are possible as well.
+    ;; For example, for RDFS, all types and supertypes of a resource.
+    ;; Also same example as "All resources and all their inferred types" from the spec
+    (p/path rdf:type / rdfs:subClassOf*)
+    "(<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>/(<http://www.w3.org/2000/01/rdf-schema#subClassOf>*))"
+
+    ;; Subproperty
+    (p/path rdfs:subPropertyOf*)
+    "(<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>*)"
+
+    ;; Negated Property Paths: Find nodes connected but not by rdf:type (either way round)
+    (p/path !(rdf:type | -rdf:type))
+    "(!(<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>|(^<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)))"
+
+    ;; Elements in an RDF collection
+    (p/path rdf:rest* / rdf:first)
+    "((<http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*)/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first>)"))
