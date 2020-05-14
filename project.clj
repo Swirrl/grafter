@@ -43,7 +43,7 @@
                  [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.3"]
 
                  [grafter/url "0.2.5"]
-                 [grafter/vocabularies "0.3.2"]
+                 [grafter/vocabularies "0.3.4"]
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.5"]]
 
@@ -88,8 +88,7 @@
 
              :dev-deps {
 
-                        :dependencies [
-                                       [http-kit "2.3.0"]
+                        :dependencies [[http-kit "2.3.0"]
                                        [org.slf4j/slf4j-simple "1.7.25"]
                                        [prismatic/schema "1.1.7"]
                                        [criterium "0.4.4"]
