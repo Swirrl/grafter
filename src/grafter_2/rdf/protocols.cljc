@@ -10,7 +10,7 @@
                                               xsd:float xsd:float
                                               xsd:integer xsd:short
                                               xsd:string xsd:time
-                                              xsd:long]]
+                                              xsd:int xsd:long]]
             #?@(:clj  [[grafter.url :refer [->java-uri]]]))
   #?(:clj (:import [java.net URI]
                    [java.time LocalTime LocalDate LocalDateTime OffsetTime OffsetDateTime]
@@ -346,9 +346,10 @@
      (datatype-uri [t]
        (->java-uri xsd:float))
 
+     ;; bounded int
      Integer
      (datatype-uri [t]
-       (->java-uri xsd:integer))
+       (->java-uri xsd:int))
 
      Long
      (datatype-uri [t]

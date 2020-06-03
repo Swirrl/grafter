@@ -5,7 +5,7 @@
             [grafter-2.rdf4j.io :as sut :refer [statements]]
             [grafter-2.rdf4j.templater :refer [graph]]
             [grafter.url :as url]
-            [grafter.vocabularies.core :refer [prefixer]])
+            [grafter.vocabularies.core :refer [prefixer ->uri]])
   (:import grafter_2.rdf.protocols.OffsetDate
            java.net.URI
            [java.time LocalDate LocalDateTime LocalTime OffsetDateTime OffsetTime ZoneOffset]
@@ -21,13 +21,15 @@
     "http://www.w3.org/2001/XMLSchema#double" Double "10.7"
     "http://www.w3.org/2001/XMLSchema#float" Float "10.6"
     "http://www.w3.org/2001/XMLSchema#integer" BigInteger "10"
+    "http://www.w3.org/2001/XMLSchema#long" Long "10"
     "http://www.w3.org/2001/XMLSchema#int" Integer "10"))
 
 (deftest backend-literal->grafter-type-test
   (are [clj-val uri klass]
       (let [ret-val (sut/backend-literal->grafter-type (sut/->backend-type clj-val))]
         (is (= clj-val ret-val))
-        (is (= klass (class clj-val))))
+        (is (= klass (class clj-val)))
+        (is (= (->uri uri) (pr/datatype-uri clj-val))))
 
       true           "http://www.w3.org/2001/XMLSchema#boolean" Boolean
       (byte 10)      "http://www.w3.org/2001/XMLSchema#byte" Byte
