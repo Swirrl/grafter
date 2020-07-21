@@ -48,7 +48,7 @@
   (pr/add
     ([this triples]
      {:pre [(or (nil? triples)
-                (seq triples)
+                (seqable? triples)
                 (instance? IStatement triples))]}
      (if (not (instance? IStatement triples))
        (when (seq triples)
@@ -59,7 +59,7 @@
 
     ([this graph triples]
      {:pre [(or (nil? triples)
-                (seq triples)
+                (seqable? triples)
                 (instance? IStatement triples))]}
      (if (not (instance? IStatement triples))
        (when (seq triples)
