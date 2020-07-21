@@ -2,9 +2,14 @@
   (:require
    [grafter-3.sparql.protocols :as spp]
    [grafter-2.rdf4j.repository :as repo]
-   [grafter-3.rdf4j.sparql.impl :as impl])
-  (:import [org.eclipse.rdf4j.query QueryLanguage]))
+   [grafter-3.rdf4j.sparql.impl :as impl]
+   [clojure.core.protocols :as ccp])
+  (:import [org.eclipse.rdf4j.query QueryLanguage]
+           [org.eclipse.rdf4j.rio RDFHandler]))
 
+
+;; TODO may need to reify a SPARQLRepository instead so we can set and
+;; access the SPARQLProtocolSession and valueFactory etc
 (defn build-repo
   "TODO doc string about building the repo "
   [{:keys [query-endpoint update-endpoint
@@ -19,31 +24,94 @@
                           (.setUsernameAndPassword username password)
                           (.enableQuadMode (boolean quad-mode?)))))
 
+(defmacro set-when
+  "Syntactic sugar over doto for calling java setters, but doesn't call
+  it when the set value is ::not-found"
+  [obj & forms]
+  (seq (conj (->> (for [[setter & arg] forms]
+                    `(let [v# ~@arg]
+                       (when (not= v# ::not-found)
+                         (~setter ~obj v#))))
+                  (cons 'do)
+                  vec)
+             `~obj)))
+
+(defn set-standard-query-opts! [qobj opts]
+  (set-when qobj
+            (.setMaxExecutionTime (:max-exection-time opts ::not-found))
+            (.setMaxQueryTime (:max-query-time opts ::not-found))
+            (.setIncludeInferred (boolean (:reasoning opts ::not-found)))))
+
 (defrecord PreppedAsk [prepped-ask]
   spp/EvalAsk
-  (evaluate-ask [t]
+  (evaluate-ask [record-opts]
     ;; TODO set other opts merged onto record e.g.   setBinding, setDataset
-    (doto prepped-ask
-      (.setMaxExecutionTime (:max-exection-time t))
-      (.setMaxQueryTime (:max-query-time t))
-      (.setIncludeInferred (:reasoning t)))
+    (set-standard-query-opts! prepped-ask record-opts)
     (.evaluate prepped-ask)))
+
+(defn make-rdf-handler
+  ([coll]
+   (make-rdf-handler identity coll))
+  ([f coll]
+   (let [finished (promise)
+         user-coll (transient coll)]
+     (reify RDFHandler
+       (startRDF [t]
+         ;(assoc! stream-state :state :started)
+         )
+       (endRDF [t]
+         ;;(assoc! stream-state :state :stopped)
+         (deliver finished :fin)
+         )
+       (handleComment [t comment]
+         (println "comment: " comment))
+       (handleNamespace [t prefix uri]
+         (println "handleNamespace: " prefix uri))
+       (handleStatement [t st]
+         (println "handleStatement: " st)
+         (conj! user-coll (f st)))
+
+       clojure.lang.IDeref
+       (deref [t]
+         (when @finished
+           (persistent! user-coll)))))))
 
 (defrecord PreppedConstruct [prepped-construct]
   spp/EvalConstruct
-  (evaluate-construct [t]
-    (doto prepped-construct
-      (.setMaxExecutionTime (:max-exection-time t))
-      (.setMaxQueryTime (:max-query-time t))
-      (.setIncludeInferred (:reasoning t)))
+  (evaluate-construct [record-opts]
+    (set-standard-query-opts! prepped-construct record-opts)
     (.evaluate prepped-construct))
-  (evaluate-construct [t rdf-handler]
-    ))
+
+  (evaluate-construct [record-opts rdf-handler]
+    (set-standard-query-opts! prepped-construct record-opts)
+    (.evaluate prepped-construct rdf-handler))
+
+  ;;clojure.lang.IReduceInit
+  ccp/CollReduce
+  (coll-reduce
+    [coll f] (let [h (make-rdf-handler [] f)]
+               (spp/evaluate-construct coll h)
+                @h)
+
+
+    )
+  (coll-reduce [coll f val]
+    (let [h (make-rdf-handler val f)]
+      (spp/evaluate-construct coll h)
+      @h))
+  )
+
+
 
 (defrecord Connection [connection]
   spp/PrepareAsk
   (prepare-ask [t query-string opts]
     (merge (->PreppedAsk (.prepareBooleanQuery connection QueryLanguage/SPARQL query-string (:base-uri opts)))
+           opts))
+
+  spp/PrepareConstruct
+  (prepare-construct [t query-string opts]
+    (merge (->PreppedConstruct (.prepareGraphQuery connection QueryLanguage/SPARQL query-string (:base-uri opts)))
            opts)))
 
 

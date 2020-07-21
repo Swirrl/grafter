@@ -27,7 +27,10 @@
   (evaluate-ask [t] "Evaluate the ASK query, returns a boolean"))
 
 (defprotocol EvalConstruct
-  (evaluate-construct [t] [t rdf-handler] "Evaluate the Construct query"))
+  (evaluate-construct
+    [t]
+    [t rdf-handler]
+    "Evaluate the Construct query"))
 
 
 
