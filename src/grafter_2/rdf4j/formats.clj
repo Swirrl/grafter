@@ -184,38 +184,3 @@
       (throw (ex-info (str "Unsupported format: " (pr-str format)) {:error :unsupported-format})))
     (let [^RDFParserFactory factory (.newInstance parser-class)]
       (.getParser factory))))
-
-(defmulti supports-prefixes?
-  "Returns true if the given format supports prefixes"
-  (fn [fmt]
-    (->rdf-format fmt)))
-
-(defmethod supports-prefixes? RDFFormat/BINARY [_]
-  false)
-
-(defmethod supports-prefixes? RDFFormat/JSONLD [_]
-  true)
-
-(defmethod supports-prefixes? RDFFormat/RDFJSON [_]
-  true)
-
-(defmethod supports-prefixes? RDFFormat/N3 [_]
-  true)
-
-(defmethod supports-prefixes? RDFFormat/NQUADS [_]
-  false)
-
-(defmethod supports-prefixes? RDFFormat/NTRIPLES [_]
-  false)
-
-(defmethod supports-prefixes? RDFFormat/TURTLE [_]
-  true)
-
-(defmethod supports-prefixes? RDFFormat/TRIG [_]
-  true)
-
-(defmethod supports-prefixes? RDFFormat/TRIX [_]
-  true)
-
-(defmethod supports-prefixes? RDFFormat/RDFXML [_]
-  true)

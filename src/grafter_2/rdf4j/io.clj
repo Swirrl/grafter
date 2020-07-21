@@ -519,11 +519,10 @@
                                   (iowriter destination
                                             :append append
                                             :encoding encoding))]
-     (if (fmt/supports-prefixes? format)
-       (reduce (fn [writer [name prefix]]
-                 (doto writer
-                   (.handleNamespace name (str prefix)))) writer prefixes)
-       writer))))
+
+     (reduce (fn [writer [name prefix]]
+               (doto writer
+                 (.handleNamespace name (str prefix)))) writer prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX

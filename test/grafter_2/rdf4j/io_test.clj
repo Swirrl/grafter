@@ -211,7 +211,6 @@
                     [(url/->java-uri "http://test/subj") [(url/->java-uri "http://test/pred") (url/->java-uri "http://test/obj")]])
         string-wtr (java.io.StringWriter.)
         serializer (sut/rdf-writer string-wtr :format :nq)]
-
     (add serializer quad)
 
     (let [output-str (str string-wtr)]
@@ -224,6 +223,7 @@
     (let [baos (java.io.ByteArrayOutputStream. 8192)
           quads (graph (url/->java-uri "http://example.org/test/graph")
                        [(url/->java-uri "http://test/subj") [(url/->java-uri "http://test/pred") (url/->java-uri "http://test/obj")]])]
+
       (add (sut/rdf-writer baos :format :brf) quads)
 
       (let [bais (java.io.ByteArrayInputStream. (.toByteArray baos))]
