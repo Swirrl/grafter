@@ -109,6 +109,34 @@
         (is (query test-db "ASK { GRAPH <http://b> { ?s ?p ?o } } LIMIT 1")
             "Should not be deleted")))))
 
+(deftest single-statement-test
+  (let [triple (core/->Triple
+                 (URI. "http://one")
+                 (URI. "http://lonely")
+                 (URI. "http://triple"))]
+    (testing "arity 2"
+      (let [ask "ASK { <http://one> <http://lonely> <http://triple> }"]
+        (with-open [conn (->connection (sail-repo))]
+          (core/add conn triple)
+          (is (query conn ask))
+          (core/delete conn triple)
+          (is (not (query conn ask))))))
+    (testing "arity 3"
+      (let [ask-a "ASK {
+                   GRAPH <http://a> {
+                   <http://one> <http://lonely> <http://triple> } }"
+            ask-b "ASK {
+                   GRAPH <http://b> {
+                   <http://one> <http://lonely> <http://triple> } }"]
+        (with-open [conn (->connection (sail-repo))]
+          (core/add conn (URL. "http://a") triple)
+          (core/add conn (URL. "http://b") triple)
+          (is (query conn ask-a))
+          (is (query conn ask-b))
+          (core/delete conn (URL. "http://a") triple)
+          (is (not (query conn ask-a)))
+          (is (query conn ask-b)))))))
+
 (deftest col-reduce-repo-test
   (is (= (into #{} (sail-repo))
          #{}))
