@@ -65,7 +65,7 @@
        (when (seq triples)
          (let [^Iterable stmts (map rio/quad->backend-quad triples)]
            (.add this stmts (resource-array (rio/->rdf4j-uri graph)))))
-       (pr/add-statement this triples))
+       (pr/add-statement this graph triples))
      this)
 
     ([this graph format triple-stream]
@@ -494,7 +494,7 @@
          (when (seq triples)
            (let [^Iterable stmts (map rio/quad->backend-quad triples)]
              (.remove this stmts (resource-array (rio/->rdf4j-uri graph)))))
-         (pr/delete-statement this triples)))))
+         (pr/delete-statement this graph triples)))))
 
 (extend-protocol ToConnection
   RepositoryConnection
