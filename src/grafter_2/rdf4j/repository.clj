@@ -12,7 +12,7 @@
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer]
            [org.eclipse.rdf4j.common.iteration CloseableIteration Iteration])
   (:import grafter_2.rdf.SPARQLRepository
-           grafter_2.rdf.protocols.IStatement           
+           grafter_2.rdf.protocols.IStatement
            org.eclipse.rdf4j.model.impl.URIImpl
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
@@ -27,6 +27,12 @@
 
 (defn- resource-array #^"[Lorg.eclipse.rdf4j.model.Resource;" [& rs]
   (into-array Resource rs))
+
+(defn- statements? [coll]
+  (or (nil? coll)
+      (sequential? coll)
+      (set? coll)
+      (instance? IStatement coll)))
 
 (extend-type RepositoryConnection
   pr/ITripleWriteable
@@ -47,9 +53,7 @@
 
   (pr/add
     ([this triples]
-     {:pre [(or (nil? triples)
-                (seqable? triples)
-                (instance? IStatement triples))]}
+     {:pre [(statements? triples)]}
      (if (not (instance? IStatement triples))
        (when (seq triples)
          (let [^Iterable stmts (map rio/quad->backend-quad triples)]
@@ -58,9 +62,7 @@
      this)
 
     ([this graph triples]
-     {:pre [(or (nil? triples)
-                (seqable? triples)
-                (instance? IStatement triples))]}
+     {:pre [(statements? triples)]}
      (if (not (instance? IStatement triples))
        (when (seq triples)
          (let [^Iterable stmts (map rio/quad->backend-quad triples)]
@@ -475,9 +477,7 @@
 
   (pr/delete
     ([this quads]
-       {:pre [(or (nil? quads)
-                  (sequential? quads)
-                  (instance? IStatement quads))]}
+       {:pre [(statements? quads)]}
      (if (not (instance? IStatement quads))
        (when (seq quads)
          (let [^Iterable stmts
@@ -487,9 +487,7 @@
 
 
     ([this graph triples]
-       {:pre [(or (nil? triples)
-                (sequential? triples)
-                (instance? IStatement triples))]}
+     {:pre [(statements? triples)]}
        (if (not (instance? IStatement triples))
          (when (seq triples)
            (let [^Iterable stmts (map rio/quad->backend-quad triples)]
@@ -592,7 +590,7 @@
                   (lazy-seq (cons (rio/backend-quad->grafter-quad v) (next-item i))))))
           ^Resource subj nil
           ^IRI pred nil
-          ^Value obj nil            
+          ^Value obj nil
           iter (.getStatements this subj pred obj (boolean infer) (resource-array))]
       (f iter))))
 
