@@ -75,6 +75,24 @@
           (is (= (set (rio/statements conn))
                  (set (rio/statements file)))))))))
 
+(deftest add-statements-test
+  (let [rdf-data (rio/statements triple-fixture-file-path)]
+    (are [add-call]
+        (let [db (sail-repo)]
+          (with-open [conn (->connection db)]
+            (-> conn
+                add-call)
+            (query conn "ASK { ?s ?p ?o } LIMIT 1")))
+
+      ;; arity 2
+      (core/add rdf-data)
+      (core/add (set rdf-data))
+
+      ;; arity 3
+      (core/add (URI. "http://g") rdf-data)
+      (core/add (URI. "http://g") (set rdf-data)))
+    ))
+
 (deftest delete-statement-test
   (testing "arity 2 delete"
     (are [initial-data delete-form]
