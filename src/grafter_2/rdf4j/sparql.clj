@@ -237,7 +237,7 @@
         prepped-query (repo/prepare-query repo pre-processed-qry nil opts)]
     (reduce (fn [pq [unbound-var val]]
               (when-not (or (sequential? val) (set? val))
-                (if (and val (satisfies? rio/IRDF4jConverter val))
+                (if (and (some? val) (satisfies? rio/IRDF4jConverter val))
                   (.setBinding pq (name unbound-var) (rio/->backend-type val))
                   (throw (ex-info (str "Could not coerce nil value into SPARQL binding for variable " unbound-var)
                                   {:variable unbound-var :bindings bindings :sparql-query sparql-query}))))
