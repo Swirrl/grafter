@@ -14,7 +14,7 @@
            [java.time LocalTime]
            [java.time.temporal ChronoField Temporal TemporalField]
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
-           [org.eclipse.rdf4j.model BNode Literal Statement URI Model]
+           [org.eclipse.rdf4j.model BNode Literal Statement URI Value Model]
            [org.eclipse.rdf4j.model.impl BNodeImpl ContextStatementImpl LiteralImpl SimpleValueFactory StatementImpl URIImpl]
            [org.eclipse.rdf4j.rio RDFFormat RDFHandler Rio]))
 
@@ -30,7 +30,7 @@
   true)
 
 (defprotocol IRDF4jConverter
-  (->backend-type [this] "Convert an arbitrary statement type into an RDF4j Statement type"))
+  (->backend-type ^Value [this] "Convert an arbitrary statement type into an RDF4j Statement type"))
 
 (defmulti backend-literal->grafter-type
   "A multimethod to convert a backend RDF literal into a corresponding

@@ -10,8 +10,10 @@
              :refer [->connection IPrepareQuery]]
             [grafter-2.rdf4j.sparql.path :as path])
   (:import java.util.regex.Pattern
+           [org.eclipse.rdf4j.model Value]
            org.eclipse.rdf4j.rio.ntriples.NTriplesUtil
-           org.eclipse.rdf4j.repository.RepositoryConnection))
+           org.eclipse.rdf4j.repository.RepositoryConnection
+           [org.eclipse.rdf4j.query Query]))
 
 (defn- get-clause-pattern [clause-name key]
   (cond
@@ -235,7 +237,7 @@
   (let [sparql-query (slurp (resource sparql-file))
         pre-processed-qry (pre-process-query sparql-query bindings)
         prepped-query (repo/prepare-query repo pre-processed-qry nil opts)]
-    (reduce (fn [pq [unbound-var val]]
+    (reduce (fn [^Query pq [unbound-var val]]
               (when-not (or (sequential? val) (set? val))
                 (if (and (some? val) (satisfies? rio/IRDF4jConverter val))
                   (.setBinding pq (name unbound-var) (rio/->backend-type val))
