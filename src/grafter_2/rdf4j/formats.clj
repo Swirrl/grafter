@@ -100,11 +100,14 @@
 (defmethod ->rdf-format org.eclipse.rdf4j.model.URI [f]
   (url->rdf-format f))
 
+(defn binary-format? [fmt]
+  (= RDFFormat/BINARY (->rdf-format fmt)))
+
 (defn select-input-coercer
   "Depending on whether the format is text or binary returns either a
   Reader or an InputStream."
   [fmt]
-  (if (= RDFFormat/BINARY (->rdf-format fmt))
+  (if (binary-format? fmt)
     io/input-stream ;; If we're a binary format we need to use an outputstream not a writer
     io/reader))
 
@@ -112,7 +115,7 @@
   "Depending on whether the format is text or binary returns either a
   Writer or an OutputStream."
   [fmt]
-  (if (= RDFFormat/BINARY (->rdf-format fmt))
+  (if (binary-format? fmt)
     io/output-stream ;; If we're a binary format we need to use an outputstream not a writer
     io/writer))
 
