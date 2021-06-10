@@ -344,7 +344,7 @@
 (defn ^:no-doc sesame-results->seq
   "Convert a sesame results object into a lazy sequence of results."
   ([prepared-query] (sesame-results->seq prepared-query identity))
-  ([^TupleQuery prepared-query converter-f]
+  ([^Query prepared-query converter-f]
      (let [^CloseableIteration results (.evaluate prepared-query)
            run-query (fn pull-query []
                        (try
