@@ -217,8 +217,8 @@
 (defn add->repo [repo]
   (fn
     ([] (->connection repo))
-    ([acc] (.close acc) repo)
-    ([acc v]
+    ([^RepositoryConnection acc] (.close acc) repo)
+    ([^RepositoryConnection acc v]
      (try (if (reduced? acc)
             acc
             (pr/add acc v))
@@ -385,7 +385,7 @@
     (.execute this)))
 
 (defprotocol IPrepareQuery
-  (prepare-query* [this sparql-string restriction]
+  (prepare-query* ^Query [this sparql-string restriction]
     "Low level function to prepare (parse, but not process) a sesame RDF
   query.  Takes a repository a query string and an optional sesame
   Dataset to act as a query restriction.
@@ -415,10 +415,10 @@
   Dataset to act as a query restriction.
 
   Prepared queries still need to be evaluated with evaluate."
-  ([repo sparql-string] (prepare-query repo sparql-string nil))
-  ([repo sparql-string restriction]
+  (^Query [repo sparql-string] (prepare-query repo sparql-string nil))
+  (^Query [repo sparql-string restriction]
    (prepare-query repo sparql-string restriction nil))
-  ([repo sparql-string restriction {:keys [reasoning?] :as opts}]
+  (^Query [repo sparql-string restriction {:keys [reasoning?] :as opts}]
    (doto (prepare-query* repo sparql-string restriction)
      (.setIncludeInferred (or reasoning? false)))))
 
@@ -533,7 +533,7 @@
   (apply f (apply concat (butlast args) (last args))))
 
 (defn- build-sparql-prefixes-block [prefix-map]
-  (str (reduce (fn [sb [prefix uri]]
+  (str (reduce (fn [^StringBuffer sb [prefix uri]]
                  (.append sb (str "PREFIX " prefix ": <" uri ">\n")))
                (StringBuffer.) prefix-map)))
 

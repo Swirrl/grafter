@@ -8,7 +8,7 @@
 
   :deploy-repositories [["releases" :clojars]]
 
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.10.3"]
 
                  ;;[org.eclipse.rdf4j/rdf4j-runtime "3.0.0" :exclusions [ch.qos.logback/logback-classic]]
 
