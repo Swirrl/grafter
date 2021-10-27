@@ -199,7 +199,11 @@ public class SPARQLSession extends SPARQLProtocolSession /*SparqlSession*/ {
                             throw new UnsupportedQueryLanguageException(errInfo.getErrorMessage());
                         }
                         else {
-                            throw new RepositoryException(errInfo.toString());
+                            if(errInfo != null) {
+                                throw new RepositoryException(errInfo.toString());
+                            } else {
+                                throw new RepositoryException("No Error Info Present, server may not have responded properly");
+                            }
                         }
                 }
             }
