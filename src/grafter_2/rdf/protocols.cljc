@@ -197,6 +197,12 @@
      (datatype-uri [this]
        xsd:string)))
 
+(defn- compare-langstrings [this that]
+  (let [c (compare (str this) (str that))]
+    (if (zero? c)
+      (compare (lang this) (lang that))
+      c)))
+
 (defrecord LangString [string lang]
   IRDFString
   (lang [this]
@@ -216,6 +222,13 @@
   IDatatypeURI
   (datatype-uri [this]
     rdf/rdf:langString)
+
+  #?@(:clj
+       [Comparable
+        (compareTo [this that] (compare-langstrings this that))]
+       :cljs
+       [IComparable
+        (-compare [this that] (compare-langstrings this that))])
 
   #?@(:cljs
       ;; IEmptyableCollection fix for protocol bug seen in Chrome / Chromium
