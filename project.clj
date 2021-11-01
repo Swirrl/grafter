@@ -43,7 +43,7 @@
                  [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.3"]
 
                  [grafter/url "0.2.5"]
-                 [grafter/vocabularies "0.3.5"]
+                 [grafter/vocabularies "0.3.5"] ;; also update this in shadow-cljs.edn
                  [me.raynes/fs "1.4.6"]
                  [potemkin "0.4.5"]]
 
