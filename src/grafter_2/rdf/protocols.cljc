@@ -235,6 +235,10 @@
       [IEmptyableCollection
        (-empty [_] "")]))
 
+(defn lang-string? [v]
+  (and (satisfies? IDatatypeURI v)
+       (= rdf:langString (datatype-uri v))))
+
 (defn language
   "Create an RDF langauge string out of a value string and a given
   language tag.  Language tags should be keywords representing the

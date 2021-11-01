@@ -33,6 +33,16 @@
   (is (thrown? AssertionError
                (language "foo" nil))))
 
+(deftest langstring-test
+  (testing "langstring"
+    (let [lang-string (->LangString "foo-bar" :en)
+          lang-string2 (->LangString "foo-bar2" :en)]
+      (is (= "foo-bar" (raw-value lang-string)))
+      (is (lang-string? lang-string))
+      (is (= 0 (compare lang-string lang-string)))
+      (is (> 0 (compare lang-string lang-string2)))
+      (is (= rdf:langString (datatype-uri lang-string))))))
+
 (deftest bnode-equality-test
   (testing "BNode equality"
     (let [id (gensym)]

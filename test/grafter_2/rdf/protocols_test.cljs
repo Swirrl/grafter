@@ -6,9 +6,12 @@
 
 (deftest langstring-test
   (testing "langstring"
-    (let [lang-string (pr/->LangString "foo-bar" :en)]
+    (let [lang-string (pr/->LangString "foo-bar" :en)
+          lang-string2 (pr/->LangString "foo-bar2" :en)]
       (is (= "foo-bar" (pr/raw-value lang-string)))
-      (is (instance? pr/LangString lang-string))
+      (is (pr/lang-string? lang-string))
+      (is (= 0 (compare lang-string lang-string)))
+      (is (> 0 (compare lang-string lang-string2)))
       (is (= rdf:langString (pr/datatype-uri lang-string))))))
 
 (deftest literal-test
