@@ -1,6 +1,6 @@
 {:source-paths ["src" "test"]
 
- :dependencies [[grafter/vocabularies "0.3.2"]]
+ :dependencies [[grafter/vocabularies "0.3.5"]]
 
  :nrepl {:port 8777}
 
