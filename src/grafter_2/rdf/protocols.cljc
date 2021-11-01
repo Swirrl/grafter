@@ -197,6 +197,12 @@
      (datatype-uri [this]
        xsd:string)))
 
+(defn- compare-langstrings [this that]
+  (let [c (compare (str this) (str that))]
+    (if (zero? c)
+      (compare (lang this) (lang that))
+      c)))
+
 (defrecord LangString [string lang]
   IRDFString
   (lang [this]
@@ -217,10 +223,21 @@
   (datatype-uri [this]
     rdf/rdf:langString)
 
+  #?@(:clj
+       [Comparable
+        (compareTo [this that] (compare-langstrings this that))]
+       :cljs
+       [IComparable
+        (-compare [this that] (compare-langstrings this that))])
+
   #?@(:cljs
       ;; IEmptyableCollection fix for protocol bug seen in Chrome / Chromium
       [IEmptyableCollection
        (-empty [_] "")]))
+
+(defn lang-string? [v]
+  (and (satisfies? IDatatypeURI v)
+       (= rdf:langString (datatype-uri v))))
 
 (defn language
   "Create an RDF langauge string out of a value string and a given
