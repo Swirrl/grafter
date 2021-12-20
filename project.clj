@@ -44,7 +44,7 @@
 
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.3.5"] ;; also update this in shadow-cljs.edn
-                 [me.raynes/fs "1.4.6"]
+                 [me.raynes/fs "1.4.6" :exclusions [org.apache.commons/commons-compress]]
                  [potemkin "0.4.5"]]
 
   ;; Ensure we build the java sub project source code too!
