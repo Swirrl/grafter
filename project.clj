@@ -17,30 +17,37 @@
                  ;; you can include:
 
                  ;; [org.eclipse.rdf4j/rdf4j-runtime "2.5.0" :exclusions [ch.qos.logback/logback-classic]]
-                 [org.eclipse.rdf4j/rdf4j-rio-api "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-binary "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-jsonld "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-n3 "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-nquads "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-rdfjson "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-rdfxml "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-trig "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-rio-trix "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-api "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqljson "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-queryresultio-text "3.0.3"]
+                 [org.eclipse.rdf4j/rdf4j-rio-api "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-binary "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-jsonld "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-n3 "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-nquads "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfjson "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-rdfxml "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trig "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-rio-trix "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-api "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-binary "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqljson "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-queryresultio-text "3.1.4"]
 
-                 [org.eclipse.rdf4j/rdf4j-repository-api "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-repository-http "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-repository-sail "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-repository-dataset "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-sail-memory "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-sail-inferencer "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-sail-nativerdf "3.0.3"]
-                 [org.eclipse.rdf4j/rdf4j-repository-manager "3.0.3"]
+                 ;; override commons-beanutils which is a
+                 ;; transitive-dep of rdf4j-queryresultio-text to
+                 ;; avoid CVE-2014-0114 / CVE-2019-10086
+                 ;;
+                 ;; NOTE: We should remove this when we upgrade rdf4j
+                 [commons-beanutils "1.9.4"]
+
+                 [org.eclipse.rdf4j/rdf4j-repository-api "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-repository-http "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-repository-sail "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-repository-dataset "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-sail-memory "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-sail-inferencer "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-sail-nativerdf "3.1.4"]
+                 [org.eclipse.rdf4j/rdf4j-repository-manager "3.1.4"]
 
                  [grafter/url "0.2.5"]
                  [grafter/vocabularies "0.3.5"] ;; also update this in shadow-cljs.edn
