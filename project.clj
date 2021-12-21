@@ -33,6 +33,13 @@
                  [org.eclipse.rdf4j/rdf4j-queryresultio-sparqlxml "3.1.4"]
                  [org.eclipse.rdf4j/rdf4j-queryresultio-text "3.1.4"]
 
+                 ;; override commons-beanutils which is a
+                 ;; transitive-dep of rdf4j-queryresultio-text to
+                 ;; avoid CVE-2014-0114 / CVE-2019-10086
+                 ;;
+                 ;; NOTE: We should remove this when we upgrade rdf4j
+                 [commons-beanutils "1.9.4"]
+
                  [org.eclipse.rdf4j/rdf4j-repository-api "3.1.4"]
                  [org.eclipse.rdf4j/rdf4j-repository-http "3.1.4"]
                  [org.eclipse.rdf4j/rdf4j-repository-sail "3.1.4"]
