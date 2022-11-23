@@ -497,6 +497,50 @@
    "void" "http://rdfs.org/ns/void#"
    "xsd" "http://www.w3.org/2001/XMLSchema#"})
 
+(defn write-namespaces
+  "Signal to the writer that we're about to send RDF data.  This will
+  also trigger any buffered prefixes to be written to the stream."
+  ([target]
+   (write-namespaces target default-prefixes))
+  ([target prefixes]
+   (.startRDF target)
+   (reduce (fn [target [name prefix]]
+             (doto target
+               (.handleNamespace name (str prefix)))) target prefixes)))
+
+(defn make-rdf-writer
+  "Coerces destination into an java.io.Writer using
+  clojure.java.io/writer and returns an RDFWriter.
+
+  Use this to capture the intention to write to a location in a
+  specific RDF format, e.g.
+
+  (grafter-2.rdf/add (rdf-writer \"/tmp/foo.nt\" :format :nt) quads)
+
+  Accepts also the following optional options:
+
+  - :append        If set to true it will append new values to the end of
+                   the file destination (default: `false`).
+
+  - :format        If a String or a File are provided the format parameter
+                   can be optional (in which case it will be infered from
+                   the file extension).  This should be a clojure keyword
+                   representing the format extension e.g. :nt.
+
+  - :encoding      The character encoding to be used (default: UTF-8)"
+
+  [destination {:keys [append format encoding] :or {append false
+                                                    encoding "UTF-8"
+                                                    }}]
+
+  (let [^RDFFormat format (resolve-format-preference destination format)
+        iowriter (fmt/select-output-coercer format)
+        writer (Rio/createWriter format
+                                 (iowriter destination
+                                           :append append
+                                           :encoding encoding))]
+
+    writer))
 
 (defn rdf-writer
   "Coerces destination into an java.io.Writer using
@@ -519,7 +563,12 @@
 
   - :encoding      The character encoding to be used (default: UTF-8)
 
-  - :prefixes      A map of RDF prefix names to IRI prefixes."
+  - :prefixes      A map of RDF prefix names to IRI prefixes.
+
+  NOTE: this function writes the supplied prefixes to the writer, and
+  then returns the writer. If you want to separate the writing of
+  prefixes from the creation of the writer, please use
+  `make-rdf-writer` and `write-namespaces`."
 
   ([destination & {:keys [append format encoding prefixes] :or {append false
                                                                 encoding "UTF-8"
@@ -532,6 +581,7 @@
                                             :append append
                                             :encoding encoding))]
 
+     (write-namespaces writer)
      (reduce (fn [writer [name prefix]]
                (doto writer
                  (.handleNamespace name (str prefix)))) writer prefixes))))
@@ -540,11 +590,7 @@
                                        RDFFormat/TRIX
                                        RDFFormat/TRIG})
 
-(defn- write-namespaces
-  "Signal to the writer that we're about to send RDF data.  This will
-  also trigger any buffered prefixes to be written to the stream."
-  [target]
-  (.startRDF target))
+
 
 (defn- end-rdf
   "Signal to the writer that we've finished sending RDF data."
@@ -561,7 +607,7 @@
      (cond
        (seq triples)
        (do
-         (write-namespaces this)
+         ;;(write-namespaces this)
          (doseq [t triples]
            (pr/add-statement this t))
          (end-rdf this))
