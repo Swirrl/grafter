@@ -13,8 +13,7 @@
                                               xsd:int xsd:long]]
             #?@(:clj  [[grafter.url :refer [->java-uri]]]))
   #?(:clj (:import [java.net URI]
-                   [java.time LocalTime LocalDate LocalDateTime OffsetTime OffsetDateTime]
-                   [org.eclipse.rdf4j.model Literal])))
+                   [java.time LocalTime LocalDate LocalDateTime OffsetTime OffsetDateTime])))
 
 #?(:cljs
    (defprotocol IURIable
@@ -250,20 +249,6 @@
          lang
          (keyword? lang)]}
   (->LangString s lang))
-
-#?(:clj
-   (extend-type Literal
-     IRDFString
-     (lang [this]
-       (keyword (.orElse (.getLanguage this) nil)))
-
-     IRawValue
-     (raw-value [this]
-       (.stringValue this))
-
-     IDatatypeURI
-     (datatype-uri [this]
-       (URI. (str (.getDatatype this))))))
 
 (defrecord RDFLiteral [raw-value datatype-uri]
   IRawValue

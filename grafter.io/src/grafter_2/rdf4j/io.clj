@@ -26,6 +26,19 @@
   (object [this] (.getObject this))
   (context [this] (.getContext this)))
 
+(extend-type Literal
+  pr/IRDFString
+  (lang [this]
+    (keyword (.orElse (.getLanguage this) nil)))
+
+  pr/IRawValue
+  (raw-value [this]
+    (.stringValue this))
+
+  pr/IDatatypeURI
+  (datatype-uri [this]
+    (URI. (str (.getDatatype this)))))
+
 (defmethod pr/blank-node? BNode [_]
   true)
 
