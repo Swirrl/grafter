@@ -6,7 +6,7 @@
             [grafter-2.rdf4j.formats :as format]
             [grafter-2.rdf4j.io :as rio]
             [me.raynes.fs :as fs])
-  (:import [org.eclipse.rdf4j.model Resource Statement URI IRI Value]
+  (:import [org.eclipse.rdf4j.model Resource Statement IRI Value]
            [org.eclipse.rdf4j.query BindingSet BooleanQuery GraphQuery Query QueryLanguage TupleQuery Update]
            [org.eclipse.rdf4j.repository Repository RepositoryConnection]
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer]

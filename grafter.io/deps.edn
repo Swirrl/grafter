@@ -1,5 +1,5 @@
 {:paths ["src" "resources"]
- :deps {io.github.swirrl/grafter.io {:local/root "../grafter.core"}
+ :deps {grafter/grafter.core {:local/root "../grafter.core"}
         ;;grafter/vocabularies {:mvn/version "0.3.5"}
         ;;grafter/url {:mvn/version "0.2.5"}
         org.eclipse.rdf4j/rdf4j-rio-api {:mvn/version "4.1.2"}

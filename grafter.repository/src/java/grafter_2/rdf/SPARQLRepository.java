@@ -3,7 +3,6 @@ package grafter_2.rdf;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.eclipse.rdf4j.http.client.HttpClientSessionManager;
-import org.eclipse.rdf4j.http.client.SesameClient;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 
@@ -73,7 +72,7 @@ public class SPARQLRepository extends org.eclipse.rdf4j.repository.sparql.SPARQL
 
         //number of max concurrent connections might have changed so reset client so it will be re-created
         //on next usage with new maximum
-        this.setSesameClient(null);
+        this.setHttpClientSessionManager(null);
     }
 
     // Fix for: https://github.com/eclipse/rdf4j/issues/367

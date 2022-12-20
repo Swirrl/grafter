@@ -37,7 +37,7 @@
 
   pr/IDatatypeURI
   (datatype-uri [this]
-    (URI. (str (.getDatatype this)))))
+    (java.net.URI. (str (.getDatatype this)))))
 
 (defmethod pr/blank-node? BNode [_]
   true)

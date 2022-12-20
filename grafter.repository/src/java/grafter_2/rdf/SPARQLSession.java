@@ -13,9 +13,8 @@ import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
-import org.eclipse.rdf4j.OpenRDFException;
+import org.eclipse.rdf4j.common.exception.RDF4JException;
 import org.eclipse.rdf4j.http.client.SPARQLProtocolSession;
-import org.eclipse.rdf4j.http.client.SparqlSession;
 import org.eclipse.rdf4j.http.protocol.UnauthorizedException;
 import org.eclipse.rdf4j.http.protocol.error.ErrorInfo;
 import org.eclipse.rdf4j.http.protocol.error.ErrorType;
@@ -74,7 +73,7 @@ public class SPARQLSession extends SPARQLProtocolSession /*SparqlSession*/ {
         return params;
     }
 
-    private HttpClientContext getHttpContext() {
+    protected HttpClientContext getHttpContext() {
         return readField(SPARQLProtocolSession.class, this, "httpContext");
     }
 
@@ -148,7 +147,7 @@ public class SPARQLSession extends SPARQLProtocolSession /*SparqlSession*/ {
     }
 
     @SuppressWarnings("deprecation")
-    @Override protected HttpResponse execute(HttpUriRequest method) throws IOException, OpenRDFException {
+    @Override protected HttpResponse execute(HttpUriRequest method) throws IOException, RDF4JException {
         //NOTE: the implementation of this method is based on SparqlSession.execute(HttpUriRequest)
         //This class cannot access the private HttpClientContext fields used by the base implementation
         //so fetches it using reflection(!). It also inspects the received response to check if it appears to indicate
