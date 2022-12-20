@@ -15,7 +15,7 @@
            [java.time.temporal ChronoField Temporal TemporalField]
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
            [org.eclipse.rdf4j.model BNode Literal Statement IRI Value Model]
-           [org.eclipse.rdf4j.model.impl SimpleBNode GenericStatement SimpleLiteral SimpleValueFactory SimpleIRI]
+           [org.eclipse.rdf4j.model.impl SimpleValueFactory]
            [org.eclipse.rdf4j.rio RDFFormat RDFHandler Rio]))
 
 (extend-type Statement
