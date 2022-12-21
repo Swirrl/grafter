@@ -1,9 +1,0 @@
-language: clojure
-sudo: required
-lein: 2.7.1
-jdk:
-  - openjdk8
-before_install:
-  - sudo ./travis/setup-lein-travis.sh
-
-script: travis_retry env JAVA_HOME=/usr/lib/jvm/java-8-oracle/bin/java lein test
