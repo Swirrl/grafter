@@ -21,6 +21,11 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
+
+      - run:
+          command: yarn add --dev shadow-cljs
+          working_directory: grafter.core
+
       # Prep step to compile grafter.repository
       - run: clojure -X:deps prep
 
