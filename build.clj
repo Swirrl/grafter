@@ -87,19 +87,9 @@
                          :jar-file (format "%s-%s.jar" module version)
                          :src-pom (canonicalise-file "template" (str module "-pom.xml"))
                          :module-target (canonicalise-file module "target")
-                         :lib (symbol "grafter" module)
+                         :lib (symbol "io.github.swirrl" module)
                          :version version
-                         :root-target root-target)))
-
-    (build-submodule :mod-name "grafter"
-                     :jar-file (format "grafter-%s.jar" version)
-                     :src-pom (canonicalise-file "template" "grafter-pom.xml")
-                     :module-target (canonicalise-file "grafter" "target")
-                     :lib 'grafter/grafter
-                     :version version
-                     :root-target root-target)
-
-    ))
+                         :root-target root-target)))))
 
 (defn build-all
   "Build all submodules locally"
@@ -115,12 +105,19 @@
 
 
 (defn deploy-all [opts]
-  (doseq [module submodules #_(conj submodules "grafter")]
-    (dd/deploy {:artifact (format "./target/%s-%s" module version)
+  (doseq [module submodules]
+    (dd/deploy {:artifact (format "./target/%s-%s.jar" module version)
                 :installer :remote
                 :sign-releases? false ;; TODO
-                :pom-file (format "./target/%s/META-INF/maven/grafter/%s/pom.xml" module module)})))
+                :pom-file (format "./target/%s/META-INF/maven/io.github.swirrl/%s/pom.xml" module module)})))
 
+(defn ci-deploy
+  "Task to deploy tagged commits to clojars"
+  [opts]
+  (let [circle-tag (System/getenv "CIRCLE_TAG")]
+    (if (some-> circle-tag (str/starts-with? "v"))
+      (deploy-all opts)
+      (println "Skipping clojars deployment (not a TAG)"))))
 
 (comment
 

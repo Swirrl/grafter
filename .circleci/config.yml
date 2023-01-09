@@ -29,7 +29,9 @@ jobs:
       # Prep step to compile grafter.repository
       - run: clojure -X:deps prep
 
-      - run: clojure -T:build test-all
+      - run: clojure -T:build build-all
+
+      - run: clojure -T:build ci-deploy
 
       - save_cache:
           paths:
