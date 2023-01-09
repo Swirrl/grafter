@@ -37,9 +37,9 @@
                                :aliases [:overrides]
                                :extra {:aliases {:overrides
                                                  {:override-deps
-                                                  {'grafter/grafter.core {:mvn/version version}
-                                                   'grafter/grafter.io {:mvn/version version}
-                                                   'grafter/grafter.repository {:mvn/version version}}}}}})
+                                                  {'io.github.swirrl/grafter.core {:mvn/version version}
+                                                   'io.github.swirrl/grafter.io {:mvn/version version}
+                                                   'io.github.swirrl/grafter.repository {:mvn/version version}}}}}})
 
         mod-target (str (io/file root-target mod-name))
         jar-file (str (io/file root-target jar-file))]
