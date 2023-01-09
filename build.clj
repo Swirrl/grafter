@@ -27,22 +27,42 @@
   (println "Testing done"))
 
 (defmacro with-project-root [dir & forms]
-  `(let [orig-root# @#'b/*project-root*] ;; yes this is correct, my cat didn't run over my keyboard I promise! :-)
-     (try
-       (b/set-project-root! ~dir)
-       (let [ret# (do ~@forms)]
-         ret#)
-       (finally
-         (b/set-project-root! orig-root#)))))
+  `(binding [b/*project-root* ~dir] ~@forms))
 
-(defn- build-submodule [& {:keys [mod-name lib pom] :as opts}]
-  (with-project-root mod-name
-    (bb/clean {:target "./target"})
-    (let [jar-file (format "target/%s-%s.jar" (name lib) version)
-          basis (b/create-basis {})]
-      (-> opts
-          (assoc :basis basis)
-          (bb/jar)))))
+(defn- build-submodule [& {:keys [jar-file mod-name lib pom root-target] :as opts}]
+  (assert (and lib version mod-name) "mod-name, lib and version are required for jar")
+
+  (println "Building submodule " mod-name)
+  (let [basis (b/create-basis {:project "deps.edn"
+                               :aliases [:overrides]
+                               :extra {:aliases {:overrides
+                                                 {:override-deps
+                                                  {'grafter/grafter.core {:mvn/version version}
+                                                   'grafter/grafter.io {:mvn/version version}
+                                                   'grafter/grafter.repository {:mvn/version version}}}}}})
+
+        mod-target (str (io/file root-target mod-name))
+        jar-file (str (io/file root-target jar-file))]
+
+    (b/write-pom (assoc opts
+                        :basis basis
+                        :class-dir mod-target))
+
+    (b/copy-dir {:src-dirs   (:paths basis)
+                 :target-dir mod-target})
+
+    (println "Building jar" (str jar-file "..."))
+
+    (b/jar (assoc opts
+                  :class-dir mod-target
+                  :jar-file jar-file))
+
+    ;;(println "Installing " jar-file " " mod-target)
+    (b/install (assoc opts
+                      :basis basis
+                      :jar-file jar-file
+                      :class-dir mod-target
+                      ))))
 
 (def submodules ["grafter.core" "grafter.io" "grafter.repository"])
 
@@ -50,18 +70,81 @@
   (str (apply io/file (.getCanonicalFile (io/file (or b/*project-root* ".")))
               f)))
 
+(defn build-grafter-repo [opts]
+  (with-project-root "grafter.repository"
+    (b/process {:command-args ["clojure" "-T:build" "compile-java"]})))
+
+(defn clean-all [opts]
+  (b/delete {:path "./target"})
+  (b/delete {:path "./grafter.core/target"})
+  (b/delete {:path "./grafter.repository/target"}))
+
+(defn build-all-modules [opts]
+  (let [root-target (canonicalise-file "target")]
+    (doseq [module submodules]
+      (with-project-root module
+        (build-submodule :mod-name module
+                         :jar-file (format "%s-%s.jar" module version)
+                         :src-pom (canonicalise-file "template" (str module "-pom.xml"))
+                         :module-target (canonicalise-file module "target")
+                         :lib (symbol "grafter" module)
+                         :version version
+                         :root-target root-target)))
+
+    (build-submodule :mod-name "grafter"
+                     :jar-file (format "grafter-%s.jar" version)
+                     :src-pom (canonicalise-file "template" "grafter-pom.xml")
+                     :module-target (canonicalise-file "grafter" "target")
+                     :lib 'grafter/grafter
+                     :version version
+                     :root-target root-target)
+
+    ))
+
 (defn build-all
   "Build all submodules locally"
   [opts]
   ;; first prep this dep by building its java classes
-  (aborting-process {:command-args ["clojure" "-X:deps" "prep"]})
-  (test-all opts)
-  (bb/clean {:target "./target"})
-  (let [root-target (canonicalise-file "target")]
+  (aborting-process {:command-args ["clojure" "-X:deps" "prep"]}) ;; TODO is this necessary?
 
-    (doseq [module submodules]
-      (build-submodule :mod-name module
-                       :src-pom (canonicalise-file "template" (str module "-pom.xml"))
-                       :lib (symbol "grafter" module)
-                       :version version
-                       :target root-target))))
+  (clean-all opts)
+  (build-grafter-repo opts)
+  (test-all opts)
+
+  (build-all-modules opts))
+
+
+(defn deploy-all [opts]
+  (doseq [module submodules #_(conj submodules "grafter")]
+    (dd/deploy {:artifact (format "./target/%s-%s" module version)
+                :installer :remote
+                :sign-releases? false ;; TODO
+                :pom-file (format "./target/%s/META-INF/maven/grafter/%s/pom.xml" module module)})))
+
+
+(comment
+
+  (clean-all {})
+
+  (build-grafter-repo {})
+
+  (build-all {})
+
+  (build-all-modules {})
+
+  (do (clean-all {})
+      (build-grafter-repo {})
+      (let [module "grafter.repository"
+            root-target (canonicalise-file "target")]
+        (build-submodule :mod-name module
+                         :src-pom (canonicalise-file "template" (str module "-pom.xml"))
+                         :module-target (canonicalise-file module "target")
+                         :lib (symbol "grafter" module)
+                         :version version
+                         :root-target root-target)))
+
+
+
+  #_(with-project-root "grafter.io"
+      (let [basis (b/create-basis {:project (-> (edn/read-string (slurp "grafter.io/deps.edn"))
+                                              (update-in [:deps 'grafter/grafter.core] (constantly {:mvn/version version})))})])))
