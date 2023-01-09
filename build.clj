@@ -1,8 +1,9 @@
 (ns build
   (:require [clojure.tools.build.api :as b]
-            [org.corfield.build :as bb]
             [clojure.string :as str]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [deps-deploy.deps-deploy :as dd]
+            ))
 
 (def version (str/replace (or (System/getenv "CIRCLE_TAG")
                               "v3.0.0-SNAPSHOT")

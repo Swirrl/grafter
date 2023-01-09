@@ -3,7 +3,8 @@
         grafter/grafter.repository {:local/root "grafter.repository"}
         }
 
- :aliases {:build {:deps {io.github.seancorfield/build-clj
+ :aliases {:build {:deps {slipset/deps-deploy {:mvn/version "0.2.0"}
+                          io.github.seancorfield/build-clj
                           {:git/tag "v0.8.5" :git/sha "de693d0"}}
                    :ns-default build}}
  }
