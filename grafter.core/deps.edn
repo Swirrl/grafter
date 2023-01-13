@@ -3,6 +3,9 @@
  :aliases {:dev {:extra-paths ["test"]
                  :extra-deps {grafter/grafter.io {:local/root "../grafter.io"}}}
 
+           :cljs-test {:extra-paths ["test"]
+                       :extra-deps {thheller/shadow-cljs {:mvn/version "2.20.15"}}}
+
            :test {:extra-paths ["test"]
                   :extra-deps {grafter/grafter.io {:local/root "../grafter.io"}
                                grafter/grafter.repository {:local/root "../grafter.repository"}
@@ -10,6 +13,13 @@
                                lambdaisland/kaocha-junit-xml {:mvn/version "0.0.76"}}
                   :main-opts ["-m" "kaocha.runner"]}
 
-           :build {:deps {io.github.seancorfield/build-clj
+
+
+           :build {:extra-paths ["test"]
+                   :extra-deps {grafter/grafter.io {:local/root "../grafter.io"}
+                                grafter/grafter.repository {:local/root "../grafter.repository"}}
+
+                   :deps {lambdaisland/kaocha {:mvn/version "1.71.1119"}
+                          io.github.seancorfield/build-clj
                           {:git/tag "v0.6.3" :git/sha "9b8e09b"}}
                    :ns-default build}}}
