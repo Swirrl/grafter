@@ -15,7 +15,8 @@
  :aliases {:dev {:extra-paths ["dev/resources" "test"]}
 
            :test {:extra-paths ["dev/resources" "test"]
-                  :extra-deps {lambdaisland/kaocha {:mvn/version "1.63.998"}
+                  :extra-deps {grafter/grafter.repository {:local/root "../grafter.repository"}
+                               lambdaisland/kaocha {:mvn/version "1.63.998"}
                                lambdaisland/kaocha-junit-xml {:mvn/version "0.0.76"}}
                   :main-opts ["-m" "kaocha.runner"]}
 
