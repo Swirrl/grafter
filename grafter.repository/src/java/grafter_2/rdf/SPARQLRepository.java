@@ -18,11 +18,7 @@ public class SPARQLRepository extends org.eclipse.rdf4j.repository.sparql.SPARQL
     }
 
      @Override public RepositoryConnection getConnection() throws RepositoryException {
-         if(!this.isInitialized()) {
-             throw new RepositoryException("SPARQLRepository not initialized.");
-         } else {
-             return new SPARQLConnection(this, createHTTPClient(), quadMode);
-         }
+         return new SPARQLConnection(this, createHTTPClient(), quadMode);
      }
 
      public synchronized HttpClientSessionManager getHttpClientSessionManager() {

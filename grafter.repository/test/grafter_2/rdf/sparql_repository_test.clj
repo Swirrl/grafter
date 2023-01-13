@@ -24,8 +24,8 @@
 (def handler
   (letfn [(respond [reasoning?]
             {:status 200
-             :headers {"Content-Type" "text/boolean"}
-             :body (pr-str reasoning?)})]
+             :headers {"Content-Type" "application/sparql-results+xml"}
+             :body (format "<?xml version=\"1.0\"?><sparql xmlns=\"http://www.w3.org/2005/sparql-results#\"><boolean>%s</boolean></sparql>" (pr-str reasoning?)) })]
     (fn [{:keys [query-string] :as request}]
       (let [{:keys [infer reasoning query]} (parse-query-string query-string)]
         (assert (= query simple-query))

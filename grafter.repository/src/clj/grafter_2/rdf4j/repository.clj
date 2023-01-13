@@ -138,19 +138,18 @@
   interacting with the OpenRDF Workbench."
   [repo-url]
   (doto (HTTPRepository. repo-url)
-    (.initialize)))
+    ))
 
 (defn sparql-repo
   "Given a query-url (String or IURI) and an optional update-url String
   or IURI, return a Sesame SPARQLRepository for communicating with
   remote repositories."
   ([query-url]
-     (doto (SPARQLRepository. (str query-url))
-       (.initialize)))
+   (SPARQLRepository. (str query-url)))
+
   ([query-url update-url]
-     (doto (SPARQLRepository. (str query-url)
-                              (str update-url))
-       (.initialize))))
+   (SPARQLRepository. (str query-url)
+                      (str update-url))))
 
 (defn notifying-repo
   "Wrap the given repository in an RDF4j NotifyingRepositoryWrapper.
@@ -212,7 +211,7 @@
   ([] (sail-repo (MemoryStore.)))
   ([sail]
    (doto (SailRepository. sail)
-     (.initialize))))
+     )))
 
 (defn add->repo [repo]
   (fn
