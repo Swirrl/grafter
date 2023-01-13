@@ -167,7 +167,7 @@
   ;; understand it.
   (pr/->RDFLiteral (pr/raw-value literal) (pr/datatype-uri literal)))
 
-(def value-factory (SimpleValueFactory/getInstance))
+(def ^:private value-factory (SimpleValueFactory/getInstance))
 
 (defn quad->backend-quad
   "Convert a grafter IStatement into a backend (RDF4j) statement type."
