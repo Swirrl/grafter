@@ -13,13 +13,13 @@
            [org.eclipse.rdf4j.common.iteration CloseableIteration Iteration])
   (:import grafter_2.rdf.SPARQLRepository
            grafter_2.rdf.protocols.IStatement
-           org.eclipse.rdf4j.model.impl.URIImpl
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
            org.eclipse.rdf4j.repository.http.HTTPRepository
            org.eclipse.rdf4j.repository.sail.SailRepository
            org.eclipse.rdf4j.sail.memory.MemoryStore
-           org.eclipse.rdf4j.sail.nativerdf.NativeStore))
+           org.eclipse.rdf4j.sail.nativerdf.NativeStore
+           org.eclipse.rdf4j.model.impl.SimpleValueFactory))
 
 (defprotocol ToConnection
   (->connection [repo] "Given an RDF4j repository return a connection to it.
@@ -503,15 +503,17 @@
   (->connection [^Repository repo]
     (.getConnection repo)))
 
+(def ^:private value-factory (SimpleValueFactory/getInstance))
+
 (defn make-restricted-dataset
   "Build a dataset to act as a graph restriction.  You can specify for
   both `:default-graph` and `:named-graphs`.  Both of which take sequences
   of URI strings."
   [& {:as options}]
   (let [->uri (fn [graph]
-                (if (instance? URI graph)
+                (if (instance? IRI graph)
                   graph
-                  (URIImpl. graph)))]
+                  (.createIRI value-factory graph)))]
     (when (or (:named-graphs options) (:default-graph options))
       (let [{:keys [default-graph named-graphs]
              :or   {default-graph [] named-graphs []}} options
