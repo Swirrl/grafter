@@ -2,10 +2,10 @@
   "Functions for converting tree's of turtle-like data into Linked
   Data statements (triples/quads)."
   (:require [grafter-2.rdf.protocols :as rdf])
-  (:import org.eclipse.rdf4j.model.URI))
+  (:import org.eclipse.rdf4j.model.IRI))
 
 (defn- valid-uri? [node]
-  (let [types [java.lang.String java.net.URL java.net.URI URI]]
+  (let [types [java.lang.String java.net.URL java.net.URI IRI]]
     (some (fn [t] (instance? t node)) types))
   ;; todo consider replacing with...
   #_(or (= java.lang.String node) (satisfies? url/IURIable)))

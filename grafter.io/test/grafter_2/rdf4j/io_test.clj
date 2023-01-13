@@ -9,11 +9,17 @@
   (:import grafter_2.rdf.protocols.OffsetDate
            java.net.URI
            [java.time LocalDate LocalDateTime LocalTime OffsetDateTime OffsetTime ZoneOffset]
-           [org.eclipse.rdf4j.model.impl ContextStatementImpl LiteralImpl URIImpl]))
+           [org.eclipse.rdf4j.model Literal]
+           [org.eclipse.rdf4j.model.impl SimpleValueFactory]))
+
+
+(def ^:private value-factory (SimpleValueFactory/getInstance))
 
 (deftest round-trip-numeric-types-test
   (are [xsd type number]
-      (is (= number (pr/raw-value (sut/->backend-type (pr/->grafter-type (LiteralImpl. number (URIImpl. xsd)))))))
+       (is (= number (pr/raw-value (sut/->backend-type (pr/->grafter-type (.createLiteral value-factory
+                                                                                          number
+                                                                                          (.createIRI value-factory xsd)))))))
 
     "http://www.w3.org/2001/XMLSchema#byte" Byte "10"
     "http://www.w3.org/2001/XMLSchema#short" Short "10"
@@ -178,7 +184,7 @@
     (is (= bonsoir (pr/->grafter-type (sut/->backend-type bonsoir))))))
 
 (deftest literal-test
-  (is (instance? LiteralImpl (sut/->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
+  (is (instance? Literal (sut/->backend-type (pr/literal "2014-01-01" (java.net.URI. "http://www.w3.org/2001/XMLSchema#date"))))))
 
 (deftest round-trip-quad-test
   (testing "round trips"
@@ -234,7 +240,11 @@
 (deftest quad->backend-quad-test
   (testing "IStatement->sesame-statement"
     (is (= (sut/quad->backend-quad (->Quad (url/->java-uri "http://foo.com/") (url/->java-uri "http://bar.com/") "a string" (url/->java-uri "http://blah.com/")))
-           (ContextStatementImpl. (URIImpl. "http://foo.com/") (URIImpl. "http://bar.com/") (LiteralImpl. "a string") (URIImpl. "http://blah.com/"))))
+           (.createStatement value-factory
+                             (.createIRI value-factory "http://foo.com/")
+                             (.createIRI value-factory "http://bar.com/")
+                             (.createLiteral value-factory "a string")
+                             (.createIRI value-factory "http://blah.com/"))))
 
     (testing "Raising Exceptions"
       (let [broken-quad (with-meta (->Quad nil "http://bar.com/" "http://baz.com/" "http://blah.com/") {:foo :bar})
@@ -253,7 +263,7 @@
 
 (deftest to-grafter-url-protocol-test
   (testing "extends RDF Model URI"
-    (let [uri (URIImpl. "http://www.tokyo-3.com:777/ayanami?geofront=retracted")
+    (let [uri (.createIRI value-factory "http://www.tokyo-3.com:777/ayanami?geofront=retracted")
           grafter-url (url/->grafter-url uri)]
       (are [expected actual] (= expected actual)
                              777 (url/port grafter-url)

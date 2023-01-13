@@ -14,8 +14,8 @@
            [java.time LocalTime]
            [java.time.temporal ChronoField Temporal TemporalField]
            [javax.xml.datatype DatatypeConstants DatatypeFactory XMLGregorianCalendar]
-           [org.eclipse.rdf4j.model BNode Literal Statement URI Value Model]
-           [org.eclipse.rdf4j.model.impl BNodeImpl ContextStatementImpl LiteralImpl SimpleValueFactory StatementImpl URIImpl]
+           [org.eclipse.rdf4j.model BNode Literal Statement IRI Value Model]
+           [org.eclipse.rdf4j.model.impl SimpleBNode GenericStatement SimpleLiteral SimpleValueFactory SimpleIRI]
            [org.eclipse.rdf4j.rio RDFFormat RDFHandler Rio]))
 
 (extend-type Statement
@@ -167,23 +167,26 @@
   ;; understand it.
   (pr/->RDFLiteral (pr/raw-value literal) (pr/datatype-uri literal)))
 
+(def value-factory (SimpleValueFactory/getInstance))
+
 (defn quad->backend-quad
   "Convert a grafter IStatement into a backend (RDF4j) statement type."
   [^IStatement is]
   (try
     (if (pr/context is)
-      (ContextStatementImpl. (->backend-type (pr/subject is))
-                             (->backend-type (pr/predicate is))
-                             (->backend-type (pr/object is))
-                             (->backend-type (pr/context is)))
-      (StatementImpl. (->backend-type (pr/subject is))
-                      (->backend-type (pr/predicate is))
-                      (->backend-type (pr/object is))))
+      (.createStatement value-factory
+                        (->backend-type (pr/subject is))
+                        (->backend-type (pr/predicate is))
+                        (->backend-type (pr/object is))
+                        (->backend-type (pr/context is)))
+      (.createStatement value-factory (->backend-type (pr/subject is))
+                        (->backend-type (pr/predicate is))
+                        (->backend-type (pr/object is))))
     (catch ClassCastException cce
       ;; We could really make do with just letting the ClassCastException raise,
       ;; but improve the message a little to nudge developers in the right
       ;; direction, about what is likely to be wrong.
-      (throw (ex-info "Error outputing Quad.  It looks like you have an incorrect data type inside a quad.  Check your URI's are not strings."
+      (throw (ex-info "Error outputing Quad.  It looks like you have an incorrect data type inside a quad.  Check your IRI's are not strings."
                       {:error :statement-conversion-error
                        :quad is
                        :quad-meta (meta is)} cce)))
@@ -248,11 +251,11 @@
 
   java.net.URL
   (->backend-type [this]
-    (URIImpl. (str this)))
+    (.createIRI value-factory (str this)))
 
   java.net.URI
   (->backend-type [this]
-    (URIImpl. (str this)))
+    (.createIRI value-factory (str this)))
 
   java.util.Date
   (->backend-type [this]
@@ -262,7 +265,7 @@
   (->backend-type [this]
     (quad->backend-quad this))
 
-  URI
+  IRI
   (->backend-type [this]
     this)
 
@@ -276,11 +279,11 @@
 
   grafter_2.rdf.protocols.BNode
   (->backend-type [this]
-    (BNodeImpl. (.id this)))
+    (.createBNode value-factory (.id this)))
 
   RDFLiteral
   (->backend-type [this]
-    (LiteralImpl. (pr/raw-value this) (URIImpl. (str (pr/datatype-uri this))))))
+    (.createLiteral value-factory (pr/raw-value this) (.createIRI value-factory (str (pr/datatype-uri this))))))
 
 ;; Dates and times
 
@@ -365,7 +368,7 @@
   (->grafter-type [this]
     (backend-literal->grafter-type this))
 
-  URI
+  IRI
   (->grafter-type [this]
     (->java-uri this))
 
@@ -374,10 +377,6 @@
     this)
 
   BNode
-  (->grafter-type [this]
-    (-> this .getID pr/make-blank-node))
-
-  BNodeImpl
   (->grafter-type [this]
     (-> this .getID pr/make-blank-node))
 
@@ -438,7 +437,7 @@
 
   IRDF4jConverter
   (->backend-type [uri]
-    (URIImpl. (str uri))))
+    (.createIRI value-factory (str uri))))
 
 
 
@@ -446,7 +445,7 @@
   "Convert an RDF4j backend quad into a grafter Quad."
   [^Statement st]
   ;; TODO fix this to work properly with object & context.
-  ;; context should return either nil or a URI
+  ;; context should return either nil or a IRI
   ;; object should be converted to a clojure type.
   (->Quad (->grafter-type (.getSubject st))
           (->java-uri (.getPredicate st))
@@ -507,7 +506,7 @@
 
   - :encoding      The character encoding to be used (default: UTF-8)
 
-  - :prefixes      A map of RDF prefix names to URI prefixes."
+  - :prefixes      A map of RDF prefix names to IRI prefixes."
 
   ([destination & {:keys [append format encoding prefixes] :or {append false
                                                                 encoding "UTF-8"
@@ -640,7 +639,7 @@
   (pr/to-statements [this options]
     (pr/to-statements (java.net.URI. (str this)) options))
 
-  URI
+  IRI
   (pr/to-statements [this options]
     (pr/to-statements (java.net.URI (str this)) options))
 
@@ -676,31 +675,31 @@
     (map backend-quad->grafter-quad this)))
 
 (extend-protocol IURIable
-  org.eclipse.rdf4j.model.URI
+  org.eclipse.rdf4j.model.IRI
   (->java-uri [t]
     (java.net.URI. (str t))))
 
 (extend-protocol ToGrafterURL
-  URI
+  IRI
   (->grafter-url [uri]
     (-> uri
         str
         ->grafter-url)))
 
 (defprotocol ToRDF4JURI
-  (->rdf4j-uri [this] "Coerce an object into a sesame URIImpl"))
+  (->rdf4j-uri [this] "Coerce an object into an RDF4j IRI"))
 
 (extend-protocol ToRDF4JURI
   String
-  (->rdf4j-uri [this] (URIImpl. this))
+  (->rdf4j-uri [this] (.createIRI value-factory this))
   URL
-  (->rdf4j-uri [this] (URIImpl. (str this)))
+  (->rdf4j-uri [this] (.createIRI value-factory (str this)))
   java.net.URI
-  (->rdf4j-uri [this] (URIImpl. (str this)))
-  org.eclipse.rdf4j.model.URI
+  (->rdf4j-uri [this] (.createIRI value-factory (str this)))
+  org.eclipse.rdf4j.model.IRI
   (->-rdf4j-uri [this] this)
   GrafterURL
-  (->-rdf4j-uri [this] (URIImpl. (str this))))
+  (->-rdf4j-uri [this] (.createIRI value-factory (str this))))
 
 (defn statements
   "Attempts to coerce an arbitrary source of RDF statements into a
@@ -723,6 +722,6 @@
   chunk size of Clojure's lazy sequences.
 
   The `:base-uri` option can be supplied to automatically re`@base`
-  URI's on a new prefix when reading."
+  IRI's on a new prefix when reading."
   [this & {:keys [format buffer-size base-uri] :as options}]
   (pr/to-statements this options))

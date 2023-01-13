@@ -97,7 +97,7 @@
 (defmethod ->rdf-format java.net.URL [f]
   (url->rdf-format f))
 
-(defmethod ->rdf-format org.eclipse.rdf4j.model.URI [f]
+(defmethod ->rdf-format org.eclipse.rdf4j.model.IRI [f]
   (url->rdf-format f))
 
 (defn binary-format? [fmt]
