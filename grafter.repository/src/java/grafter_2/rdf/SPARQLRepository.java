@@ -18,7 +18,7 @@ public class SPARQLRepository extends org.eclipse.rdf4j.repository.sparql.SPARQL
     }
 
      @Override public RepositoryConnection getConnection() throws RepositoryException {
-         return new SPARQLConnection(this, createHTTPClient(), quadMode);
+         return new SPARQLConnection(this, createSPARQLProtocolSession(), quadMode);
      }
 
      public synchronized HttpClientSessionManager getHttpClientSessionManager() {
