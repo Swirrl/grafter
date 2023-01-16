@@ -1,5 +1,6 @@
 (ns build
-  (:require [clojure.tools.build.api :as b]))
+  (:require [clojure.tools.build.api :as b])
+  (:refer-clojure :exclude [test]))
 
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
