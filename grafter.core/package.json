@@ -1,5 +1,6 @@
 {
   "name": "grafter",
+  "license": "EPL-1.0",
   "scripts": {
     "deps": "yarn install",
     "watch-test": "shadow-cljs watch test;",
