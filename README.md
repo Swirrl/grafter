@@ -11,6 +11,11 @@ It provides support for all common RDF serialisations and
 includes a library of functions for querying and writing to SPARQL
 repositories.
 
+## Prerequisites
+
+- Java 17
+- Clojure 1.11.1
+
 ## FAQ
 
 *Where can I find the api-docs?*
