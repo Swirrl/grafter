@@ -497,13 +497,15 @@
    "void" "http://rdfs.org/ns/void#"
    "xsd" "http://www.w3.org/2001/XMLSchema#"})
 
-(defn write-namespaces
-  "Signal to the writer that we're about to send RDF data.  This will
-  also trigger any buffered prefixes to be written to the stream."
+(defn write-prefixes
+  "Write a map of RDF prefix mappings to the supplied RDFHandler.
+
+  NOTE: This call does not flush the handler, so prefixes may appear
+  after a subsequent call to add (or RDF4j's underlying .endRDF
+  method)."
   ([target]
-   (write-namespaces target default-prefixes))
+   (write-prefixes target default-prefixes))
   ([target prefixes]
-   (.startRDF target)
    (reduce (fn [target [name prefix]]
              (doto target
                (.handleNamespace name (str prefix)))) target prefixes)))
@@ -529,9 +531,9 @@
 
   - :encoding      The character encoding to be used (default: UTF-8)"
 
-  [destination {:keys [append format encoding] :or {append false
-                                                    encoding "UTF-8"
-                                                    }}]
+  [destination & {:keys [append format encoding] :or {append false
+                                                      encoding "UTF-8"
+                                                      }}]
 
   (let [^RDFFormat format (resolve-format-preference destination format)
         iowriter (fmt/select-output-coercer format)
@@ -565,26 +567,19 @@
 
   - :prefixes      A map of RDF prefix names to IRI prefixes.
 
-  NOTE: this function writes the supplied prefixes to the writer, and
-  then returns the writer. If you want to separate the writing of
-  prefixes from the creation of the writer, please use
-  `make-rdf-writer` and `write-namespaces`."
+  NOTE: this function starts the RDFHandler and writes the supplied
+  prefixes to the writer, and then returns the writer. If you want to
+  separate the writing of prefixes from the creation of the writer and
+  want to control the starting of the writer, please use
+  `make-rdf-writer` and `write-prefixes`."
 
   ([destination & {:keys [append format encoding prefixes] :or {append false
                                                                 encoding "UTF-8"
-                                                                prefixes default-prefixes}}]
+                                                                prefixes default-prefixes} :as opts}]
 
-   (let [^RDFFormat format (resolve-format-preference destination format)
-         iowriter (fmt/select-output-coercer format)
-         writer (Rio/createWriter format
-                                  (iowriter destination
-                                            :append append
-                                            :encoding encoding))]
-
-     (write-namespaces writer)
-     (reduce (fn [writer [name prefix]]
-               (doto writer
-                 (.handleNamespace name (str prefix)))) writer prefixes))))
+   (let [writer (make-rdf-writer destination opts)]
+     (.startRDF writer)
+     (write-prefixes writer prefixes))))
 
 (def ^:no-doc format-supports-graphs #{RDFFormat/NQUADS
                                        RDFFormat/TRIX
@@ -592,8 +587,11 @@
 
 
 
-(defn- end-rdf
-  "Signal to the writer that we've finished sending RDF data."
+(defn- flush-rdf
+  "Signal to the writer that we've finished sending RDF data. This just
+  flushes any triples that may still be buffered to the underlying I/O
+  system, and is not responsible for closing the I/O
+  stream/connection."
   [target]
   (.endRDF target))
 
@@ -607,10 +605,9 @@
      (cond
        (seq triples)
        (do
-         ;;(write-namespaces this)
          (doseq [t triples]
            (pr/add-statement this t))
-         (end-rdf this))
+         (flush-rdf this))
        (nil? (seq triples)) (do (.startRDF this)
                                 (.endRDF this))
        :else (throw (IllegalArgumentException. "This serializer was given an unknown type it must be passed a sequence of Statements."))))

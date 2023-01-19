@@ -276,3 +276,124 @@
     (let [[[s1 p1 o1] [s2 p2 o2]] (statements (io/resource "grafter/rdf/bnodes.nt"))]
       (is (pr/blank-node? o1))
       (is (pr/blank-node? s2)))))
+
+
+(def rdf-data-1 [(pr/->Triple (java.net.URI. "http://foo.bar/baz") (java.net.URI. "http://p") (java.net.URI. "http://o"))])
+(def rdf-data-2 [(pr/->Triple (java.net.URI. "http://foo.bar/qux") (java.net.URI. "http://p") (java.net.URI. "http://o"))])
+(def rdf-data-3 [(pr/->Triple (java.net.URI. "http://barbar/baz") (java.net.URI. "http://p") (java.net.URI. "http://o"))])
+
+
+(deftest rdf-writer-rdf4j-handler-operation-ordering
+  (testing "Supported orderings of operations"
+    (with-open [sw (java.io.StringWriter.)]
+      (let [;; rdf-writer internally calls .startRDF followed by write-prefixes
+            tw (sut/rdf-writer sw {:format :ttl :prefixes {"foobar" "http://foo.bar/"}})]
+
+        ;; because former rdf-writer operation calls .startRDF we
+        ;; can then immediately add data. Calls to add will always
+        ;; flush the stream but not close the underlying writer.
+        (pr/add tw rdf-data-1)
+
+        (is (= "@prefix foobar: <http://foo.bar/> .\n\nfoobar:baz <http://p> <http://o> .\n"
+               (str sw)))
+
+        ;; Call again to show we can keep adding even though add
+        ;; internally calls .endRDF (flush).
+        (pr/add tw rdf-data-2)
+
+        (is (= "@prefix foobar: <http://foo.bar/> .\n\nfoobar:baz <http://p> <http://o> .\n\nfoobar:qux <http://p> <http://o> .\n"
+               (str sw)))
+
+        ;; Show we can even write prefixes in the middle of the stream
+        (sut/write-prefixes tw {"barbar" "http://barbar/"})
+
+        ;; Theres no point writing prefixes in the middle of a stream
+        ;; unless we follow with more data (that might use them),
+        ;; so...
+        (pr/add tw rdf-data-3)
+
+        (is (= (str "@prefix foobar: <http://foo.bar/> .\n\nfoobar:baz <http://p> <http://o> .\n\nfoobar:qux <http://p> <http://o> .\n"
+                    "@prefix barbar: <http://barbar/> .\n\nbarbar:baz <http://p> <http://o> .\n")
+               (str sw)))))))
+
+(deftest make-rdf-writer-rdf4j-handler-operation-ordering
+  (testing "Supported orderings of operations"
+    (with-open [sw (java.io.StringWriter.)]
+      (let [;; rdf-writer internally calls .startRDF followed by write-prefixes
+            tw (sut/make-rdf-writer sw {:format :ttl})]
+
+        ;; NOTE this deftest is functionally equivalent to
+        ;; rdf-writer-rdf4j-handler-operation-ordering, but shows the
+        ;; decomplected calls... make-rdf-writer does not call
+        ;; .startRDF or write-prefixes
+
+        (.startRDF tw)
+        (sut/write-prefixes tw {"foobar" "http://foo.bar/"})
+
+        ;; because former rdf-writer operation calls .startRDF we
+        ;; can then immediately add data. Calls to add will always
+        ;; flush the stream but not close the underlying writer.
+        (pr/add tw rdf-data-1)
+
+        (is (= "@prefix foobar: <http://foo.bar/> .\n\nfoobar:baz <http://p> <http://o> .\n"
+               (str sw)))
+
+        ;; Call again to show we can keep adding even though add
+        ;; internally calls .endRDF (flush).
+        (pr/add tw rdf-data-2)
+
+        (is (= "@prefix foobar: <http://foo.bar/> .\n\nfoobar:baz <http://p> <http://o> .\n\nfoobar:qux <http://p> <http://o> .\n"
+               (str sw)))
+
+        ;; Show we can even write prefixes in the middle of the stream
+        (sut/write-prefixes tw {"barbar" "http://barbar/"})
+
+        ;; Theres no point writing prefixes in the middle of a stream
+        ;; unless we follow with more data (that might use them),
+        ;; so...
+        (pr/add tw rdf-data-3)
+
+        (is (= (str "@prefix foobar: <http://foo.bar/> .\n\nfoobar:baz <http://p> <http://o> .\n\nfoobar:qux <http://p> <http://o> .\n"
+                    "@prefix barbar: <http://barbar/> .\n\nbarbar:baz <http://p> <http://o> .\n")
+               (str sw))))))
+
+  (testing "Assertions about RDF4j"
+    (testing "Unsupported operation orderings"
+      ;; NOTE these are really here to capture and assert RDF4j
+      ;; semantics (as they've changed in the past)
+
+      (with-open [sw (java.io.StringWriter.)]
+        (let [tw (sut/make-rdf-writer sw {:format :ttl})]
+
+          (is (thrown? Exception
+                       (.startRDF tw)
+                       (.startRDF tw))
+              ".startRDF in RDF4j raises an exception when called more than once"))
+
+        (let [tw (sut/make-rdf-writer sw {:format :ttl})]
+
+          (is (thrown? Exception
+                       (sut/write-prefixes tw {"foo" "http://foo/bar"}))
+              "Can't write prefixes without .startRDF being called first."))
+
+        (let [tw (sut/make-rdf-writer sw {:format :ttl})]
+          (is (thrown? Exception
+                       (.endRDF tw))
+              "Can't call .endRDF before .startRDF"))
+
+        (let [tw (sut/make-rdf-writer sw {:format :ttl})]
+          (is (thrown? Exception
+                       (.endRDF tw))
+              "Can't call .endRDF before .startRDF"))
+
+        (testing "Calling .endRDF multiple times doesn't actually prevent subsequent use"
+          (with-open [sw (java.io.StringWriter.)]
+            (let [tw (sut/make-rdf-writer sw {:format :ttl})]
+              (.startRDF tw)
+              (add tw rdf-data-1)
+              (.endRDF tw)
+              (.endRDF tw)
+              (add tw rdf-data-2)
+
+              (is (= "\n<http://foo.bar/baz> <http://p> <http://o> .\n\n<http://foo.bar/qux> <http://p> <http://o> .\n"
+                     (str sw))))))))))
