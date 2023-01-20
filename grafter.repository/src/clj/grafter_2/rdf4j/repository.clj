@@ -11,7 +11,8 @@
            [org.eclipse.rdf4j.repository Repository RepositoryConnection]
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer]
            [org.eclipse.rdf4j.common.iteration CloseableIteration Iteration])
-  (:import grafter_2.rdf.SPARQLRepository
+  (:import ;;grafter_2.rdf.SPARQLRepository
+           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
            grafter_2.rdf.protocols.IStatement
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
