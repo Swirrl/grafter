@@ -453,9 +453,7 @@
                            (lazy-cat
                             [current-result]
                             (pull-query)))
-                         (do
-                           (println "closing " results)
-                           (.close results)))
+                         (.close results))
                        (catch Exception e
                          (throw (ex-info "Error waiting on results" {:prepared-query prepared-query} e)))))]
      (run-query))))
