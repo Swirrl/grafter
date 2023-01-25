@@ -11,8 +11,8 @@
            [org.eclipse.rdf4j.repository Repository RepositoryConnection]
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer]
            [org.eclipse.rdf4j.common.iteration CloseableIteration Iteration])
-  (:import ;;grafter_2.rdf.SPARQLRepository
-           org.eclipse.rdf4j.repository.sparql.SPARQLRepository
+  (:import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
+           org.eclipse.rdf4j.http.client.SharedHttpClientSessionManager
            grafter_2.rdf.protocols.IStatement
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
@@ -20,7 +20,9 @@
            org.eclipse.rdf4j.repository.sail.SailRepository
            org.eclipse.rdf4j.sail.memory.MemoryStore
            org.eclipse.rdf4j.sail.nativerdf.NativeStore
-           org.eclipse.rdf4j.model.impl.SimpleValueFactory))
+           org.eclipse.rdf4j.model.impl.SimpleValueFactory
+           org.apache.http.impl.client.HttpClients
+           (java.util.concurrent Executors TimeUnit)))
 
 (defprotocol ToConnection
   (->connection [repo] "Given an RDF4j repository return a connection to it.
@@ -138,19 +140,113 @@
   "Given a URL as a String return a Sesame HTTPRepository for e.g.
   interacting with the OpenRDF Workbench."
   [repo-url]
-  (doto (HTTPRepository. repo-url)
-    ))
+  (HTTPRepository. repo-url))
+
+
+(defn make-http-client-builder
+  "Returns an unbuilt apache http-client configuration.
+
+  Takes a map of the following key value pairs:
+
+  - `:grafter.http/max-conn-total`               Total number of concurrent connections on this http client (default 10)
+  - `:grafter.http/max-conn-per-route`           Maximum number of concurrent connections allowed per endpoint (default 10)
+  - `:grafter.http/conn-time-to-live`            How long until an idle TCP connection in the pool will be closed (default 60)
+  - `:grafter.http/conn-time-to-live-timeunit`   Timeunits for the above (default TimeUnit/SECONDS)
+  - `:grafter.http/user-agent`                   The http user agent to report to the server (default \"grafter\")
+  "
+  [{:grafter.http/keys [max-conn-total
+                        max-conn-per-route
+                        conn-time-to-live
+                        conn-time-to-live-timeunit
+                        user-agent]
+    :or {max-conn-total 10
+         max-conn-per-route 10
+         conn-time-to-live 60
+         conn-time-to-live-timeunit TimeUnit/SECONDS
+         user-agent "grafter"
+         }}]
+  (-> (HttpClients/custom)
+      ;;(.useSystemProperties) ;; we could do this but better to be explict in clj
+
+      ;; NOTE there are additional
+      (.setMaxConnTotal max-conn-total)
+      (.setMaxConnPerRoute max-conn-per-route)
+      (.setUserAgent user-agent)
+      (.setConnectionTimeToLive conn-time-to-live conn-time-to-live-timeunit)))
+
+(defn make-default-thread-pool
+  "Create a new thread-pool suitable for use with RDF4j's
+  SPARQLRepository.
+
+  Takes a map of key value pairs:
+
+  - `:grafter.http/io-thread-pool-size` (default 10) the fixed size of the thread pool to read background IO
+
+  "
+  [{:grafter.http/keys [io-thread-pool-size] :or {io-thread-pool-size 10}}]
+  ;; NOTE the code here is essentially a port of the code found in
+  ;; RDF4j:
+  ;; https://github.com/eclipse/rdf4j/blob/0b74c317c4e7508ca4518eb9486dbc292d299d41/core/http/client/src/main/java/org/eclipse/rdf4j/http/client/SharedHttpClientSessionManager.java#L167
+  (let [backing-thread-factory (Executors/defaultThreadFactory)]
+    (Executors/newScheduledThreadPool ;; NOTE this operates as a fixed size pool!
+     io-thread-pool-size
+     (reify java.util.concurrent.ThreadFactory
+       (newThread [this runnable]
+         (let [thread (.newThread backing-thread-factory runnable)]
+           (doto thread
+             (.setName (str "grafter-http-thread-" (.getName thread))))))))))
+
+(def ^:private default-thread-pool
+  (memoize make-default-thread-pool))
+
+(defn make-shared-session-manager
+  "A default shared session manager, configuring the behaviour of the
+  http connection and thread pooling used inside the HttpClient and
+  RDF4j.
+
+  Accepts a map of key value pairs:
+
+  - `:grafter/http-client-builder` (optional) if supplied overrides the default shared HttpClientBuilder (see `make-http-client-builder`)
+  - `:grafter/thread-pool` (optional) if supplied overrides the default ScheduledThreadPoolExecutor.
+  "
+
+  [{:grafter/keys [http-client-builder thread-pool] :as opts}]
+  (let [thread-pool (or thread-pool (make-default-thread-pool opts))]
+    (SharedHttpClientSessionManager. (.build (or http-client-builder (make-http-client-builder opts)))
+                                     thread-pool)))
+
+(def ^:private default-shared-session-manager
+  ;; By default we memoize this call to ensure we share the same
+  ;; pooled/connection object.
+  ;;
+  ;; If you don't want this you can pass your own override in to
+  ;; `sparql-repo`.
+  (memoize (partial make-shared-session-manager {})))
 
 (defn sparql-repo
   "Given a query-url (String or IURI) and an optional update-url String
   or IURI, return a Sesame SPARQLRepository for communicating with
-  remote repositories."
+  remote repositories.
+
+  Takes the arguments `query-url` and `update-url` for the respective
+  endpoints; these arguments may be `nil`.
+
+  Optionally takes a map of options with the following key:
+
+  `:grafter.http/session-manager` (defaults to a shared session manager as returned from `make-shared-session-manager`)
+  "
   ([query-url]
-   (SPARQLRepository. (str query-url)))
+   (sparql-repo query-url nil {}))
 
   ([query-url update-url]
-   (SPARQLRepository. (str query-url)
-                      (str update-url))))
+   (sparql-repo query-url update-url {}))
+
+  ([query-url update-url {:grafter.http/keys [session-manager] :as opts}]
+   (let [session-manager (or session-manager (default-shared-session-manager))]
+     (doto (SPARQLRepository. (str query-url)
+                              (str update-url))
+       (.setHttpClientSessionManager session-manager)))))
+
 
 (defn notifying-repo
   "Wrap the given repository in an RDF4j NotifyingRepositoryWrapper.
@@ -345,22 +441,24 @@
   "Convert a sesame results object into a lazy sequence of results."
   ([prepared-query] (sesame-results->seq prepared-query identity))
   ([^Query prepared-query converter-f]
-     (let [^CloseableIteration results (.evaluate prepared-query)
-           run-query (fn pull-query []
-                       (try
-                         (if (.hasNext results)
-                           (let [current-result (try
-                                                  (converter-f (.next results))
-                                                  (catch Exception e
-                                                    (.close results)
-                                                    (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
-                             (lazy-cat
-                              [current-result]
-                              (pull-query)))
-                           (.close results))
-                         (catch Exception e
-                           (throw (ex-info "Error waiting on results" {:prepared-query prepared-query} e)))))]
-       (run-query))))
+   (let [^CloseableIteration results (.evaluate prepared-query)
+         run-query (fn pull-query []
+                     (try
+                       (if (.hasNext results)
+                         (let [current-result (try
+                                                (converter-f (.next results))
+                                                (catch Exception e
+                                                  (.close results)
+                                                  (throw (ex-info "Error reading results" {:prepared-query prepared-query} e))))]
+                           (lazy-cat
+                            [current-result]
+                            (pull-query)))
+                         (do
+                           (println "closing " results)
+                           (.close results)))
+                       (catch Exception e
+                         (throw (ex-info "Error waiting on results" {:prepared-query prepared-query} e)))))]
+     (run-query))))
 
 (defprotocol IQueryEvaluator
   (evaluate [this] "Low level protocol to evaluate a sesame RDF Query
@@ -543,10 +641,6 @@
   "Run an arbitrary SPARQL query.  Works with ASK, DESCRIBE, CONSTRUCT
   and SELECT queries.
 
-  You can call this on a Repository however if you do you may in some
-  cases cause a resource leak, for example if the sequence of results
-  isn't fully consumed.
-
   To use this without leaking resources it is recommended that you
   call ->connection on your repository, inside a with-open; and then
   consume all your results inside of a nested doseq/dorun/etc...
@@ -575,13 +669,14 @@
 
   If no options are passed then we use the default of no graph
   restrictions whilst the union graph is the union of all graphs."
-  [repo sparql & {:as options :keys [prefixes]}]
+  [conn sparql & {:as options :keys [prefixes reasoning?]}]
   ;; we could call .setNamespace on the connection, but
   ;; connection/namespaces are mutable so better to prepend the
   ;; prefixes onto the SPARQL string ourselves.
   (let [sparql (str (build-sparql-prefixes-block prefixes) sparql)
         dataset (mapply make-restricted-dataset (or options {}))]
-    (pr/query-dataset repo sparql dataset options)))
+
+    (pr/query-dataset conn sparql dataset options)))
 
 (extend-type RepositoryConnection
   pr/ITripleReadable
