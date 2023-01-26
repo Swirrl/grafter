@@ -39,14 +39,7 @@
 
 (use-fixtures :each http-kit-server-fixture)
 
-(comment
-
-  ;; Disable these tests as it's not obvious how we can set these
-  ;; parameters with the RDF4j changes.
-
-  (deftest simple-http-query-inference-test
-    (let [repo (repo/sparql-repo query-endpoint)]
-      (is (true? (repo/query (repo/->connection repo) simple-query :reasoning? true)))
-      (is (false? (repo/query (repo/->connection repo) simple-query :reasoning? false)))))
-
-  )
+(deftest simple-http-query-inference-test
+  (let [repo (repo/sparql-repo query-endpoint)]
+    (is (true? (repo/query (repo/->connection repo) simple-query :reasoning? true)))
+    (is (false? (repo/query (repo/->connection repo) simple-query :reasoning? false)))))

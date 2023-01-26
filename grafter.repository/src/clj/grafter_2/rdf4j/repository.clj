@@ -211,9 +211,23 @@
   "
 
   [{:grafter/keys [http-client-builder thread-pool] :as opts}]
-  (let [thread-pool (or thread-pool (make-default-thread-pool opts))]
-    (SharedHttpClientSessionManager. (.build (or http-client-builder (make-http-client-builder opts)))
-                                     thread-pool)))
+  (let [thread-pool (or thread-pool (make-default-thread-pool opts))
+        http-client (.build (or http-client-builder (make-http-client-builder opts)))]
+    (reify org.eclipse.rdf4j.http.client.HttpClientSessionManager
+      (getHttpClient [t]
+        http-client)
+      (createSPARQLProtocolSession [t query-url update-url]
+        (grafter_2.rdf.SPARQLSession. query-url update-url http-client thread-pool))
+      (createRDF4JProtocolSession [t server-url]
+        (assert false "createRDF4JProtocolSession not implemented on grafter HttpClientSessionManager"))
+
+      (shutDown [t]
+        (.shutdown thread-pool)
+        (.awaitTermination thread-pool 10 TimeUnit/SECONDS)
+
+        ;; TODO should also probably close sessions
+        ;; https://github.com/eclipse/rdf4j/blob/0b74c317c4e7508ca4518eb9486dbc292d299d41/core/http/client/src/main/java/org/eclipse/rdf4j/http/client/SharedHttpClientSessionManager.java#L270
+        ))))
 
 (def ^:private default-shared-session-manager
   ;; By default we memoize this call to ensure we share the same
@@ -693,3 +707,16 @@
   "Cleanly shutsdown the repository."
   [^Repository repo]
   (.shutDown repo))
+
+(comment
+
+  (def r (sparql-repo "http://localhost:5820/muttnik-dev/query?timeout=0"))
+
+  (with-open [conn (->connection r)]
+    (take 10 (into [] (query conn "select * where { ?s ?p ?o }"))))
+
+  (shutdown r)
+
+
+
+  )
