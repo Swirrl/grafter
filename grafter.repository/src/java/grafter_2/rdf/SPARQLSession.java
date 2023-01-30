@@ -5,13 +5,13 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectionPoolTimeoutException;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.eclipse.rdf4j.common.exception.RDF4JException;
 import org.eclipse.rdf4j.http.client.SPARQLProtocolSession;
@@ -24,7 +24,6 @@ import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.UnsupportedRDFormatException;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,19 +35,6 @@ public class SPARQLSession extends SPARQLProtocolSession /*SparqlSession*/ {
         super(client, executor);
         this.setQueryURL(queryEndpointUrl);
         this.setUpdateURL(updateEndpointUrl);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T readField(Class cls, Object receiver, String fieldName) {
-        try {
-            Field f = cls.getDeclaredField(fieldName);
-            f.setAccessible(true);
-            return (T)f.get(receiver);
-        } catch(NoSuchFieldException ex) {
-            throw new RuntimeException(String.format("Field %s in class %s does not exist", fieldName, cls.getName()));
-        } catch (IllegalAccessException ex) {
-            throw new RuntimeException(String.format("Field %s in class %s is not accessible", fieldName, cls.getName()));
-        }
     }
 
     @SuppressWarnings("deprecation")
@@ -71,10 +57,6 @@ public class SPARQLSession extends SPARQLProtocolSession /*SparqlSession*/ {
         params.setLongParameter(ClientPNames.CONN_MANAGER_TIMEOUT,1);
 
         return params;
-    }
-
-    protected HttpClientContext getHttpContext() {
-        return readField(SPARQLProtocolSession.class, this, "httpContext");
     }
 
     /**
@@ -153,7 +135,7 @@ public class SPARQLSession extends SPARQLProtocolSession /*SparqlSession*/ {
         //so fetches it using reflection(!). It also inspects the received response to check if it appears to indicate
         //a query timeout and throws a QueryInterruptedException in that case.
         HttpClient httpClient = getHttpClient();
-        HttpClientContext httpContext = getHttpContext();
+        HttpContext httpContext = getHttpContext();
 
         boolean consume = true;
 
