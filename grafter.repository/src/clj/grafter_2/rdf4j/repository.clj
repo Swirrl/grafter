@@ -212,22 +212,47 @@
 
   [{:grafter/keys [http-client-builder thread-pool] :as opts}]
   (let [thread-pool (or thread-pool (make-default-thread-pool opts))
-        http-client (.build (or http-client-builder (make-http-client-builder opts)))]
+        http-client (.build (or http-client-builder (make-http-client-builder opts)))
+        open-sessions (or (:open-sessions opts) (atom #{})) ;; for testing
+        ]
     (reify org.eclipse.rdf4j.http.client.HttpClientSessionManager
       (getHttpClient [t]
         http-client)
       (createSPARQLProtocolSession [t query-url update-url]
-        (grafter_2.rdf.SPARQLSession. query-url update-url http-client thread-pool))
+        (let [new-session
+              ;; 'subclass' SPARQLSession to handle closing/shutdown
+              ;; logic of open-sessions
+              (proxy [grafter_2.rdf.SPARQLSession] [query-url update-url http-client thread-pool]
+                (close [] (try
+                            (proxy-super close)
+                            (finally
+                              (swap! open-sessions disj this)))))]
+          (swap! open-sessions conj new-session)
+          new-session))
       (createRDF4JProtocolSession [t server-url]
         (assert false "createRDF4JProtocolSession not implemented on grafter HttpClientSessionManager"))
 
       (shutDown [t]
-        (.shutdown thread-pool)
-        (.awaitTermination thread-pool 10 TimeUnit/SECONDS)
-
-        ;; TODO should also probably close sessions
+        ;; note we shutdown like is done here:
         ;; https://github.com/eclipse/rdf4j/blob/0b74c317c4e7508ca4518eb9486dbc292d299d41/core/http/client/src/main/java/org/eclipse/rdf4j/http/client/SharedHttpClientSessionManager.java#L270
-        ))))
+        (try
+          (doseq [s @open-sessions]
+            (try
+              (.close s)
+              (swap! open-sessions disj s)
+              (catch Exception e
+                (binding [*out* *err*]
+                  (println e)))))
+
+          (finally
+            (try
+              (.shutdown thread-pool)
+              (.awaitTermination thread-pool 10 TimeUnit/SECONDS)
+              (catch InterruptedException _
+                (.interrupt (Thread/currentThread)))
+              (finally
+                (when-not (.isTerminated thread-pool)
+                  (.shutdownNow thread-pool))))))))))
 
 (def ^:private default-shared-session-manager
   ;; By default we memoize this call to ensure we share the same

@@ -214,6 +214,28 @@
                      :prefixes prefixes
                      :reasoning? true)))))))
 
+(deftest make-shared-session-manager-test
+  (let [http (repo/make-http-client-builder {})
+        thread-pool (repo/make-default-thread-pool {})
+        open-sessions (atom #{})
+        ssm (make-shared-session-manager {:grafter/http-client-builder http
+                                          :grafter/thread-pool thread-pool
+                                          ;; inject open-sessions not public part of API just to aid tests
+                                          :open-sessions open-sessions})]
+
+    (testing "tracks open-sessions"
+      (.createSPARQLProtocolSession ssm "http://localhost:5820/query" "")
+      (.createSPARQLProtocolSession ssm "http://localhost:5820/query" "")
+
+      (is (= 2 (count @open-sessions))))
+    (testing "shutdown"
+      (.shutDown ssm)
+
+      (is (= 0 (count @open-sessions))
+          "open sessions should be removed/closed")
+
+      (is (.isTerminated thread-pool)))))
+
 
 (comment
 
