@@ -51,8 +51,6 @@
       (int 42)       "http://www.w3.org/2001/XMLSchema#int" Integer
       "hello"        "http://www.w3.org/2001/XMLSchema#string" String
 
-      ;; TODO
-
       (OffsetDateTime/of (LocalDate/of 2018 11 3)
                          (LocalTime/of 11 13 15 300)
                          (ZoneOffset/ofHoursMinutes 4 15))

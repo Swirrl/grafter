@@ -95,7 +95,7 @@
   "Build all submodules locally"
   [opts]
   ;; first prep this dep by building its java classes
-  (aborting-process {:command-args ["clojure" "-X:deps" "prep"]}) ;; TODO is this necessary?
+  (aborting-process {:command-args ["clojure" "-X:deps" "prep"]})
 
   (clean-all opts)
   (build-grafter-repo opts)
@@ -108,7 +108,7 @@
   (doseq [module submodules]
     (dd/deploy {:artifact (format "./target/%s-%s.jar" module version)
                 :installer :remote
-                :sign-releases? false ;; TODO
+                :sign-releases? false  ;; TODO
                 :pom-file (format "./target/%s/META-INF/maven/io.github.swirrl/%s/pom.xml" module module)})))
 
 (defn ci-deploy

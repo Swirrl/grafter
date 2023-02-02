@@ -4,8 +4,6 @@
             [grafter-2.rdf.protocols :as pr]
             [grafter.url :as url]))
 
-;; TODO add more tests
-
 (def hasBnode (url/->java-uri "http://example.org/hasBlankNode"))
 (def p (url/->java-uri "http://example.org/test/predicate"))
 (def o (url/->java-uri "http://example.org/test/object"))
