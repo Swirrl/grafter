@@ -1,0 +1,26 @@
+{:paths ["src" "resources"]
+ :deps {io.github.swirrl/grafter.core {:local/root "../grafter.core"}
+        ;;grafter/vocabularies {:mvn/version "0.3.5"}
+        ;;grafter/url {:mvn/version "0.2.5"}
+        org.eclipse.rdf4j/rdf4j-rio-api {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-binary {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-jsonld {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-n3 {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-nquads {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-rdfjson {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-rdfxml {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-trig {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-rio-trix {:mvn/version "4.2.2"}}
+
+ :aliases {:dev {:extra-paths ["dev/resources" "test"]
+                 :extra-deps {org.slf4j/slf4j-nop {:mvn/version "2.0.4"}}}
+
+           :test {:extra-paths ["dev/resources" "test"]
+                  :extra-deps {grafter/grafter.repository {:local/root "../grafter.repository"}
+                               lambdaisland/kaocha {:mvn/version "1.63.998"}
+                               lambdaisland/kaocha-junit-xml {:mvn/version "0.0.76"}}
+                  :main-opts ["-m" "kaocha.runner"]}
+
+           :build {:deps {io.github.seancorfield/build-clj
+                          {:git/tag "v0.6.3" :git/sha "9b8e09b"}}
+                   :ns-default build}}}

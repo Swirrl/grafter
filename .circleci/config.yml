@@ -1,0 +1,94 @@
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  build:
+    docker:
+      - image: cimg/clojure:1.11.1-node
+
+    working_directory: ~/repo
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "deps.edn" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run:
+          command: yarn add --dev shadow-cljs
+          working_directory: grafter.core
+
+      # Prep step to compile grafter.repository
+      - run: clojure -X:deps prep
+
+      - run: clojure -T:build build-all
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "deps.edn" }}
+
+      - persist_to_workspace:
+          # Must be an absolute path, or relative path from
+          # working_directory. This is a directory on the container
+          # which is taken to be the root directory of the workspace.
+          root: target
+          # Must be relative path from root
+          paths:
+            - ./*
+
+  deploy:
+    docker:
+      - image: cimg/clojure:1.11.1-node
+
+    working_directory: ~/repo
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+      - attach_workspace:
+          at: target
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "deps.edn" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: clojure -T:build ci-deploy
+
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  test_build: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
+    jobs:
+      - build:
+          context:
+            - swirrl-dockerhub-consumer
+          filters:  # required since `deploy` has tag filters AND requires `test`
+            tags:
+              only: /.*/
+
+      - deploy:
+          context:
+            - swirrl-clojars-publisher
+            - swirrl-dockerhub-consumer
+
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/

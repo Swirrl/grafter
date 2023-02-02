@@ -1,0 +1,13 @@
+{
+  "name": "grafter",
+  "license": "EPL-1.0",
+  "scripts": {
+    "deps": "yarn install",
+    "watch-test": "shadow-cljs watch test;",
+    "clean": "rm -rf target"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "shadow-cljs": "^2.20.15"
+  }
+}

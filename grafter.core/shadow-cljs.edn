@@ -1,0 +1,12 @@
+{:deps {:aliases [:cljs-test]}
+ ;;:source-paths ["src" "test"]
+
+ ;;:dependencies [[grafter/vocabularies "0.3.5"]]
+
+ :nrepl {:port 8777}
+
+ :builds {:test {:target :node-test
+                 :output-to "target/node-tests.js"
+                 :ns-regexp "test$"}
+          }
+ }

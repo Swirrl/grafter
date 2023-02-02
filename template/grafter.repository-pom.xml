@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.github.swirrl</groupId>
+  <artifactId>grafter.repository</artifactId>
+  <packaging>jar</packaging>
+  <name>grafter.repository</name>
+  <description>Grafter Repository - clojure wrappers and helpers for accessing SPARQL repositories</description>
+  <url>https://github.com/Swirrl/grafter</url>
+  <licenses>
+    <license>
+      <name>Eclipse Public License</name>
+      <url>http://www.eclipse.org/legal/epl-v10.html</url>
+    </license>
+  </licenses>
+  <scm>
+    <url>https://github.com/Swirrl/grafter</url>
+    <connection>scm:git:git://github.com/Swirrl/matcha.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/Swirrl/grafter.git</developerConnection>
+  </scm>
+</project>

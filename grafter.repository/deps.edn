@@ -1,0 +1,28 @@
+{:paths ["src/clj" "target/classes"]
+ :deps {io.github.swirrl/grafter.core {:local/root "../grafter.core"}
+        io.github.swirrl/grafter.io {:local/root "../grafter.io"}
+
+        org.eclipse.rdf4j/rdf4j-model {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-repository-api {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-repository-http {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-repository-sail {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-repository-dataset {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-sail-memory {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-sail-inferencer {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-sail-nativerdf {:mvn/version "4.2.2"}
+        org.eclipse.rdf4j/rdf4j-repository-manager {:mvn/version "4.2.2"}
+
+        me.raynes/fs {:mvn/version "1.4.6" :exclusions [org.apache.commons/commons-compress]}}
+
+ :deps/prep-lib {:ensure "target/classes"
+                 :alias :build
+                 :fn compile-java}
+
+ :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.5" :git/sha "9c738da"}}
+                   :ns-default build}
+
+           :test {:extra-paths ["dev-resources" "test"]
+                  :extra-deps {http-kit/http-kit {:mvn/version "2.3.0"}
+                               lambdaisland/kaocha {:mvn/version "1.63.998"}
+                               lambdaisland/kaocha-junit-xml {:mvn/version "0.0.76"}}
+                  :main-opts ["-m" "kaocha.runner"]}}}
