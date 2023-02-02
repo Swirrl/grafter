@@ -12,7 +12,6 @@
            [org.eclipse.rdf4j.sail.inferencer.fc CustomGraphQueryInferencer DirectTypeHierarchyInferencer ForwardChainingRDFSInferencer]
            [org.eclipse.rdf4j.common.iteration CloseableIteration Iteration])
   (:import org.eclipse.rdf4j.repository.sparql.SPARQLRepository
-           org.eclipse.rdf4j.http.client.SharedHttpClientSessionManager
            grafter_2.rdf.protocols.IStatement
            org.eclipse.rdf4j.query.impl.DatasetImpl
            org.eclipse.rdf4j.repository.event.base.NotifyingRepositoryWrapper
@@ -346,8 +345,7 @@
   Sesame MemoryStore."
   ([] (sail-repo (MemoryStore.)))
   ([sail]
-   (doto (SailRepository. sail)
-     )))
+   (SailRepository. sail)))
 
 (defn add->repo [repo]
   (fn
