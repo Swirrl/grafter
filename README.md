@@ -26,9 +26,7 @@ It is split into three sub-projects with their own dependency packages
 
 *Where can I find the api-docs?*
 
-[Latest docs](http://swirrl.github.io/grafter)
-
-Legacy docs [api.grafter.org](http://api.grafter.org/)
+[Legacy docs]([http://api.grafter.org/](https://cljdoc.org/d/grafter/grafter/2.1.18))
 
 *Didn't grafter also contain tools for tabular processing?*
 
