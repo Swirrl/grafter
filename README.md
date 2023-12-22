@@ -35,7 +35,7 @@ As of 0.9.0 the `grafter.tabular` library has been moved into a
 the core grafter library can focus on processing linked data.
 
 This part of the library is now considered deprecated.  If you depend
-on it you can still use it, and it may receive occaisional
+on it you can still use it, and it may receive occasional
 maintainance updates.
 
 If you're looking to start a greenfield project then you can easily
